@@ -9,9 +9,9 @@ export const App = () => {
 	const { width, onMouseDown } = useSlider(360, 320, 640);
 	return (
 		<div id="app">
-			<div id="sidebar" style={{ flexBasis: width }} onMouseDown={onMouseDown}>
+			<div id="sidebar" style={{ flexBasis: width }}>
 				<Sidebar />
-				<div className="slider" />
+				<div className="slider" onMouseDown={onMouseDown} />
 			</div>
 			<div id="viewport">
 				<Viewport />

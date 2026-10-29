@@ -6,7 +6,7 @@ import { GRASS, DIRT, ROCK, WATER } from "./materials";
 import { Vector3 } from "three";
 import { SurfaceMesh } from "./surfaces";
 import { ProceduralBiomeSource } from "./biome-source";
-import { biomes } from "./biomes";
+import { biomes, type BiomeId } from "./biomes";
 import { DEFAULT_GENERATION_SETTINGS } from "./settings";
 
 export class Generator {
@@ -47,19 +47,78 @@ export class Generator {
 
 		const biomeSource = new ProceduralBiomeSource(seed);
 
+		const biomeGrid: BiomeId[][] = Array.from({ length: world.width }, (_, x) => Array.from({ length: world.depth }, (_, z) => biomeSource.getBiome(x, z)));
+		const allBiomes = Array.from(biomes.getAll());
+		const maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));
+
 		for (let x = 0; x < world.width; x++) {
 			for (let z = 0; z < world.depth; z++) {
-				const biomeId = biomeSource.getBiome(x, z);
+				const biomeId = biomeGrid[x][z];
 				const biome = biomes.get(biomeId);
 
 				if (!biome)
 					throw new Error(`Unknown biome ID ${biomeId}.`);
 
-				const large = noise2D(x / biome.continentalScale, z / biome.continentalScale);
-				const medium = noise2D(x / biome.detailScale + 100, z / biome.detailScale + 100);
-				const fine = noise2D(x / biome.roughnessScale + 200, z / biome.roughnessScale + 200);
+				const biomeWeights = new Map<BiomeId, number>();
 
-				const height = biome.baseHeight + large * biome.continentalStrength + medium * biome.detailStrength + fine * biome.roughnessStrength;
+				for (let dx = -maxTransitionWidth; dx <= maxTransitionWidth; dx++) {
+					for (let dz = -maxTransitionWidth; dz <= maxTransitionWidth; dz++) {
+						const sampleX = x + dx;
+						const sampleZ = z + dz;
+
+						if (sampleX < 0 || sampleX >= world.width || sampleZ < 0 || sampleZ >= world.depth)
+							continue;
+
+						const neighborId = biomeGrid[sampleX][sampleZ];
+						const neighbor = biomes.get(neighborId);
+
+						if (!neighbor)
+							throw new Error(`Unknown biome ID ${neighborId}.`);
+
+						const distance = Math.sqrt(dx * dx + dz * dz);
+
+						if (distance > neighbor.transitionWidth && distance !== 0)
+							continue;
+
+						const weight = distance === 0 ? 1 : Math.pow(1 - distance / neighbor.transitionWidth, neighbor.transitionSharpness);
+
+						if (weight <= 0)
+							continue;
+
+						biomeWeights.set(neighborId, (biomeWeights.get(neighborId) ?? 0) + weight);
+					}
+				}
+
+				let blendedHeight = 0;
+				let totalWeight = 0;
+
+				for (const [weightedBiomeId, weight] of biomeWeights) {
+					const weightedBiome = biomes.get(weightedBiomeId);
+
+					if (!weightedBiome)
+						throw new Error(`Unknown biome ID ${weightedBiomeId}.`);
+
+					const biomeBaseHeight = baseHeight + weightedBiome.baseHeight - DEFAULT_GENERATION_SETTINGS.baseHeight;
+
+					const biomeContinentalScale = continentalScale * weightedBiome.continentalScale / DEFAULT_GENERATION_SETTINGS.continentalScale;
+					const biomeDetailScale = detailScale * weightedBiome.detailScale / DEFAULT_GENERATION_SETTINGS.detailScale;
+					const biomeRoughnessScale = roughnessScale * weightedBiome.roughnessScale / DEFAULT_GENERATION_SETTINGS.roughnessScale;
+
+					const biomeContinentalStrength = continentalStrength * weightedBiome.continentalStrength / DEFAULT_GENERATION_SETTINGS.continentalStrength;
+					const biomeDetailStrength = detailStrength * weightedBiome.detailStrength / DEFAULT_GENERATION_SETTINGS.detailStrength;
+					const biomeRoughnessStrength = roughnessStrength * weightedBiome.roughnessStrength / DEFAULT_GENERATION_SETTINGS.roughnessStrength;
+
+					const large = noise2D(x / biomeContinentalScale, z / biomeContinentalScale);
+					const medium = noise2D(x / biomeDetailScale + 100, z / biomeDetailScale + 100);
+					const fine = noise2D(x / biomeRoughnessScale + 200, z / biomeRoughnessScale + 200);
+
+					const height = biomeBaseHeight + large * biomeContinentalStrength + medium * biomeDetailStrength + fine * biomeRoughnessStrength;
+
+					blendedHeight += height * weight;
+					totalWeight += weight;
+				}
+
+				const height = blendedHeight / totalWeight;
 				const clampedHeight = Math.max(1, Math.min(size.y, Math.round(height)));
 
 				world.setHeight(x, z, clampedHeight);

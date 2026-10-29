@@ -8,10 +8,14 @@ export type BiomeDefinition = {
 	readonly id: BiomeId;
 	readonly name: string;
 	readonly colorId: readonly [number, number, number];
+	readonly transitionWidth: number;
+	readonly transitionSharpness: number;
 } & BiomeGenerationSettings;
 
 export type BiomeOptions = BiomeGenerationSettings & {
 	readonly colorId: readonly [number, number, number];
+	readonly transitionWidth?: number;
+	readonly transitionSharpness?: number;
 };
 
 export class BiomeRegistry {
@@ -29,6 +33,8 @@ export class BiomeRegistry {
 			name,
 			...DEFAULT_GENERATION_SETTINGS,
 			...options,
+			transitionWidth: options.transitionWidth ?? 8,
+			transitionSharpness: options.transitionSharpness ?? 2,
 		};
 
 		this.validate(biome);
@@ -59,6 +65,12 @@ export class BiomeRegistry {
 
 		if (![biome.continentalScale, biome.detailScale, biome.roughnessScale].every((value) => Number.isFinite(value) && value > 0))
 			throw new RangeError("Biome noise scales must be finite and greater than zero.");
+
+		if (!Number.isFinite(biome.transitionWidth) || biome.transitionWidth < 0)
+			throw new RangeError("Biome transition width must be finite and non-negative.");
+
+		if (!Number.isFinite(biome.transitionSharpness) || biome.transitionSharpness <= 0)
+			throw new RangeError("Biome transition sharpness must be finite and greater than zero.");
 	}
 }
 
@@ -72,7 +84,9 @@ export const GRASSLAND = biomes.register("grassland", {
 	detailScale: 19.2,
 	detailStrength: 3,
 	roughnessScale: 8,
-	roughnessStrength: 1
+	roughnessStrength: 1,
+	transitionWidth: 8,
+	transitionSharpness: 1.5
 });
 
 export const FOREST = biomes.register("forest", {
@@ -83,7 +97,9 @@ export const FOREST = biomes.register("forest", {
 	detailScale: 19.2,
 	detailStrength: 4,
 	roughnessScale: 8,
-	roughnessStrength: 1.5
+	roughnessStrength: 1.5,
+	transitionWidth: 10,
+	transitionSharpness: 1.5
 });
 
 export const DESERT = biomes.register("desert", {
@@ -94,7 +110,9 @@ export const DESERT = biomes.register("desert", {
 	detailScale: 32,
 	detailStrength: 1.5,
 	roughnessScale: 12,
-	roughnessStrength: 0.5
+	roughnessStrength: 0.5,
+	transitionWidth: 12,
+	transitionSharpness: 1.2
 });
 
 export const MOUNTAINS = biomes.register("mountains", {
@@ -105,5 +123,7 @@ export const MOUNTAINS = biomes.register("mountains", {
 	detailScale: 16,
 	detailStrength: 6,
 	roughnessScale: 6,
-	roughnessStrength: 3
+	roughnessStrength: 3,
+	transitionWidth: 3,
+	transitionSharpness: 4
 });
