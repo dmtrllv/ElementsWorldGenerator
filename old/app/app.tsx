@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Viewport } from "./viewport";
-import { clamp } from "../utils";
+import { clamp } from "../../src/utils";
 
 import "./styles/app.scss";
 import { Notifications } from "./notification";

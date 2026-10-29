@@ -1,0 +1,37 @@
+#notifications {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	margin: 15px;
+	font-size: 20px;
+
+	.title {
+		font-size: 24px;
+		margin-bottom: 15px;
+	}
+
+	.notification {
+		position: relative;
+		&.error {
+			--color: red;
+			--bg: rgba(88, 11, 11, 0.3);
+		}
+
+		padding: 15px 15px;
+		border: 1px solid var(--color);
+		border-radius: 4px;
+		background-color: var(--bg);
+		margin-top: 10px;
+	}
+
+	.close-btn {
+		position: absolute;
+		right: 10px;
+		top: 2px;
+		cursor: pointer;
+		opacity: 0.4;
+		&:hover {
+			opacity: 1;
+		}
+	}
+}

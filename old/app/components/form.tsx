@@ -4,6 +4,15 @@ import { Vector2, Vector3 } from "three";
 
 import "./styles/form.scss";
 
+const hexToRgb = (hex: string): [number, number, number] => {
+	const value = hex.replace(/^#/, "");
+	return [
+		parseInt(value.slice(0, 2), 16),
+		parseInt(value.slice(2, 4), 16),
+		parseInt(value.slice(4, 6), 16)
+	];
+}
+
 const RenderFormInput = ({ inputKey, section, input, submit }: { inputKey: string, submit: Function, section: FormSection<any, any>, input: FormInputs[string] }) => {
 	const state = section[STATE_TAG][0][inputKey];
 	const updateState = (e: React.ChangeEvent<any>) => section.set(inputKey, e.target.value);
@@ -37,6 +46,10 @@ const RenderFormInput = ({ inputKey, section, input, submit }: { inputKey: strin
 				<label htmlFor={`input-${inputKey}-x`}>x: </label><input className="vec3-x" id={`input-${inputKey}-x`} name={input.name + ".x"} placeholder={input.name + ".x"} type="number" value={state.x} onChange={e => section.set(inputKey, new Vector3(+e.target.value, state.y, state.z))} />
 				<label htmlFor={`input-${inputKey}-y`}>y: </label><input className="vec3-y" id={`input-${inputKey}-y`} name={input.name + ".y"} placeholder={input.name + ".y"} type="number" value={state.y} onChange={e => section.set(inputKey, new Vector3(state.x, +e.target.value, state.z))} />
 				<label htmlFor={`input-${inputKey}-z`}>z: </label><input className="vec3-z" id={`input-${inputKey}-z`} name={input.name + ".z"} placeholder={input.name + ".z"} type="number" value={state.z} onChange={e => section.set(inputKey, new Vector3(state.x, state.y, +e.target.value))} />
+			</div>;
+		case "rgb":
+			return <div className="input-group">
+				<input type="color" onChange={e => section.set(inputKey, hexToRgb(e.target.value))} color={state} />
 			</div>
 	}
 }
@@ -53,11 +66,12 @@ const Label = ({ id, input }: { id: string, input: FormInputType }) => {
 		default:
 			return <label htmlFor={`input-${id}`}>{input.name}: </label>;
 	}
-}
+};
+
 
 export const Form = <T extends FormSection<any, any>[]>({ sections, onSubmit, children, ...props }: PropsWithChildren<FormProps<T>>) => {
 	const submit = () => {
-		if(onSubmit) {
+		if (onSubmit) {
 			const result = Object.fromEntries(sections.map((props) => [props.id, { ...props[STATE_TAG][0] }]));
 			onSubmit(result as SubmitData<T>);
 		}
@@ -66,7 +80,7 @@ export const Form = <T extends FormSection<any, any>[]>({ sections, onSubmit, ch
 		<form {...props}>
 			{sections.map((section) => {
 				return (
-					<DropdownPanel key={section.title} title={section.title}>
+					<DropdownPanel key={section.title} title={section.title} open={props.open}>
 						{Object.keys(section.inputs).map(key => {
 							const val = section.inputs[key]!;
 							return (
@@ -90,6 +104,7 @@ export type FormProps<T extends FormSection<any, any>[]> = {
 	onSubmit?: FormSubmitter<T>,
 	className?: string;
 	id?: string;
+	open?: boolean;
 };
 
 export type FormData = FormSection<any, FormInputs>[];
@@ -100,6 +115,7 @@ export type InputValue<T> =
 	T extends ToggleInputType ? boolean :
 	T extends Vector2Type ? Vector2 :
 	T extends Vector3Type ? Vector3 :
+	T extends RgbType ? readonly [number, number, number] :
 	number;
 
 export type FormSubmitter<T extends FormSection<any, any>[]> = (data: SubmitData<T>) => any;
@@ -124,6 +140,7 @@ export type FormSection<Id extends string, T extends FormInputs> = {
 	readonly reset: () => void;
 	readonly values: () => { [K in keyof T]: InputValue<T[K]> };
 	readonly update: (v: { [K in keyof T]: InputValue<T[K]> }) => void;
+	readonly useOnChange: 
 	readonly [STATE_TAG]: FormSectionState;
 };
 
@@ -155,6 +172,9 @@ export function useFormSection<const Id extends string, const T extends FormInpu
 		update(val) {
 			setState(val);
 		},
+		onChange() {
+
+		},
 		[STATE_TAG]: [state, setState]
 	};
 };
@@ -174,7 +194,8 @@ export type FormInputType =
 	| ResetInputType
 	| ButtonInputType
 	| Vector2Type
-	| Vector3Type;
+	| Vector3Type
+	| RgbType;
 
 export type TextInputType = {
 	readonly name: string;
@@ -321,5 +342,19 @@ export const vector3 = (text: string, value: Vector3): Vector3Type => {
 		name: text,
 		type: "vec3",
 		default: value
+	};
+};
+
+export type RgbType = {
+	readonly name: string;
+	readonly type: "rgb";
+	readonly default: [number, number, number];
+};
+
+export const rgbColor = (name: string, value: readonly [number, number, number]): RgbType => {
+	return {
+		name,
+		type: "rgb",
+		default: value as any
 	};
 };

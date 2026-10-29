@@ -1,4 +1,4 @@
-import { rgb } from "../utils";
+import { rgb } from "../../src/utils";
 import { DEFAULT_GENERATION_SETTINGS, type SharedGenerationSettings } from "./settings";
 
 export type BiomeId = number;

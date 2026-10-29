@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { randomInt } from "../utils";
+import { randomInt } from "../../src/utils";
 
 export type SharedGenerationSettings = {
 	baseHeight: number;

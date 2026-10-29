@@ -1,7 +1,7 @@
 import { useEditor } from "./editor";
 import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from "../generator/settings";
-import { randomSeed } from "../utils";
-import { Form, number, text, dropdown, button, useFormSection, submit, reset, vector3, DropdownPanel, type FormSubmitter } from "./components";
+import { randomSeed } from "../../src/utils";
+import { Form, number, text, dropdown, button, useFormSection, submit, reset, vector3, DropdownPanel, type FormSubmitter, rgbColor } from "./components";
 import { useRef, useState } from "react";
 import { Vector3 } from "three";
 import { useNotifications } from "./notification";
@@ -108,7 +108,7 @@ export const Sidebar = () => {
 		<div style={{ position: "absolute", overflowY: "auto", height: "100%", width: "100%" }}>
 			<Form sections={[globalSettings]} onSubmit={generate} />
 			<DropdownPanel title="Biomes" open={false}>
-				{biomes.map(biome => <BiomeForm key={biome.id} {...biome} />)};
+				{biomes.map(biome => <BiomeForm key={biome.id} definition={biome} />)};
 			</DropdownPanel>
 
 			<DropdownPanel title="Saves" open={false}>
@@ -125,15 +125,22 @@ export const Sidebar = () => {
 	);
 };
 
-const BiomeForm = ({ name,  }: BiomeFormProps) => {
-	const biomeSettings = useFormSection(name, name, {
-
+const BiomeForm = ({ definition }: BiomeFormProps) => {
+	const { id, name, baseHeight, transitionWidth, colorId, constraints, continentalScale } = definition;
+	const biomeSettings = useFormSection(id.toString(), name, {
+		baseHeight: number("baseHeight", baseHeight, {}),
+		transitionWidth: number("transitionWidth", transitionWidth, {}),
+		colorId: rgbColor("colorId", colorId),
+		continentalScale: number("continentalScale", continentalScale, {})
 	});
+
+	biomeSettings.
+
 	return (
-		<Form sections={[biomeSettings]} />
-	)
+		<Form sections={[biomeSettings]} open={false} />
+	);
 }
 
-type BiomeFormProps = BiomeDefinition & {
-
+type BiomeFormProps = {
+	definition: BiomeDefinition;
 }
