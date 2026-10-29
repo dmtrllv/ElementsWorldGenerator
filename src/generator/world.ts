@@ -2,6 +2,7 @@
 import type { Vector3 } from "three";
 import type { MaterialId } from "./materials";
 import type { SurfaceMesh } from "./surfaces";
+import type { BiomeRegistry } from "./biomes";
 
 export const BLOCK_SIZE = 16;
 export const VOXELS_PER_BLOCK = BLOCK_SIZE * BLOCK_SIZE * BLOCK_SIZE;
@@ -55,6 +56,7 @@ export class Block {
 export class World {
 	public readonly seed: number;
 	public readonly size: Vector3;
+	public readonly biomes: BiomeRegistry;
 
 	private readonly heights: Uint16Array;
 	private readonly blocks = new Map<bigint, Block>();
@@ -67,11 +69,12 @@ export class World {
 
 	public get blockCount() { return this.blocks.size; }
 
-	public constructor(seed: number, size: Vector3) {
+	public constructor(seed: number, size: Vector3, biomes: BiomeRegistry) {
 		this.seed = seed;
 		this.size = size.clone();
 		this.heights = new Uint16Array(size.x * size.z);
 		this.biomeIds = new Uint32Array(size.x * size.z);
+		this.biomes = biomes;
 	}
 
 	private getBlockKey(x: number, y: number, z: number): bigint {

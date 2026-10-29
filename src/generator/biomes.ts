@@ -1,5 +1,5 @@
 import { rgb } from "../utils";
-import { DEFAULT_GENERATION_SETTINGS,type SharedGenerationSettings } from "./settings";
+import { DEFAULT_GENERATION_SETTINGS, type SharedGenerationSettings } from "./settings";
 
 export type BiomeId = number;
 
@@ -8,21 +8,29 @@ export type BiomeGenerationSettings = SharedGenerationSettings;
 export type BiomeDefinition = {
 	readonly id: BiomeId;
 	readonly name: string;
-	readonly colorId: readonly [number, number, number];
-	readonly transitionWidth: number;
-	readonly transitionSharpness: number;
-} & BiomeGenerationSettings;
+} & Required<BiomeOptions>;
 
 export type BiomeOptions = BiomeGenerationSettings & {
 	readonly colorId: readonly [number, number, number];
 	readonly transitionWidth?: number;
 	readonly transitionSharpness?: number;
+	readonly constraints: BiomeConstraints;
+};
+
+export type BiomeConstraints = {
+	readonly elevation?: { ">"?: number, "<"?: number };
+	readonly temperature?: { ">"?: number, "<"?: number };
+	readonly moisture?: { ">"?: number, "<"?: number };
 };
 
 export class BiomeRegistry {
 	private readonly biomes = new Map<BiomeId, BiomeDefinition>();
 	private readonly idsByName = new Map<string, BiomeId>();
 	private nextId = 1;
+
+	public constructor() {
+		this.regiserDefault();
+	}
 
 	public register(name: string, options: BiomeOptions): BiomeId {
 		if (this.idsByName.has(name))
@@ -73,58 +81,69 @@ export class BiomeRegistry {
 		if (!Number.isFinite(biome.transitionSharpness) || biome.transitionSharpness <= 0)
 			throw new RangeError("Biome transition sharpness must be finite and greater than zero.");
 	}
+
+	private regiserDefault() {
+		this.register("grassland", {
+			colorId: rgb(126, 200, 80),
+			baseHeight: 12,
+			continentalScale: 86,
+			continentalStrength: 4,
+			detailScale: 19.2,
+			detailStrength: 3,
+			roughnessScale: 8,
+			roughnessStrength: 1,
+			transitionWidth: 8,
+			transitionSharpness: 1.5,
+			constraints: {},
+		});
+
+		this.register("forest", {
+			colorId: rgb(35, 120, 55),
+			baseHeight: 12,
+			continentalScale: 86,
+			continentalStrength: 12,
+			detailScale: 19.2,
+			detailStrength: 4,
+			roughnessScale: 8,
+			roughnessStrength: 1.5,
+			transitionWidth: 10,
+			transitionSharpness: 1.5,
+			constraints: {
+				moisture: { ">": 0.1 },
+			},
+		});
+
+		this.register("desert", {
+			colorId: rgb(230, 195, 110),
+			baseHeight: 10,
+			continentalScale: 128,
+			continentalStrength: 4,
+			detailScale: 32,
+			detailStrength: 1.5,
+			roughnessScale: 12,
+			roughnessStrength: 0.5,
+			transitionWidth: 12,
+			transitionSharpness: 1.2,
+			constraints: {
+				temperature: { ">": 0.25 },
+				moisture: { "<": -0.15 },
+			},
+		});
+
+		this.register("mountains", {
+			colorId: rgb(130, 130, 140),
+			baseHeight: 18,
+			continentalScale: 48,
+			continentalStrength: 18,
+			detailScale: 16,
+			detailStrength: 6,
+			roughnessScale: 6,
+			roughnessStrength: 3,
+			transitionWidth: 3,
+			transitionSharpness: 4,
+			constraints: {
+				elevation: { ">": 0.55 },
+			},
+		});
+	}
 }
-
-export const biomes = new BiomeRegistry();
-
-export const GRASSLAND = biomes.register("grassland", {
-	colorId: rgb(126, 200, 80),
-	baseHeight: 12,
-	continentalScale: 86,
-	continentalStrength: 4,
-	detailScale: 19.2,
-	detailStrength: 3,
-	roughnessScale: 8,
-	roughnessStrength: 1,
-	transitionWidth: 8,
-	transitionSharpness: 1.5
-});
-
-export const FOREST = biomes.register("forest", {
-	colorId: rgb(35, 120, 55),
-	baseHeight: 12,
-	continentalScale: 86,
-	continentalStrength: 12,
-	detailScale: 19.2,
-	detailStrength: 4,
-	roughnessScale: 8,
-	roughnessStrength: 1.5,
-	transitionWidth: 10,
-	transitionSharpness: 1.5
-});
-
-export const DESERT = biomes.register("desert", {
-	colorId: rgb(230, 195, 110),
-	baseHeight: 10,
-	continentalScale: 128,
-	continentalStrength: 4,
-	detailScale: 32,
-	detailStrength: 1.5,
-	roughnessScale: 12,
-	roughnessStrength: 0.5,
-	transitionWidth: 12,
-	transitionSharpness: 1.2
-});
-
-export const MOUNTAINS = biomes.register("mountains", {
-	colorId: rgb(130, 130, 140),
-	baseHeight: 18,
-	continentalScale: 48,
-	continentalStrength: 18,
-	detailScale: 16,
-	detailStrength: 6,
-	roughnessScale: 6,
-	roughnessStrength: 3,
-	transitionWidth: 3,
-	transitionSharpness: 4
-});

@@ -2,9 +2,10 @@ import { useEditor } from "./editor";
 import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from "../generator/settings";
 import { randomSeed } from "../utils";
 import { Form, number, text, dropdown, button, useFormSection, submit, reset, vector3, DropdownPanel, type FormSubmitter } from "./components";
-import { useState } from "react";
-import { Vector2, Vector3 } from "three";
+import { useRef, useState } from "react";
+import { Vector3 } from "three";
 import { useNotifications } from "./notification";
+import { BiomeRegistry, type BiomeDefinition } from "../generator/biomes";
 
 //const getUrlSeed = () => {
 //	const seed = Object.fromEntries(new URLSearchParams(location.search))["seed"];
@@ -65,6 +66,19 @@ export const Sidebar = () => {
 
 	const [saves, setSaves] = useState(loadSaves());
 
+	const biomeRegistry = useRef(new BiomeRegistry());
+
+	const [biomes, setBiomes] = useState(Array.from(biomeRegistry.current.getAll()));
+	const addBiome = () => {
+
+	};
+	const removeBiome = () => {
+
+	};
+	const updateBiome = () => {
+
+	};
+
 	const saveSettings = () => {
 		const { settingsName, ...settings } = globalSettings.values();
 		const newSaves = { ...saves, [settingsName]: settings };
@@ -75,14 +89,15 @@ export const Sidebar = () => {
 	const generate: FormSubmitter<[typeof globalSettings]> = (s) => {
 		try {
 			editor.renderer.setDebugMode(s.global.debugMode as any);
-			editor.renderer.render(editor.generator.generate(s.global))
+			editor.renderer.render(editor.generator.generate(s.global, biomeRegistry.current))
 		} catch (e) {
 			if (e instanceof Error) {
 				notifications.notify({
 					type: "Error",
 					message: e.message,
 					title: e.name,
-				})
+				});
+				console.error(e);
 			} else {
 				throw e;
 			}
@@ -93,7 +108,7 @@ export const Sidebar = () => {
 		<div style={{ position: "absolute", overflowY: "auto", height: "100%", width: "100%" }}>
 			<Form sections={[globalSettings]} onSubmit={generate} />
 			<DropdownPanel title="Biomes" open={false}>
-				
+				{biomes.map(biome => <BiomeForm key={biome.id} {...biome} />)};
 			</DropdownPanel>
 
 			<DropdownPanel title="Saves" open={false}>
@@ -109,3 +124,16 @@ export const Sidebar = () => {
 		</div>
 	);
 };
+
+const BiomeForm = ({ name,  }: BiomeFormProps) => {
+	const biomeSettings = useFormSection(name, name, {
+
+	});
+	return (
+		<Form sections={[biomeSettings]} />
+	)
+}
+
+type BiomeFormProps = BiomeDefinition & {
+
+}

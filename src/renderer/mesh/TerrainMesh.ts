@@ -5,7 +5,6 @@ import { BLOCK_SIZE } from "../../generator/world";
 import { materials } from "../../generator/materials";
 import type { MaterialId, RenderGroup } from "../../generator/materials";
 import type { SurfaceMesh } from "../../generator/surfaces";
-import { biomes } from "../../generator/biomes";
 
 type Face = {
 	normal: [number, number, number];
@@ -66,7 +65,7 @@ export class TerrainMesh {
 			}
 
 			const vertexStart = geometry.positions.length / 3;
-			const biome = showBiomeColors ? biomes.get(world.getBiome(bx, bz)) : undefined;
+			const biome = showBiomeColors ? world.biomes.get(world.getBiome(bx, bz)) : undefined;
 
 			if (showBiomeColors && !biome)
 				throw new Error(`Unknown biome ID ${world.getBiome(bx, bz)}.`);

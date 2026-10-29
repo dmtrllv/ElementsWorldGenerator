@@ -1,7 +1,6 @@
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
 import alea from "alea";
-import type { BiomeId } from "./biomes";
-import { GRASSLAND, FOREST, DESERT, MOUNTAINS } from "./biomes";
+import type { BiomeId, BiomeRegistry } from "./biomes";
 
 export interface BiomeSource {
 	getBiome(x: number, z: number): BiomeId;
@@ -14,8 +13,9 @@ export class ProceduralBiomeSource implements BiomeSource {
 	private readonly temperatureScale: number;
 	private readonly moistureScale: number;
 	private readonly elevationScale: number;
+	private readonly biomes: BiomeRegistry;
 
-	public constructor(seed: number, temperatureScale = 96, moistureScale = 72, elevationScale = 128) {
+	public constructor(seed: number, temperatureScale: number, moistureScale: number, elevationScale: number, biomes: BiomeRegistry) {
 		const temperatureRandom = alea(`${seed}:temperature`);
 		const moistureRandom = alea(`${seed}:moisture`);
 		const elevationRandom = alea(`${seed}:biome-elevation`);
@@ -23,6 +23,7 @@ export class ProceduralBiomeSource implements BiomeSource {
 		this.temperatureScale = temperatureScale;
 		this.moistureScale = moistureScale;
 		this.elevationScale = elevationScale;
+		this.biomes = biomes;
 
 		this.temperatureNoise = createNoise2D(temperatureRandom);
 		this.moistureNoise = createNoise2D(moistureRandom);
@@ -34,15 +35,47 @@ export class ProceduralBiomeSource implements BiomeSource {
 		const moisture = this.moistureNoise(x / this.moistureScale + 100, z / this.moistureScale + 100);
 		const elevation = this.elevationNoise(x / this.elevationScale + 200, z / this.elevationScale + 200);
 
-		if (elevation > 0.55)
-			return MOUNTAINS;
+		//if (elevation > 0.55)
+		//	return MOUNTAINS;
 
-		if (temperature > 0.25 && moisture < -0.15)
-			return DESERT;
+		//if (temperature > 0.25 && moisture < -0.15)
+		//	return DESERT;
 
-		if (moisture > 0.1)
-			return FOREST;
+		//if (moisture > 0.1)
+		//	return FOREST;
 
-		return GRASSLAND;
+		//return GRASSLAND;
+
+		for (const biome of this.biomes.getAll()) {
+			const constraints = biome.constraints;
+
+			if (constraints.elevation) {
+				if ("<" in constraints.elevation && elevation >= constraints.elevation["<"]!)
+					continue;
+
+				if (">" in constraints.elevation && elevation <= constraints.elevation[">"]!)
+					continue;
+			}
+
+			if (constraints.moisture) {
+				if ("<" in constraints.moisture && moisture >= constraints.moisture["<"]!)
+					continue;
+
+				if (">" in constraints.moisture && moisture <= constraints.moisture[">"]!)
+					continue;
+			}
+
+			if (constraints.temperature) {
+				if ("<" in constraints.temperature && temperature >= constraints.temperature["<"]!)
+					continue;
+
+				if (">" in constraints.temperature && temperature <= constraints.temperature[">"]!)
+					continue;
+			}
+
+			return biome.id;
+		}
+
+		throw new Error(`No biome matches constraints at (${x}, ${z}). Temperature: ${temperature}, moisture: ${moisture}, elevation: ${elevation}`);
 	}
 }

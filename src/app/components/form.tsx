@@ -57,8 +57,10 @@ const Label = ({ id, input }: { id: string, input: FormInputType }) => {
 
 export const Form = <T extends FormSection<any, any>[]>({ sections, onSubmit, children, ...props }: PropsWithChildren<FormProps<T>>) => {
 	const submit = () => {
-		const result = Object.fromEntries(sections.map((props) => [props.id, { ...props[STATE_TAG][0] }]));
-		onSubmit(result as SubmitData<T>);
+		if(onSubmit) {
+			const result = Object.fromEntries(sections.map((props) => [props.id, { ...props[STATE_TAG][0] }]));
+			onSubmit(result as SubmitData<T>);
+		}
 	};
 	return (
 		<form {...props}>
@@ -85,7 +87,7 @@ export const Form = <T extends FormSection<any, any>[]>({ sections, onSubmit, ch
 
 export type FormProps<T extends FormSection<any, any>[]> = {
 	sections: T,
-	onSubmit: FormSubmitter<T>,
+	onSubmit?: FormSubmitter<T>,
 	className?: string;
 	id?: string;
 };

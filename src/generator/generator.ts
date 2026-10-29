@@ -6,11 +6,11 @@ import { GRASS, DIRT, ROCK, WATER } from "./materials";
 import { Vector3 } from "three";
 import { SurfaceMesh } from "./surfaces";
 import { ProceduralBiomeSource } from "./biome-source";
-import { biomes, type BiomeId } from "./biomes";
+import { BiomeRegistry, type BiomeId } from "./biomes";
 import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from "./settings";
 
 export class Generator {
-	public generate(settings: GenerationSettings): World {
+	public generate(settings: GenerationSettings, biomes: BiomeRegistry): World {
 		let {
 			seed,
 			size,
@@ -46,11 +46,11 @@ export class Generator {
 		if (![continentalStrength, detailStrength, roughnessStrength].every(Number.isFinite))
 			throw new RangeError("Noise strengths must be finite.");
 
-		const world = new World(seed, size);
+		const world = new World(seed, size, biomes);
 		const prng = alea(seed);
 		const noise2D = createNoise2D(prng);
 
-		const biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale);
+		const biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, biomes);
 
 		const biomeGrid: BiomeId[][] = Array.from({ length: world.width }, (_, x) => Array.from({ length: world.depth }, (_, z) => biomeSource.getBiome(x, z)));
 		const allBiomes = Array.from(biomes.getAll());
