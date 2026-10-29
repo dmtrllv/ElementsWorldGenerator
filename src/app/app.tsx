@@ -4,6 +4,7 @@ import { Viewport } from "./viewport";
 import { clamp } from "../utils";
 
 import "./styles/app.scss";
+import { Notifications } from "./notification";
 
 export const App = () => {
 	const { width, onMouseDown } = useSlider(360, 320, 640);
@@ -16,6 +17,7 @@ export const App = () => {
 			<div id="viewport">
 				<Viewport />
 			</div>
+			<Notifications />
 		</div>
 	);
 };

@@ -1,9 +1,10 @@
 import { useEditor } from "./editor";
 import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from "../generator/settings";
 import { randomSeed } from "../utils";
-import { Form, number, text, dropdown, button, useFormSection, submit, reset, vector3 } from "./components";
+import { Form, number, text, dropdown, button, useFormSection, submit, reset, vector3, DropdownPanel, type FormSubmitter } from "./components";
 import { useState } from "react";
 import { Vector2, Vector3 } from "three";
+import { useNotifications } from "./notification";
 
 //const getUrlSeed = () => {
 //	const seed = Object.fromEntries(new URLSearchParams(location.search))["seed"];
@@ -35,8 +36,9 @@ const storeSaves = (saves: Record<string, GenerationSettings>) => {
 
 export const Sidebar = () => {
 	const editor = useEditor();
+	const notifications = useNotifications();
 
-	const globalSettings = useFormSection("global", "Global Settings", {
+	const globalSettings = useFormSection("global", "World Settings", {
 		seed: number("Seed", DEFAULT_GENERATION_SETTINGS.seed, { min: -1_000_000_000, max: 1_000_000_000, step: 1 }),
 		baseHeight: number("Base height", DEFAULT_GENERATION_SETTINGS.baseHeight, {}),
 		size: vector3("Size", DEFAULT_GENERATION_SETTINGS.size),
@@ -70,23 +72,40 @@ export const Sidebar = () => {
 		setSaves(newSaves);
 	};
 
+	const generate: FormSubmitter<[typeof globalSettings]> = (s) => {
+		try {
+			editor.renderer.setDebugMode(s.global.debugMode as any);
+			editor.renderer.render(editor.generator.generate(s.global))
+		} catch (e) {
+			if (e instanceof Error) {
+				notifications.notify({
+					type: "Error",
+					message: e.message,
+					title: e.name,
+				})
+			} else {
+				throw e;
+			}
+		}
+	}
+
 	return (
 		<div style={{ position: "absolute", overflowY: "auto", height: "100%", width: "100%" }}>
+			<Form sections={[globalSettings]} onSubmit={generate} />
+			<DropdownPanel title="Biomes" open={false}>
+				
+			</DropdownPanel>
 
-			<button onClick={saveSettings}>Save Settings</button>
-			<h2>Saves:</h2>
-			{Object.entries(saves).map(([k, v], i) => {
-				return (
-					<div key={i} onClick={() => globalSettings.update({ ...v, settingsName: k, size: new Vector3(v.size.x, v.size.y, v.size.z) } as any)}>
-						{k}
-					</div>
-				)
-			})}
-
-			<Form sections={[globalSettings]} onSubmit={(s) => {
-				editor.renderer.setDebugMode(s.global.debugMode as any);
-				editor.renderer.render(editor.generator.generate(s.global))
-			}} />
+			<DropdownPanel title="Saves" open={false}>
+				<button onClick={saveSettings}>Save Settings</button>
+				{Object.entries(saves).map(([k, v], i) => {
+					return (
+						<div key={i} onClick={() => globalSettings.update({ ...v, settingsName: k, size: new Vector3(v.size.x, v.size.y, v.size.z) } as any)}>
+							{k}
+						</div>
+					)
+				})}
+			</DropdownPanel>
 		</div>
 	);
 };

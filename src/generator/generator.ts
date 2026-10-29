@@ -29,6 +29,7 @@ export class Generator {
 		} = settings;
 
 		size = size.floor();
+		console.log(seaLevel, size.y)
 
 		if (!Number.isFinite(seaLevel) || seaLevel < 0 || seaLevel > size.y)
 			throw new RangeError("seaLevel must be between 0 and the world height.");

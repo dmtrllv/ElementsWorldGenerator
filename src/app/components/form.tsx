@@ -10,11 +10,11 @@ const RenderFormInput = ({ inputKey, section, input, submit }: { inputKey: strin
 
 	switch (input.type) {
 		case "number":
-			return <input className="number" id={`input-${inputKey}`} name={input.name} placeholder={input.name} type="number" value={state} onChange={updateState} />
+			return <input className="number" id={`input-${inputKey}`} name={input.name} placeholder={input.name} type="number" value={state} onChange={e => section.set(inputKey, +e.target.value)} />
 		case "text":
 			return <input className="text" id={`input-${inputKey}`} name={input.name} placeholder={input.name} type="text" value={state} onChange={updateState} />
 		case "slider":
-			return <input className="slider" id={`input-${inputKey}`} name={input.name} placeholder={input.name} type="number" value={state} onChange={updateState} />
+			return <input className="slider" id={`input-${inputKey}`} name={input.name} placeholder={input.name} type="number" value={state} onChange={e => section.set(inputKey, +e.target.value)} />
 		case "toggle":
 			return <input className="toggle" id={`input-${inputKey}`} name={input.name} placeholder={input.name} type="checkbox" value={state} onChange={updateState} />
 		case "dropdown":
@@ -28,12 +28,12 @@ const RenderFormInput = ({ inputKey, section, input, submit }: { inputKey: strin
 		case "button":
 			return <button className="btn" name={input.name} type="button" onClick={input.handler}>{input.name}</button>
 		case "vec2":
-			return <div>
+			return <div className="input-group">
 				<label htmlFor={`input-${inputKey}-x`}>x: </label><input className="vec2-x" id={`input-${inputKey}-x`} name={input.name + ".x"} placeholder={input.name + ".x"} type="number" value={state.x} onChange={e => section.set(inputKey, new Vector2(+e.target.value, state.y))} />
 				<label htmlFor={`input-${inputKey}-y`}>y: </label><input className="vec2-y" id={`input-${inputKey}-y`} name={input.name + ".y"} placeholder={input.name + ".y"} type="number" value={state.y} onChange={e => section.set(inputKey, new Vector2(state.x, +e.target.value))} />
 			</div>
 		case "vec3":
-			return <div>
+			return <div className="input-group">
 				<label htmlFor={`input-${inputKey}-x`}>x: </label><input className="vec3-x" id={`input-${inputKey}-x`} name={input.name + ".x"} placeholder={input.name + ".x"} type="number" value={state.x} onChange={e => section.set(inputKey, new Vector3(+e.target.value, state.y, state.z))} />
 				<label htmlFor={`input-${inputKey}-y`}>y: </label><input className="vec3-y" id={`input-${inputKey}-y`} name={input.name + ".y"} placeholder={input.name + ".y"} type="number" value={state.y} onChange={e => section.set(inputKey, new Vector3(state.x, +e.target.value, state.z))} />
 				<label htmlFor={`input-${inputKey}-z`}>z: </label><input className="vec3-z" id={`input-${inputKey}-z`} name={input.name + ".z"} placeholder={input.name + ".z"} type="number" value={state.z} onChange={e => section.set(inputKey, new Vector3(state.x, state.y, +e.target.value))} />
@@ -41,16 +41,17 @@ const RenderFormInput = ({ inputKey, section, input, submit }: { inputKey: strin
 	}
 }
 
-const hasLabel = (input: FormInputType): boolean => {
+const Label = ({ id, input }: { id: string, input: FormInputType }) => {
 	switch (input.type) {
 		case "submit":
 		case "reset":
 		case "button":
+			return null;
 		case "vec2":
 		case "vec3":
-			return false;
+			return <div className="label">{input.name}: </div>;
 		default:
-			return true;
+			return <label htmlFor={`input-${id}`}>{input.name}: </label>;
 	}
 }
 
@@ -67,8 +68,9 @@ export const Form = <T extends FormSection<any, any>[]>({ sections, onSubmit, ch
 						{Object.keys(section.inputs).map(key => {
 							const val = section.inputs[key]!;
 							return (
-								<div key={key} className={`input ${val.type}`}>
-									{hasLabel(val) && <label htmlFor={`input-${key}`}>{val.name}: </label>}
+								<div key={key} className={`input-field ${val.type}`}>
+									<Label id={key} input={val} />
+									{/*{hasLabel(val) && <label htmlFor={`input-${key}`}>{val.name}: </label>}*/}
 									<RenderFormInput inputKey={key} section={section} input={val} submit={submit} />
 								</div>
 							)

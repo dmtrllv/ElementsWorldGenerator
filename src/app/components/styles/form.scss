@@ -1,11 +1,38 @@
 form {
-	.input.vec2,
-	.input.vec3 {
+	.input-field {
 		position: relative;
 		max-width: 100%;
-		label {
-			display: block;
+		//padding: 0px 20px;
+		display: flex;
+
+		& > label,
+		& > .label {
+			flex: 1;
+			align-content: center;
 		}
+
+		input {
+			border-radius: 4px;
+			border: 1px solid rgb(73, 73, 73);
+			background-color: rgba(54, 54, 54, 1);
+			margin: 5px;
+			height: 24px;
+			color: white;
+			min-width: 0;
+			flex: 1;
+			padding: 4px 8px;
+			height: unset;
+		}
+
+		.input-group {
+			flex: 1;
+		}
+	}
+
+	.vec2,
+	.vec3 {
+		display: block;
+		flex: 1;
 		div {
 			max-width: 100%;
 			display: flex;
@@ -14,5 +41,34 @@ form {
 				flex: 1;
 			}
 		}
+
+		.input-group > label {
+			display: block;
+			align-content: center;
+			text-align: left;
+			margin: 0px 10px 0px 10px;
+
+			&:first-child {
+				margin-left: 0px;
+			}
+		}
+	}
+
+	.btn {
+		border-radius: 4px;
+		border: 1px solid rgb(73, 73, 73);
+		background-color: rgba(54, 54, 54, 1);
+		margin: 5px 0px;
+		color: white;
+		padding: 8px 16px;
+		display: inline-block;
+	}
+
+	.input-field.button,
+	.input-field.reset,
+	.input-field.submit {
+		display: inline-block;
+		margin: 5px;
+		padding: 0px;
 	}
 }
