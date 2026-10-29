@@ -34,19 +34,9 @@ export class ProceduralBiomeSource implements BiomeSource {
 		const temperature = this.temperatureNoise(x / this.temperatureScale, z / this.temperatureScale);
 		const moisture = this.moistureNoise(x / this.moistureScale + 100, z / this.moistureScale + 100);
 		const elevation = this.elevationNoise(x / this.elevationScale + 200, z / this.elevationScale + 200);
-
-		//if (elevation > 0.55)
-		//	return MOUNTAINS;
-
-		//if (temperature > 0.25 && moisture < -0.15)
-		//	return DESERT;
-
-		//if (moisture > 0.1)
-		//	return FOREST;
-
-		//return GRASSLAND;
-
-		for (const biome of this.biomes.getAll()) {
+		const iter = this.biomes.getAll();
+		const fallback = iter.next();
+		for (const biome of iter) {
 			const constraints = biome.constraints;
 
 			if (constraints.elevation) {
@@ -75,7 +65,8 @@ export class ProceduralBiomeSource implements BiomeSource {
 
 			return biome.id;
 		}
-
-		throw new Error(`No biome matches constraints at (${x}, ${z}). Temperature: ${temperature}, moisture: ${moisture}, elevation: ${elevation}`);
+		if (!fallback.value)
+			throw new Error(`No biome matches constraints at (${x}, ${z}). Temperature: ${temperature}, moisture: ${moisture}, elevation: ${elevation}`);
+		return fallback.value.id;
 	}
 }
