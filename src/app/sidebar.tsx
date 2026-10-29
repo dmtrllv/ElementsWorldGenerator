@@ -32,6 +32,7 @@ export const Sidebar = () => {
 	const [detailStrength, setDetailStrength] = useState(DEFAULT_GENERATION_SETTINGS.detailStrength);
 	const [roughnessScale, setRoughnessScale] = useState(DEFAULT_GENERATION_SETTINGS.roughnessScale);
 	const [roughnessStrength, setRoughnessStrength] = useState(DEFAULT_GENERATION_SETTINGS.roughnessStrength);
+	const [debugMode, setDebugMode] = useState<"materials" | "biomes">("materials");
 
 	setUrlSeed(seed);
 
@@ -108,6 +109,17 @@ export const Sidebar = () => {
 			<p>
 				<span style={{ width: "120px", display: "inline-block", textAlign: "right", paddingRight: "5px" }}>roughnessStrength:</span>
 				<input placeholder="roughnessStrength" type="number" value={roughnessStrength} onChange={(e) => setRoughnessStrength(+e.target.value)} />
+			</p>
+			<p>
+				<label htmlFor="debug-mode">Debug view:</label>
+				<select id="debug-mode" value={debugMode} onChange={(e) => {
+					const mode = e.target.value as "materials" | "biomes";
+					setDebugMode(mode);
+					editor.renderer.setDebugMode(mode);
+				}}>
+					<option value="materials">Normal materials</option>
+					<option value="biomes">Biome colors</option>
+				</select>
 			</p>
 			<button onClick={_ => generate()}>Generate</button>
 			<button onClick={() => { const seed = random(); setSeed(seed); generate(seed); }}>Generate (Random seed)</button>

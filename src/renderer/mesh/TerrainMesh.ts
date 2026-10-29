@@ -5,6 +5,7 @@ import { BLOCK_SIZE } from "../../generator/world";
 import { materials } from "../../generator/materials";
 import type { MaterialId, RenderGroup } from "../../generator/materials";
 import type { SurfaceMesh } from "../../generator/surfaces";
+import { biomes } from "../../generator/biomes";
 
 type Face = {
 	normal: [number, number, number];
@@ -15,6 +16,7 @@ type MaterialGeometry = {
 	positions: number[];
 	normals: number[];
 	uvs: number[];
+	colors: number[];
 	indices: number[];
 };
 
@@ -37,7 +39,7 @@ const FACE_UVS: [number, number][] = [
 ];
 
 export class TerrainMesh {
-	public static build(world: World, paletteColumns = 8, paletteRows = 8): THREE.BufferGeometry {
+	public static build(world: World, paletteColumns = 8, paletteRows = 8, showBiomeColors = false): THREE.BufferGeometry {
 		if (!Number.isInteger(paletteColumns) || paletteColumns <= 0 ||
 			!Number.isInteger(paletteRows) || paletteRows <= 0)
 			throw new RangeError("Palette dimensions must be positive integers.");
@@ -46,7 +48,7 @@ export class TerrainMesh {
 		const renderGroups = TerrainMesh.getRenderGroups();
 
 		for (const group of renderGroups)
-			groupGeometries.set(group, { positions: [], normals: [], uvs: [], indices: [] });
+			groupGeometries.set(group, { positions: [], normals: [], uvs: [], indices: [], colors: [] });
 
 		const addFace = (materialId: MaterialId, bx: number, by: number, bz: number, vx: number, vy: number, vz: number, scale: number, face: Face) => {
 			const definition = materials.get(materialId);
@@ -58,12 +60,16 @@ export class TerrainMesh {
 
 			let geometry = groupGeometries.get(definition.renderGroup);
 			if (!geometry) {
-				geometry = { positions: [], normals: [], uvs: [], indices: [] };
+				geometry = { positions: [], normals: [], uvs: [], indices: [], colors: [] };
 				groupGeometries.set(definition.renderGroup, geometry);
 				renderGroups.push(definition.renderGroup);
 			}
 
 			const vertexStart = geometry.positions.length / 3;
+			const biome = showBiomeColors ? biomes.get(world.getBiome(bx, bz)) : undefined;
+
+			if (showBiomeColors && !biome)
+				throw new Error(`Unknown biome ID ${world.getBiome(bx, bz)}.`);
 			const px = bx - world.width / 2;
 			const py = by;
 			const pz = bz - world.depth / 2;
@@ -82,6 +88,11 @@ export class TerrainMesh {
 				geometry.positions.push(px + (vx + corner[0]) * scale, py + (vy + corner[1]) * scale, pz + (vz + corner[2]) * scale);
 				geometry.normals.push(...face.normal);
 				geometry.uvs.push(uv[0] === 0 ? u0 : u1, uv[1] === 0 ? v0 : v1);
+				if (showBiomeColors && biome) {
+					geometry.colors.push(biome.colorId[0] / 255, biome.colorId[1] / 255, biome.colorId[2] / 255);
+				} else {
+					geometry.colors.push(1, 1, 1);
+				}
 			}
 
 			geometry.indices.push(vertexStart, vertexStart + 1, vertexStart + 2, vertexStart, vertexStart + 2, vertexStart + 3);
@@ -143,6 +154,7 @@ export class TerrainMesh {
 		const positions: number[] = [];
 		const normals: number[] = [];
 		const uvs: number[] = [];
+		const colors: number[] = [];
 		const indices: number[] = [];
 
 		for (const [materialIndex, group] of renderGroups.entries()) {
@@ -173,7 +185,7 @@ export class TerrainMesh {
 		geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
 		geometry.setIndex(indices);
 		geometry.computeBoundingSphere();
-
+		geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 		return geometry;
 	}
 
@@ -204,9 +216,9 @@ export class TerrainMesh {
 	public static createMaterials(): THREE.MeshStandardMaterial[] {
 		return TerrainMesh.getRenderGroups().map((group) => {
 			if (group === "transparent")
-				return new THREE.MeshStandardMaterial({ color: 0x75bde8, transparent: true, opacity: 0.55, depthWrite: false, roughness: 0.2 });
+				return new THREE.MeshStandardMaterial({ color: 0x75bde8, vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false, roughness: 0.2 });
 
-			return new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
+			return new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 1 });
 		});
 	}
 
@@ -220,7 +232,7 @@ export class TerrainMesh {
 
 		let target = geometry.get(definition.renderGroup);
 		if (!target) {
-			target = { positions: [], normals: [], uvs: [], indices: [] };
+			target = { positions: [], normals: [], uvs: [], indices: [], colors: [] };
 			geometry.set(definition.renderGroup, target);
 			renderGroups.push(definition.renderGroup);
 		}
@@ -237,6 +249,7 @@ export class TerrainMesh {
 		for (const vertex of surface.vertices) {
 			target.positions.push(vertex.position.x, vertex.position.y, vertex.position.z);
 			target.uvs.push(u0 + vertex.uv[0] * (u1 - u0), v0 + vertex.uv[1] * (v1 - v0));
+			target.colors.push(1, 1, 1);
 		}
 
 		for (const triangle of surface.triangles) {

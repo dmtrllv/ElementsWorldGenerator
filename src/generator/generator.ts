@@ -54,6 +54,7 @@ export class Generator {
 		for (let x = 0; x < world.width; x++) {
 			for (let z = 0; z < world.depth; z++) {
 				const biomeId = biomeGrid[x][z];
+				world.setBiome(x, z, biomeId);
 				const biome = biomes.get(biomeId);
 
 				if (!biome)

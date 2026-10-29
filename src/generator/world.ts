@@ -59,6 +59,7 @@ export class World {
 	private readonly heights: Uint16Array;
 	private readonly blocks = new Map<bigint, Block>();
 	private readonly surfaces: SurfaceMesh[] = [];
+	private readonly biomeIds: Uint32Array;
 
 	public get width() { return this.size.x; }
 	public get height() { return this.size.y; }
@@ -70,6 +71,7 @@ export class World {
 		this.seed = seed;
 		this.size = size.clone();
 		this.heights = new Uint16Array(size.x * size.z);
+		this.biomeIds = new Uint32Array(size.x * size.z);
 	}
 
 	private getBlockKey(x: number, y: number, z: number): bigint {
@@ -132,6 +134,23 @@ export class World {
 			throw new RangeError("Height coordinates are outside the world.");
 
 		return this.heights[z * this.width + x];
+	}
+
+	public setBiome(x: number, z: number, biomeId: number): void {
+		if (!Number.isInteger(biomeId) || biomeId < 0 || biomeId > 0xFFFFFFFF)
+			throw new RangeError("Biome ID must be a valid unsigned 32-bit integer.");
+
+		if (x < 0 || x >= this.width || z < 0 || z >= this.depth)
+			throw new RangeError("Biome coordinates are outside the world.");
+
+		this.biomeIds[z * this.width + x] = biomeId;
+	}
+
+	public getBiome(x: number, z: number): number {
+		if (x < 0 || x >= this.width || z < 0 || z >= this.depth)
+			throw new RangeError("Biome coordinates are outside the world.");
+
+		return this.biomeIds[z * this.width + x];
 	}
 
 	public addSurface(surface: SurfaceMesh): void {

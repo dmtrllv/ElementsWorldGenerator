@@ -4,6 +4,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { World } from "../generator/world";
 import { TerrainMesh } from "./mesh/TerrainMesh";
 
+export type TerrainDebugMode = "materials" | "biomes";
+
 export class Renderer {
 	private container: HTMLDivElement | null = null;
 	private scene: Scene | null = null;
@@ -12,6 +14,9 @@ export class Renderer {
 	private controls: OrbitControls | null = null;
 	private resizeObserver: ResizeObserver | null = null;
 	private terrain: Mesh | null = null;
+
+	private currentWorld: World | null = null;
+	private debugMode: TerrainDebugMode = "materials";
 
 	public constructor() { }
 
@@ -111,6 +116,8 @@ export class Renderer {
 		if (!this.scene)
 			throw new Error("Renderer is not initialized!");
 
+		this.currentWorld = world;
+
 		if (this.terrain) {
 			this.scene.remove(this.terrain);
 			this.terrain.geometry.dispose();
@@ -151,10 +158,17 @@ export class Renderer {
 			}
 		}
 
-		const geometry = TerrainMesh.build(world);
+		const geometry = TerrainMesh.build(world, 8, 8, this.debugMode === "biomes");
 		const material = TerrainMesh.createMaterials();
 		this.terrain = new Mesh(geometry, material);
 		this.scene.add(this.terrain);
+	}
+
+	public setDebugMode(mode: TerrainDebugMode): void {
+		this.debugMode = mode;
+
+		if (this.currentWorld)
+			this.render(this.currentWorld);
 	}
 
 }
