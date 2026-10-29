@@ -1,0 +1,18 @@
+form {
+	.input.vec2,
+	.input.vec3 {
+		position: relative;
+		max-width: 100%;
+		label {
+			display: block;
+		}
+		div {
+			max-width: 100%;
+			display: flex;
+			input {
+				min-width: 0;
+				flex: 1;
+			}
+		}
+	}
+}

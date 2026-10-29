@@ -1,8 +1,9 @@
-import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from "./settings";
+import { rgb } from "../utils";
+import { DEFAULT_GENERATION_SETTINGS,type SharedGenerationSettings } from "./settings";
 
 export type BiomeId = number;
 
-export type BiomeGenerationSettings = Readonly<Omit<GenerationSettings, "seaLevel" | "size">>;
+export type BiomeGenerationSettings = SharedGenerationSettings;
 
 export type BiomeDefinition = {
 	readonly id: BiomeId;
@@ -77,10 +78,10 @@ export class BiomeRegistry {
 export const biomes = new BiomeRegistry();
 
 export const GRASSLAND = biomes.register("grassland", {
-	colorId: [126, 200, 80],
+	colorId: rgb(126, 200, 80),
 	baseHeight: 12,
-	continentalScale: 48,
-	continentalStrength: 8,
+	continentalScale: 86,
+	continentalStrength: 4,
 	detailScale: 19.2,
 	detailStrength: 3,
 	roughnessScale: 8,
@@ -90,9 +91,9 @@ export const GRASSLAND = biomes.register("grassland", {
 });
 
 export const FOREST = biomes.register("forest", {
-	colorId: [35, 120, 55],
+	colorId: rgb(35, 120, 55),
 	baseHeight: 12,
-	continentalScale: 48,
+	continentalScale: 86,
 	continentalStrength: 12,
 	detailScale: 19.2,
 	detailStrength: 4,
@@ -103,10 +104,10 @@ export const FOREST = biomes.register("forest", {
 });
 
 export const DESERT = biomes.register("desert", {
-	colorId: [230, 195, 110],
+	colorId: rgb(230, 195, 110),
 	baseHeight: 10,
-	continentalScale: 64,
-	continentalStrength: 5,
+	continentalScale: 128,
+	continentalStrength: 4,
 	detailScale: 32,
 	detailStrength: 1.5,
 	roughnessScale: 12,
@@ -116,7 +117,7 @@ export const DESERT = biomes.register("desert", {
 });
 
 export const MOUNTAINS = biomes.register("mountains", {
-	colorId: [130, 130, 140],
+	colorId: rgb(130, 130, 140),
 	baseHeight: 18,
 	continentalScale: 48,
 	continentalStrength: 18,

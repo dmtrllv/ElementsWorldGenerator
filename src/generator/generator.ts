@@ -7,7 +7,7 @@ import { Vector3 } from "three";
 import { SurfaceMesh } from "./surfaces";
 import { ProceduralBiomeSource } from "./biome-source";
 import { biomes, type BiomeId } from "./biomes";
-import { DEFAULT_GENERATION_SETTINGS } from "./settings";
+import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from "./settings";
 
 export class Generator {
 	public generate(settings: GenerationSettings): World {
@@ -22,6 +22,10 @@ export class Generator {
 			detailStrength,
 			roughnessScale,
 			roughnessStrength,
+			biomeElevationScale,
+			biomeMoistureScale,
+			//biomeScale,
+			biomeTemperatureScale
 		} = settings;
 
 		size = size.floor();
@@ -45,7 +49,7 @@ export class Generator {
 		const prng = alea(seed);
 		const noise2D = createNoise2D(prng);
 
-		const biomeSource = new ProceduralBiomeSource(seed);
+		const biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale);
 
 		const biomeGrid: BiomeId[][] = Array.from({ length: world.width }, (_, x) => Array.from({ length: world.depth }, (_, z) => biomeSource.getBiome(x, z)));
 		const allBiomes = Array.from(biomes.getAll());
@@ -172,16 +176,3 @@ export class Generator {
 	}
 
 }
-
-export type GenerationSettings = {
-	seed: number;
-	size: Vector3;
-	baseHeight: number;
-	seaLevel: number;
-	continentalScale: number;
-	continentalStrength: number;
-	detailScale: number;
-	detailStrength: number;
-	roughnessScale: number;
-	roughnessStrength: number;
-};

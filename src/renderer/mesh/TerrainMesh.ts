@@ -174,6 +174,9 @@ export class TerrainMesh {
 			for (const value of part.uvs)
 				uvs.push(value);
 
+			for (const value of part.colors)
+				colors.push(value);
+
 			for (const index of part.indices)
 				indices.push(index + vertexOffset);
 
