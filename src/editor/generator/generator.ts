@@ -7,7 +7,7 @@ import { NumberInput, Vector3Input } from "../../ui/components";
 import { BiomeRegistry, type BiomeId } from "./biomes";
 import { World } from "./world";
 import alea from "alea";
-import { createNoise2D } from "simplex-noise";
+import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
 import { ProceduralBiomeSource } from "./biome-source";
 import { GRASS, DIRT, ROCK, WATER } from "./materials";
 import { SurfaceMesh } from "./surfaces";
@@ -19,6 +19,10 @@ export class Generator {
 
 	public readonly worldSettings = new WorldSettings();
 	public readonly biomes: BiomeRegistry;
+	private currentWorld: World | null = null;
+	private noise2D: NoiseFunction2D | null = null;
+	private biomeSource: ProceduralBiomeSource | null = null;
+	private maxTransitionWidth = 0;
 
 	public constructor(editor: Editor) {
 		this.editor = editor;
@@ -61,20 +65,20 @@ export class Generator {
 			throw new RangeError("Noise strengths must be finite.");
 
 		const world = new World(seed, size, this.biomes, chunkSize);
-		const prng = alea(seed);
-		const noise2D = createNoise2D(prng);
 
-		const biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, this.biomes);
+		this.currentWorld = world;
+		this.noise2D = createNoise2D(alea(seed));
+		this.biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, this.biomes);
 
 		const allBiomes = this.biomes.getAll();
-		const maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));
+		this.maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));
 
 		const chunkColumns = Math.ceil(world.width / chunkSize);
 		const chunkRows = Math.ceil(world.depth / chunkSize);
 
 		for (let chunkZ = 0; chunkZ < chunkRows; chunkZ++) {
 			for (let chunkX = 0; chunkX < chunkColumns; chunkX++) {
-				this.generateChunk(world, chunkX, chunkZ, noise2D, biomeSource, maxTransitionWidth);
+				this.generateChunk(chunkX, chunkZ);
 			}
 		}
 
@@ -117,8 +121,18 @@ export class Generator {
 		this.editor.get(Renderer).render(world);
 	}
 
-	private generateChunk(world: World, chunkX: number, chunkZ: number, noise2D: ReturnType<typeof createNoise2D>, biomeSource: ProceduralBiomeSource, maxTransitionWidth: number): void {
-		const { chunkSize, baseHeight, continentalScale, continentalStrength, detailScale, detailStrength, roughnessScale, roughnessStrength } = this.worldSettings;
+	public generateChunk(chunkX: number, chunkZ: number): void {
+		const world = this.currentWorld;
+		const noise2D = this.noise2D;
+		const biomeSource = this.biomeSource;
+
+		if (!world || !noise2D || !biomeSource)
+			throw new Error("World has not been initialized.");
+
+		const maxTransitionWidth = this.maxTransitionWidth;
+		const { baseHeight, continentalScale, continentalStrength, detailScale, detailStrength, roughnessScale, roughnessStrength } = this.worldSettings;
+
+		const chunkSize = world.chunkSize;
 
 		const originX = chunkX * chunkSize;
 		const originZ = chunkZ * chunkSize;
