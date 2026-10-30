@@ -3,14 +3,15 @@ import { ColorInput, NumberInput, TextInput } from "../../ui/components";
 import { rgb } from "../../utils";
 import { Editor } from "../editor";
 import { NotificationManager } from "../notifications";
+import { serializable } from "../serializer";
 import { input, section, Settings } from "../settings";
 
 export type BiomeId = number;
 
 export type BiomeConstraints = {
-	readonly elevation?: { ">"?: number, "<"?: number };
-	readonly temperature?: { ">"?: number, "<"?: number };
-	readonly moisture?: { ">"?: number, "<"?: number };
+	elevation?: { ">"?: number, "<"?: number };
+	temperature?: { ">"?: number, "<"?: number };
+	moisture?: { ">"?: number, "<"?: number };
 };
 
 @store
@@ -165,43 +166,56 @@ export type BiomeOptions = Omit<Biome, "id" | "name" | "color"> & {
 
 @store
 export class Biome extends Settings {
+	@serializable()
 	public readonly id!: BiomeId;
 
 	@input(TextInput)
+	@serializable()
 	public name!: string;
 
 	@input(ColorInput)
+	@serializable()
 	public color!: [number, number, number];
 
 	@input(NumberInput)
+	@serializable()
 	public baseHeight: number = 12;
 
 	@input(NumberInput)
+	@serializable()
 	public continentalScale: number = 96;
 
 	@input(NumberInput)
+	@serializable()
 	public continentalStrength: number = 12;
 
 	@input(NumberInput)
+	@serializable()
 	public detailScale: number = 87 / 2.5;
 
 	@input(NumberInput)
+	@serializable()
 	public detailStrength: number = 4;
 
 	@input(NumberInput)
+	@serializable()
 	public roughnessScale: number = 87 / 2;
 
 	@input(NumberInput)
+	@serializable()
 	public roughnessStrength: number = 1.2;
 
 	@section("Transition")
 	@input(NumberInput)
+	@serializable()
 	public transitionWidth: number = 8;
 
 	@input(NumberInput)
+	@serializable()
 	public transitionSharpness: number = 1.5;
 
 	//@input(NumberInput)
+	@serializable()
 	public constraints: BiomeConstraints = {};
 
 	public constructor(id: BiomeId, options: BiomeOptions) {

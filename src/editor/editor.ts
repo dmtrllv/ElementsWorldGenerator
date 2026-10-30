@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useRef, type PropsWithChildren } from "react";
 import { observe } from "../state";
+import { Serializer } from "./serializer";
+import { Generator } from "./generator";
+import { WorldSettings } from "./generator/world-settings";
 
 export class Editor {
 	public static readonly get = () => {

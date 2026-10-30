@@ -1,9 +1,6 @@
 import { Vector3 } from "three";
 import type { Editor } from "../editor";
-import { input, section, Settings } from "../settings";
-import { randomSeed } from "../../utils";
 import { store, state } from "../../state";
-import { NumberInput, Vector3Input } from "../../ui/components";
 import { BiomeRegistry, type BiomeId } from "./biomes";
 import { World } from "./world";
 import alea from "alea";
@@ -12,6 +9,7 @@ import { ProceduralBiomeSource } from "./biome-source";
 import { GRASS, DIRT, ROCK, WATER } from "./materials";
 import { SurfaceMesh } from "./surfaces";
 import { Renderer } from "../renderer";
+import { WorldSettings } from "./world-settings";
 
 @store
 export class Generator {
@@ -271,7 +269,7 @@ export class Generator {
 
 		if (!Number.isSafeInteger(radius) || radius < 0)
 			throw new RangeError("Chunk radius must be a non-negative safe integer.");
-		
+
 		const world = this.currentWorld;
 
 		if (!world)
@@ -317,54 +315,4 @@ export class Generator {
 
 		this.generateChunksAround(chunkX, chunkZ, radius, circular, force);
 	}
-}
-
-@store
-export class WorldSettings extends Settings {
-	@section("World Settings")
-	@input(NumberInput, { step: 1 })
-	public seed: number = randomSeed();
-
-	@input(Vector3Input)
-	public size: Vector3 = new Vector3(32, 32, 32);
-
-	@input(NumberInput)
-	public chunkSize: number = 16;
-
-	@input(NumberInput)
-	public baseHeight: number = 12;
-
-	@input(NumberInput, { step: 1 })
-	public seaLevel: number = 7;
-
-
-	@section("World Scales")
-	@input(NumberInput)
-	public continentalScale: number = 96;
-
-	@input(NumberInput)
-	public continentalStrength: number = 12;
-
-	@input(NumberInput)
-	public detailScale: number = 87 / 2.5;
-
-	@input(NumberInput)
-	public detailStrength: number = 4;
-
-	@input(NumberInput)
-	public roughnessScale: number = 87 / 2;
-
-	@input(NumberInput)
-	public roughnessStrength: number = 1.2;
-
-
-	@section("Biome Scales")
-	@input(NumberInput, { step: 1 })
-	public biomeTemperatureScale: number = 192;
-
-	@input(NumberInput, { step: 1 })
-	public biomeMoistureScale: number = 148;
-
-	@input(NumberInput, { step: 1 })
-	public biomeElevationScale: number = 256;
 }

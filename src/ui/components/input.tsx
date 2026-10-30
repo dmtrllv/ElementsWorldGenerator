@@ -1,4 +1,4 @@
-import { Fragment, useState, type JSX } from "react";
+import { Fragment, useEffect, type JSX } from "react";
 import { Vector2, Vector3 } from "three";
 import { Settings, type InputComponent } from "../../editor/settings";
 import { observe } from "../../state";
@@ -16,17 +16,10 @@ const nameToLabel = (name: string) => name.split("").map((s, i) => {
 });
 
 export const TextInput: InputComponent<string, StringProps> = ({ onChange, value, label, ...props }) => {
-	const [state, setState] = useState(value);
-
-	const update = (value: string) => {
-		setState(value);
-		onChange(value);
-	};
-
 	return (
 		<div className="input-field">
 			<div className="label">{label || nameToLabel(props.name)}:</div>
-			<input value={state} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => update(e.target.value)} />
+			<input value={value} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => onChange(e.target.value)} />
 		</div>
 	);
 };
@@ -50,30 +43,19 @@ const rgbToHex = ([r, g, b]: [number, number, number]): string => {
 }
 
 export const ColorInput: InputComponent<[number, number, number]> = ({ onChange, value, label, ...props }) => {
-	const [state, setState] = useState(value);
-
-	const update = (value: string) => {
-		const val = hexToRgb(value);
-		setState(val);
-		onChange(val);
-	};
-
 	return (
 		<div className="input-field">
 			<div className="label">{label || nameToLabel(props.name)}:</div>
-			<input value={rgbToHex(state)} {...props} id={props.name} placeholder={props.name} type="color" onChange={e => update(e.target.value)} />
+			<input value={rgbToHex(value)} {...props} id={props.name} placeholder={props.name} type="color" onChange={e => onChange(hexToRgb(e.target.value))} />
 		</div>
 	);
 };
 
 
 export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, value, label, ...props }) => {
-	const [state, setState] = useState(value.toString());
-
 	const update = (value: string) => {
 		const val = +value;
 		if (Number.isFinite(val) && !Number.isNaN(val)) {
-			setState(value);
 			onChange(val);
 		}
 	};
@@ -81,7 +63,7 @@ export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, val
 	return (
 		<div className="input-field">
 			<div className="label">{label || nameToLabel(props.name)}:</div>
-			<input value={state} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => update(e.target.value)} />
+			<input value={value} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => update(e.target.value)} />
 		</div>
 	);
 };
@@ -133,6 +115,17 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, l
 		onChange(value);
 	};
 
+	useEffect(() => {
+		if(value.x !== sx.size)
+			sx.set(value.x);
+		
+		if(value.y !== sy.size)
+			sy.set(value.y);
+		
+		if(value.z !== sz.size)
+			sz.set(value.z);
+	}, [value]);
+
 	return (
 		<div className="input-field vec3">
 			<div className="label">{label || nameToLabel(name)}:</div>
@@ -157,6 +150,7 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, l
 export const SettingsView = <T extends Settings>({ settings, type, onChange }: { settings: T, type: new (...args: any[]) => T, onChange?: SettingsChangeHandler<T> }) => {
 	const state = observe(settings) as any;
 	const inputs = Settings.getInputs(type);
+	console.log("SettingsView change")
 
 	const elements = [];
 	let sectionElements: JSX.Element[] = [];

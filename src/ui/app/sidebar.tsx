@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { Editor, Generator, WorldSettings } from "../../editor";
+import { Editor, Generator } from "../../editor";
 import { Biome } from "../../editor/generator/biomes";
 import { SettingsView } from "../components";
 import { DropdownPanel } from "../components/dropdown";
 import { useSlider } from "../hooks/slider";
 import { observe } from "../../state";
+import { WorldSettings } from "../../editor/generator/world-settings";
 
 import "./styles/sidebar.scss";
 
 const World = () => {
 	const generator = Editor.use(Generator);
-
 	return (
 		<SettingsView type={WorldSettings} settings={generator.worldSettings} />
 	);

@@ -66,6 +66,9 @@ export const store = (Class: any): any => {
 				get(target, p) {
 					if (p === DISPATCHERS)
 						return classDispatchers;
+					if (p === "constructor") {
+						return target.constructor;
+					}
 					if (p in values) {
 						const val = values[p];
 

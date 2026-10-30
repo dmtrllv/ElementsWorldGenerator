@@ -18,7 +18,7 @@ const MenuItemView = ({ item }: { item: MenuItem }) => {
 
 	return (
 		<div className="menu-item">
-			<div className="item" onClick={() => { item.action && item.action(); console.log(item.text, item.action) }}>
+			<div className="item" onClick={() => { item.action && item.action(); }}>
 				{item.text}
 			</div>
 			{item.children.length > 0 && (

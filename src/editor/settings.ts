@@ -1,4 +1,6 @@
+import { Vector3 } from "three";
 import { state } from "../state";
+import { Serializer } from "./serializer";
 
 const INPUTS = Symbol("INPUTS");
 
@@ -9,12 +11,32 @@ type InputMap = Record<string, {
 	props?: any;
 }>;
 
+const DESERIALIZED_PROPS = Symbol("DESERIALIZE_PROPS");
+
 export abstract class Settings {
 	public static readonly getInputs = <T extends new () => Settings>(target: T): InputMap => {
 		let ctor = target as any;
 		if (!ctor[INPUTS])
 			ctor[INPUTS] = {};
 		return ctor[INPUTS];
+	}
+
+	public constructor(data: { [DESERIALIZED_PROPS]: any });
+	public constructor();
+	public constructor(data?: { [DESERIALIZED_PROPS]: any }) {
+		if (data)
+			Object.assign(this, data[DESERIALIZED_PROPS])
+	}
+}
+
+export class Vector3Serializer extends Serializer<Vector3> {
+	protected serialize(v: Vector3): string {
+		return JSON.stringify(v);
+	}
+
+	protected deserialize(target: new () => Vector3, string: string): Vector3 {
+		const { x, y, z } = JSON.parse(string);
+		return new Vector3(x, y, z);
 	}
 }
 
@@ -32,7 +54,7 @@ export const header = <T extends Settings, K extends keyof T>(title: string) => 
 	const k = key as any;
 	if (!(key in inputs))
 		inputs[k] = {};
-	Object.assign(inputs[k], { header: title });
+	Object.assign(inputs[k], { header: title, });
 };
 
 export const section = <T extends Settings, K extends keyof T>(title: string) => (target: T, key: K) => {
@@ -40,7 +62,7 @@ export const section = <T extends Settings, K extends keyof T>(title: string) =>
 	const k = key as any;
 	if (!(key in inputs))
 		inputs[k] = {};
-	Object.assign(inputs[k], { section: title });
+	Object.assign(inputs[k], { section: title, });
 };
 
 export type InputComponent<T, P extends {} = {}> = React.FC<InputComponentProps<T> & Partial<P>>;
