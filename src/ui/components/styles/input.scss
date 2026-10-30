@@ -1,5 +1,5 @@
 form {
-	.header {
+	.body > .header {
 		font-size: 18px;
 		height: 32px;
 		width: 100%;
@@ -14,23 +14,6 @@ form {
 		&:not(:first-child) {
 			border-top: 1px solid rgb(112, 112, 112);
 		}
-
-		.header {
-			position: relative;
-			border-bottom: 1px solid rgb(112, 112, 112);
-
-			h4 {
-				font-size: 18px;
-				height: 32px;
-				width: 100%;
-				padding: 0px;
-
-				&:not(:first-child) {
-					margin-top: 15px;
-				}
-			}
-		}
-
 		.body {
 			border: none;
 		}

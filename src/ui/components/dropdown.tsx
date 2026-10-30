@@ -1,4 +1,4 @@
-import { useState, type PropsWithChildren } from "react";
+import { useState, type JSX, type PropsWithChildren } from "react";
 
 import "./styles/dropdown.scss";
 
@@ -8,9 +8,9 @@ export const DropdownPanel = ({ title, children, ...props }: PropsWithChildren<D
 	return (
 		<div className={`dropdown-panel ${open ? "open" : ""}`}>
 			<div className="header" onClick={() => setOpen(!open)}>
-				<h4>{title}</h4>
+				{typeof title === "string" ? <h4>{title}</h4> : title}
 				<div className="icon">
-					&#8595;
+					⌄
 				</div>
 			</div>
 			<div className="body">
@@ -21,6 +21,6 @@ export const DropdownPanel = ({ title, children, ...props }: PropsWithChildren<D
 };
 
 export type DropdownPanelProps = {
-	title: string;
+	title: JSX.Element | string;
 	open?: boolean;
 };

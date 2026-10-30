@@ -4,10 +4,10 @@ import { Generator, WorldSettings } from "../editor/generator";
 import { SettingsView } from "./components";
 import { useSlider } from "./hooks/slider";
 import { NotificationManager } from "../editor/notifications";
-
-import "./styles/sidebar.scss";
 import { Biome } from "../editor/generator/biomes";
 import { DropdownPanel } from "./components/dropdown";
+
+import "./styles/sidebar.scss";
 
 const World = () => {
 	const generator = Editor.use(Generator);
@@ -44,8 +44,9 @@ const Biomes = () => {
 	return (
 		<>
 			{generator.biomes.getAll().map(biome => {
+				const color = `rgb(${biome.color[0]},${biome.color[1]},${biome.color[2]})`;
 				return (
-					<DropdownPanel key={biome.name} title={biome.name} open={false} >
+					<DropdownPanel key={biome.name} title={<h4><div style={{ backgroundColor: color }} className="biome-color" />{biome.name}</h4>} open={false} >
 						<SettingsView type={Biome} settings={biome} />
 					</DropdownPanel>
 				)

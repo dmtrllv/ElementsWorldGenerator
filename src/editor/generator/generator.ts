@@ -38,12 +38,10 @@ export class Generator {
 			roughnessStrength,
 			biomeElevationScale,
 			biomeMoistureScale,
-			//biomeScale,
 			biomeTemperatureScale
 		} = this.worldSettings;
 
 		size = size.floor();
-		console.log(seaLevel, size.y)
 
 		if (!Number.isFinite(seaLevel) || seaLevel < 0 || seaLevel > size.y)
 			throw new RangeError("seaLevel must be between 0 and the world height.");
@@ -73,7 +71,6 @@ export class Generator {
 		for (let x = 0; x < world.width; x++) {
 			for (let z = 0; z < world.depth; z++) {
 				const biomeId = biomeGrid[x][z];
-				console.log({biomeId})
 				world.setBiome(x, z, biomeId);
 				const biome = this.biomes.get(biomeId);
 
