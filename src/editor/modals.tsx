@@ -17,7 +17,6 @@ export class ModalManager {
 	}
 
 	public confirm(message: string, title: string = "Confirm") {
-		console.log(confirm, this);
 		if (this.confirmModal)
 			return Promise.resolve(false);
 		let resolver = { res: null } as any;

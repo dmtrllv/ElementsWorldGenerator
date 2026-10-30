@@ -43,7 +43,6 @@ const rgbToHex = ([r, g, b]: [number, number, number]): string => {
 }
 
 export const ColorInput: InputComponent<[number, number, number]> = ({ onChange, value, label, ...props }) => {
-	console.log("Color render", value);
 	return (
 		<div className="input-field">
 			<div className="label">{label || nameToLabel(props.name)}:</div>
@@ -151,7 +150,6 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, l
 export const SettingsView = <T extends Settings>({ settings, type, onChange }: { settings: T, type: new (...args: any[]) => T, onChange?: SettingsChangeHandler<T> }) => {
 	const state = observe(settings) as any;
 	const inputs = Settings.getInputs(type);
-	console.log("SettingsView change")
 
 	const elements = [];
 	let sectionElements: JSX.Element[] = [];

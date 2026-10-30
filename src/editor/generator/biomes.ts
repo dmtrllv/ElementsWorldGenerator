@@ -60,16 +60,19 @@ export class BiomeRegistry {
 		this.idsByName.delete(name);
 	}
 
-	public readonly load = (biomes: Biome[]) => {
+	public load(biomes: Biome[]): void {
 		let highestId = 0;
 		let last = this.biomes.pop();
-		while(last) {
+
+		while (last) {
 			this.remove(last.name);
 			last = this.biomes.pop();
 		}
+
 		biomes.forEach(biome => {
 			this.biomes.push(biome);
 			this.idsByName.set(biome.name, biome.id);
+
 			if (biome.id > highestId)
 				highestId = biome.id;
 		});

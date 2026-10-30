@@ -71,10 +71,8 @@ export class SaveManager {
 			return null; // TODO: ERROR/notification
 
 		let { world, biomes } = JSON.parse(data);
-		console.log(world);
 		world = Serializer.deserialize(WorldSettings, world);
 		biomes = biomes.map((b: any) => Serializer.deserialize(Biome, b));
-		console.log(biomes);
 		this.editor.get(Generator).biomes.load(biomes);
 		Object.assign(this.editor.get(Generator).worldSettings, world);
 	}

@@ -28,7 +28,6 @@ const BiomeTitle = ({ biome }: { biome: Biome }) => {
 const Biomes = () => {
 	const generator = Editor.use(Generator);
 	const biomes = observe(generator.biomes.biomes);
-	console.log("biomes changed!", biomes);
 	return (
 		<>
 			{biomes.map(biome => {
