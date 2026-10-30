@@ -23,6 +23,12 @@ export class NotificationManager {
 		if (index > -1)
 			this.notifications.splice(index, 1);
 	}
+
+	public readonly error = (message: string) => {
+		this.notify({ type: "Error", message, title: "Error" });
+		throw new Error(message);
+	}
+
 }
 
 export type Notification = NotificationData & {

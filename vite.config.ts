@@ -4,13 +4,5 @@ import react from "@vitejs/plugin-react-swc";
 export default defineConfig({
 	plugins: [
 		react({ tsDecorators: true }),
-		{
-			name: "full-reload",
-			configureServer(server) {
-				server.watcher.on("change", () => {
-					server.ws.send({ type: "full-reload" });
-				});
-			}
-		}
-	]
+	],
 });

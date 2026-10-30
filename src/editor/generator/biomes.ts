@@ -1,6 +1,8 @@
 import { state, store } from "../../state";
 import { ColorInput, NumberInput, TextInput } from "../../ui/components";
 import { rgb } from "../../utils";
+import { Editor } from "../editor";
+import { NotificationManager } from "../notifications";
 import { input, section, Settings } from "../settings";
 
 export type BiomeId = number;
@@ -15,20 +17,28 @@ export type BiomeConstraints = {
 export class BiomeRegistry {
 	@state
 	public readonly biomes: Biome[] = [];
-
 	private readonly idsByName = new Map<string, BiomeId>();
+	private readonly notifications: NotificationManager;
+	private idCounter = 0;
+	private freeIds: number[] = [];
 
-	private nextId = 1;
+	private nextId() {
+		let id = this.freeIds.pop();
+		if(id !== undefined)
+			return id;
+		return this.idCounter++;
+	}
 
-	public constructor() {
+	public constructor(editor: Editor) {
+		this.notifications = editor.get(NotificationManager);
 		this.regiserDefault();
 	}
 
 	public register(options: BiomeOptions): BiomeId {
 		if (this.idsByName.has(options.name))
-			throw new Error(`Biome "${options.name}" is already registered.`);
+			throw this.notifications.error(`Biome "${options.name}" is already registered.`);
 
-		const id = this.nextId++;
+		const id = this.nextId();
 		const biome = new Biome(id, options);
 
 		this.validate(biome);
@@ -38,8 +48,19 @@ export class BiomeRegistry {
 		return id;
 	}
 
+	public remove(name: string) {
+		if (!this.idsByName.has(name))
+			throw this.notifications.error(`Biome "${name}" is not registered.`);
+		const index = this.biomes.findIndex(b => b.name === name);
+		if(index > -1) {
+			delete this.biomes[index];
+			this.freeIds.push(index);
+		}
+		this.idsByName.delete(name);
+	}
+
 	public get(id: BiomeId): Biome | undefined {
-		return this.biomes[id - 1];
+		return this.biomes[id];
 	}
 
 	public getId(name: string): BiomeId | undefined {

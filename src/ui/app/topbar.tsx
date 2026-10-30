@@ -1,4 +1,6 @@
 import { Editor, Generator, NotificationManager, Renderer, type TerrainRenderMode } from "../../editor";
+import { ModalManager } from "../../editor/modals";
+import { OpenModal, SaveModal } from "../modals/saves";
 
 import "./styles/topbar.scss";
 
@@ -6,6 +8,7 @@ export const Topbar = () => {
 	const generator = Editor.use(Generator);
 	const notifications = Editor.use(NotificationManager);
 	const renderer = Editor.use(Renderer);
+	const modals = Editor.use(ModalManager);
 
 	const generate = () => {
 		try {
@@ -26,6 +29,10 @@ export const Topbar = () => {
 
 	return (
 		<div id="topbar">
+			<div className="left">
+				<button className="btn-generate" onClick={() => modals.open(OpenModal)}>Open</button>
+				<button className="btn-generate" onClick={() => modals.open(SaveModal)}>Save</button>
+			</div>
 			<div className="right">
 				<div className="render-mode">
 					<select name="render-mode" id="pet-select" value={renderer.renderMode.toString()} onChange={e => renderer.setRenderMode(e.target.value as TerrainRenderMode)}>

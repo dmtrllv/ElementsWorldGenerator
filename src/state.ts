@@ -80,18 +80,13 @@ export const store = (Class: any): any => {
 						}
 					}
 
-					const value = target[p as keyof typeof target];
-
-					if (typeof value === "function") {
-						return value.bind(proxiedSelf);
-					}
-					return value;
+					return target[p as keyof typeof target];
 				},
 				set(target, p, newValue) {
 					if (p in values) {
-						if (newValue && typeof newValue === "object")
+						if (newValue && (typeof newValue === "object")) {
 							target[p as keyof typeof target] = setProxy(p, newValue);
-						else {
+						} else {
 							target[p as keyof typeof target] = newValue
 							values[p as keyof typeof values] = newValue;
 						}
@@ -103,6 +98,12 @@ export const store = (Class: any): any => {
 					return true;
 				},
 			});
+
+			for (const k in this) {
+				if (typeof this[k] === "function") {
+					this[k] = this[k].bind(proxiedSelf);
+				}
+			}
 
 			return proxiedSelf;
 		}

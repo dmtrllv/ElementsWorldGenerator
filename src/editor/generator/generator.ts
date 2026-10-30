@@ -18,10 +18,11 @@ export class Generator {
 	public readonly editor: Editor;
 
 	public readonly worldSettings = new WorldSettings();
-	public readonly biomes = new BiomeRegistry();
+	public readonly biomes: BiomeRegistry;
 
 	public constructor(editor: Editor) {
 		this.editor = editor;
+		this.biomes = new BiomeRegistry(editor);
 	}
 
 	public readonly generate = () => {
