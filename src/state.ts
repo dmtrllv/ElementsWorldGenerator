@@ -55,7 +55,7 @@ export const store = (Class: any): any => {
 				if (!dispatchers[key])
 					dispatchers[key] = [];
 
-				if (!proxies[key] || proxies[key] === value) {
+				if (!proxies[key] || proxies[key] !== value) {
 					proxies[key] = new Proxy(value, {
 						get(target, property) {
 							return Reflect.get(target, property, target);
@@ -138,7 +138,8 @@ export const store = (Class: any): any => {
 					continue;
 
 				if (!Object.prototype.hasOwnProperty.call(value, "prototype"))
-					throw new Error(`Arrow function "${Class.name}.${key}" cannot be used as a store method. Use a regular method instead.`);
+					continue;
+				//	throw new Error(`Arrow function "${Class.name}.${key}" cannot be used as a store method. Use a regular method instead.`);
 
 				this[key] = value.bind(proxiedSelf);
 			}

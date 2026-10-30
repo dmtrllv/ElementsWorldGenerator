@@ -84,11 +84,8 @@ export class Modal {
 	}
 }
 
-@store
 export class ConfirmModal {
-	@state
 	public readonly title: string;
-	@state
 	public readonly message: string;
 
 	private readonly confirmer: (confirm: boolean) => void;

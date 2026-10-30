@@ -59,7 +59,7 @@ export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, val
 			onChange(val);
 		}
 	};
-
+	
 	return (
 		<div className="input-field">
 			<div className="label">{label || nameToLabel(props.name)}:</div>

@@ -62,8 +62,8 @@ const ConfirmWindow = ({ modal }: { modal: ConfirmModal }) => {
 					{message}
 				</div>
 				<div className="footer">
-					<button onClick={modal.confirm}>Confirm</button>
-					<button onClick={modal.close}>Cancel</button>
+					<button onClick={() => modal.confirm()}>Confirm</button>
+					<button onClick={() => modal.close()}>Cancel</button>
 				</div>
 			</div>
 		</div>
