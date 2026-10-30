@@ -28,7 +28,7 @@ export const useSlider = (init: number, min: number, max: number, dir: "x" | "y"
 	}, [isSliding]);
 
 	return {
-		width: size,
+		size,
 		onMouseDown: (e: React.MouseEvent) => {
 			downPos.current = dir === "x" ? e.clientX : e.clientY;
 			startSize.current = size;

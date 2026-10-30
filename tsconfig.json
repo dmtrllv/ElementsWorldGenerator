@@ -16,5 +16,5 @@
 		"erasableSyntaxOnly": true,
 		"experimentalDecorators": true
 	},
-	"include": [ "src", "old/app", "old/generator", "old/stores", "old/renderer" ]
+	"include": [ "src" ]
 }

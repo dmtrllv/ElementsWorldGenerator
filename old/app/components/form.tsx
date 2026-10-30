@@ -14,7 +14,7 @@ const hexToRgb = (hex: string): [number, number, number] => {
 }
 
 const RenderFormInput = ({ inputKey, section, input, submit }: { inputKey: string, submit: Function, section: FormSection<any, any>, input: FormInputs[string] }) => {
-	const state = section[STATE_TAG][0][inputKey];
+	const state =  (section as any)[STATE_TAG][0][inputKey];
 	const updateState = (e: React.ChangeEvent<any>) => section.set(inputKey, e.target.value);
 
 	switch (input.type) {
@@ -72,7 +72,7 @@ const Label = ({ id, input }: { id: string, input: FormInputType }) => {
 export const Form = <T extends FormSection<any, any>[]>({ sections, onSubmit, children, ...props }: PropsWithChildren<FormProps<T>>) => {
 	const submit = () => {
 		if (onSubmit) {
-			const result = Object.fromEntries(sections.map((props) => [props.id, { ...props[STATE_TAG][0] }]));
+			const result = Object.fromEntries(sections.map((props) => [props.id, { ...(props as any)[STATE_TAG][0] }]));
 			onSubmit(result as SubmitData<T>);
 		}
 	};
