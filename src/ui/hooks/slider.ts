@@ -33,6 +33,10 @@ export const useSlider = (init: number, min: number, max: number, dir: "x" | "y"
 			downPos.current = dir === "x" ? e.clientX : e.clientY;
 			startSize.current = size;
 			setIsSliding(true);
+		},
+		set: (s: number) => {
+			if(size !== s)
+				setSize(s);
 		}
 	};
 };

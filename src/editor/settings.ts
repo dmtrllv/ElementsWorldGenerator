@@ -1,3 +1,5 @@
+import { state } from "../state";
+
 const INPUTS = Symbol("INPUTS");
 
 type InputMap = Record<string, {
@@ -17,6 +19,7 @@ export abstract class Settings {
 }
 
 export const input = <T extends Settings, K extends keyof T, P extends {}>(Component: InputComponent<T[K], P>, { label, ...props }: Partial<P & { label?: string }> = {}) => (target: T, key: K) => {
+	state(target, key);
 	const inputs = Settings.getInputs(target.constructor as any);
 	const k = key as any;
 	if (!(key in inputs))

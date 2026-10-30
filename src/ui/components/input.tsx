@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type JSX } from "react";
+import { Fragment, useState, type JSX } from "react";
 import { Vector2, Vector3 } from "three";
 import { Settings, type InputComponent } from "../../editor/settings";
 import { use } from "../../state";
@@ -8,19 +8,71 @@ import { useSlider } from "../hooks/slider";
 import "./styles/input.scss";
 
 const nameToLabel = (name: string) => name.split("").map((s, i) => {
-	if(i === 0)
+	if (i === 0)
 		return s.toUpperCase();
-	if(s.toUpperCase() === s)
+	if (s.toUpperCase() === s)
 		return ` ${s.toLowerCase()}`;
 	return s;
 });
+
+export const TextInput: InputComponent<string, StringProps> = ({ onChange, value, label, ...props }) => {
+	const [state, setState] = useState(value);
+
+	const update = (value: string) => {
+		setState(value);
+		onChange(value);
+	};
+
+	return (
+		<div className="input-field">
+			<div className="label">{label || nameToLabel(props.name)}:</div>
+			<input value={state} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => update(e.target.value)} />
+		</div>
+	);
+};
+
+export type StringProps = {
+	min: number;
+	max: number;
+};
+
+const hexToRgb = (hex: string): [number, number, number] => {
+	const value = hex.replace(/^#/, "");
+	return [
+		parseInt(value.substring(0, 2), 16),
+		parseInt(value.substring(2, 4), 16),
+		parseInt(value.substring(4, 6), 16)
+	];
+}
+
+const rgbToHex = ([r, g, b]: [number, number, number]): string => {
+	return `#${[r, g, b].map(v => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
+}
+
+export const ColorInput: InputComponent<[number, number, number]> = ({ onChange, value, label, ...props }) => {
+	const [state, setState] = useState(value);
+
+	const update = (value: string) => {
+		const val = hexToRgb(value);
+		setState(val);
+		onChange(val);
+	};
+
+	return (
+		<div className="input-field">
+			<div className="label">{label || nameToLabel(props.name)}:</div>
+			<input value={rgbToHex(state)} {...props} id={props.name} placeholder={props.name} type="color" onChange={e => update(e.target.value)} />
+		</div>
+	);
+};
+
 
 export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, value, label, ...props }) => {
 	const [state, setState] = useState(value.toString());
 
 	const update = (value: string) => {
 		const val = +value;
-		if(Number.isFinite(val) && !Number.isNaN(val)) {
+		if (Number.isFinite(val) && !Number.isNaN(val)) {
 			setState(value);
 			onChange(val);
 		}
@@ -35,16 +87,19 @@ export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, val
 };
 
 export type NumberProps = {
-	min: number,
-	max: number,
-	step: number,
+	min: number;
+	max: number;
+	step: number;
 };
 
 export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, label, ...props }) => {
-	const [{ x, y }, setState] = useState({ ...value });
+	const sx = useSlider(value.x, -Infinity, Infinity, "y");
+	const sy = useSlider(value.y, -Infinity, Infinity, "y");
+
 
 	const update = (value: Vector2) => {
-		setState(value);
+		sx.set(value.x);
+		sy.set(value.y);
 		onChange(value);
 	};
 
@@ -53,12 +108,12 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, l
 			<div className="label">{label || nameToLabel(name)}:</div>
 			<div className="inputs">
 				<div className="input">
-					<div className="label x">x</div>
-					<input {...props} value={x} id={name + ".x"} name={name + ".x"} placeholder={name + ".x"} type="number" onChange={(e) => update(new Vector2(+e.target.value, y))} />
+					<div className="label x" onMouseDown={sx.onMouseDown}>x</div>
+					<input {...props} value={sx.size} id={name + ".x"} name={name + ".x"} placeholder={name + ".x"} type="number" onChange={(e) => update(new Vector2(+e.target.value, sy.size))} />
 				</div>
-				<div className="input">
-					<div className="label y">y</div>
-					<input {...props} value={y} id={name + ".y"} name={name + ".y"} placeholder={name + ".y"} type="number" onChange={(e) => update(new Vector2(x, +e.target.value))} />
+				<div className="input" >
+					<div className="label y" onMouseDown={sy.onMouseDown}>y</div>
+					<input {...props} value={sy.size} id={name + ".y"} name={name + ".y"} placeholder={name + ".y"} type="number" onChange={(e) => update(new Vector2(sx.size, +e.target.value))} />
 				</div>
 			</div>
 		</div>
@@ -66,22 +121,17 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, l
 };
 
 export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, label, ...props }) => {
-	const [s, setState] = useState({ ...value });
-	const { x, y, z } = s;
+	const sx = useSlider(value.x, -Infinity, Infinity, "y");
+	const sy = useSlider(value.y, -Infinity, Infinity, "y");
+	const sz = useSlider(value.z, -Infinity, Infinity, "y");
+
+
 	const update = (value: Vector3) => {
-		if (!value.equals(s)) {
-			setState(value);
-			onChange(value);
-		}
+		sx.set(value.x);
+		sy.set(value.y);
+		sz.set(value.z);
+		onChange(value);
 	};
-
-	const sx = useSlider(x, -Infinity, Infinity, "y");
-	const sy = useSlider(y, -Infinity, Infinity, "y");
-	const sz = useSlider(z, -Infinity, Infinity, "y");
-
-	useEffect(() => { update(new Vector3(sx.size, y, z)) }, [sx]);
-	useEffect(() => { update(new Vector3(x, sy.size, z)) }, [sy]);
-	useEffect(() => { update(new Vector3(x, y, sz.size)) }, [sz]);
 
 	return (
 		<div className="input-field vec3">
@@ -89,15 +139,15 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, l
 			<div className="inputs">
 				<div className="input">
 					<div className="label x" onMouseDown={sx.onMouseDown}>x</div>
-					<input {...props} value={x} id={name + ".x"} name={name + ".x"} placeholder={name + ".x"} type="number" onChange={(e) => update(new Vector3(+e.target.value, y, z))} />
+					<input {...props} value={sx.size} id={name + ".x"} name={name + ".x"} placeholder={name + ".x"} type="number" onChange={(e) => update(new Vector3(+e.target.value, sy.size, sz.size))} />
 				</div>
-				<div className="input" onMouseDown={sy.onMouseDown}>
-					<div className="label y">y</div>
-					<input {...props} value={y} id={name + ".y"} name={name + ".y"} placeholder={name + ".y"} type="number" onChange={(e) => update(new Vector3(x, +e.target.value, z))} />
+				<div className="input" >
+					<div className="label y" onMouseDown={sy.onMouseDown}>y</div>
+					<input {...props} value={sy.size} id={name + ".y"} name={name + ".y"} placeholder={name + ".y"} type="number" onChange={(e) => update(new Vector3(sx.size, +e.target.value, sz.size))} />
 				</div>
-				<div className="input" onMouseDown={sz.onMouseDown}>
-					<div className="label z">z</div>
-					<input {...props} value={z} id={name + ".z"} name={name + ".z"} placeholder={name + ".z"} type="number" onChange={(e) => update(new Vector3(x, y, +e.target.value))} />
+				<div className="input" >
+					<div className="label z" onMouseDown={sz.onMouseDown}>z</div>
+					<input {...props} value={sz.size} id={name + ".z"} name={name + ".z"} placeholder={name + ".z"} type="number" onChange={(e) => update(new Vector3(sx.size, sy.size, +e.target.value))} />
 				</div>
 			</div>
 		</div>

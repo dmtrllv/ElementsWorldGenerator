@@ -1,19 +1,9 @@
 import { state, store } from "../../state";
-import { NumberInput } from "../../ui/components";
+import { ColorInput, NumberInput, TextInput } from "../../ui/components";
 import { rgb } from "../../utils";
 import { input, section, Settings } from "../settings";
-//import { DEFAULT_GENERATION_SETTINGS, type SharedGenerationSettings } from "./settings";
 
 export type BiomeId = number;
-
-//export type BiomeGenerationSettings = SharedGenerationSettings;
-
-//export type BiomeOptions = BiomeGenerationSettings & {
-//	readonly color: [number, number, number];
-//	readonly transitionWidth?: number;
-//	readonly transitionSharpness?: number;
-//	readonly constraints: BiomeConstraints;
-//};
 
 export type BiomeConstraints = {
 	readonly elevation?: { ">"?: number, "<"?: number };
@@ -156,10 +146,10 @@ export type BiomeOptions = Omit<Biome, "id" | "name" | "color"> & {
 export class Biome extends Settings {
 	public readonly id!: BiomeId;
 
-	//@input(NumberInput)
+	@input(TextInput)
 	public name!: string;
 
-	//@input(NumberInput)
+	@input(ColorInput)
 	public color!: [number, number, number];
 
 	@input(NumberInput)

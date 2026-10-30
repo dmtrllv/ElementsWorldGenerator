@@ -28,13 +28,12 @@ export const store = (Class: any): any => {
 			const setProxy = (key: string | number | symbol, value: any) => {
 				values[key] = value;
 				dispatchers[key] = [];
-
-				proxies[key] = new Proxy(value, {
-					get(target, p, receiver) {
+				proxies[key] = new Proxy(value && (typeof value === "object") ? value : {}, {
+					get(_, p) {
 						if (p === DISPATCHERS)
 							return dispatchers[key];
 
-						return Reflect.get(target, p, receiver);
+						return values[key][p];
 					},
 					set(target, p, newValue, receiver) {
 						const result = Reflect.set(target, p, newValue, receiver);

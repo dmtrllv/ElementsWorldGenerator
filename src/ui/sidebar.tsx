@@ -8,6 +8,7 @@ import { Biome } from "../editor/generator/biomes";
 import { DropdownPanel } from "./components/dropdown";
 
 import "./styles/sidebar.scss";
+import { use } from "../state";
 
 const World = () => {
 	const generator = Editor.use(Generator);
@@ -38,15 +39,23 @@ const World = () => {
 	);
 };
 
+const BiomeTitle = ({ biome }: { biome: Biome }) => {
+	const { color } = use(biome);
+	const c = `rgb(${color[0]},${color[1]},${color[2]})`;
+	
+	return (
+		<h4><div style={{ backgroundColor: c }} className="biome-color" />{biome.name}</h4>
+	)
+}
+
 const Biomes = () => {
 	const generator = Editor.use(Generator);
-
+	console.log(generator.biomes.getAll());
 	return (
 		<>
 			{generator.biomes.getAll().map(biome => {
-				const color = `rgb(${biome.color[0]},${biome.color[1]},${biome.color[2]})`;
 				return (
-					<DropdownPanel key={biome.name} title={<h4><div style={{ backgroundColor: color }} className="biome-color" />{biome.name}</h4>} open={false} >
+					<DropdownPanel key={biome.name} title={<BiomeTitle biome={biome} />} open={false} >
 						<SettingsView type={Biome} settings={biome} />
 					</DropdownPanel>
 				)
