@@ -5,6 +5,7 @@ import { materials } from "../../generator/materials";
 import type { MaterialId, RenderGroup } from "../../generator/materials";
 import type { SurfaceMesh } from "../../generator/surfaces";
 import { Block, BLOCK_SIZE } from "../../generator/block";
+import type { Chunk } from "../../generator/chunk";
 
 type Face = {
 	normal: [number, number, number];
@@ -38,7 +39,7 @@ const FACE_UVS: [number, number][] = [
 ];
 
 export class TerrainMesh {
-	public static build(world: World, paletteColumns = 8, paletteRows = 8, showBiomeColors = false): THREE.BufferGeometry {
+	public static build(world: World, chunk: Chunk, paletteColumns = 8, paletteRows = 8, showBiomeColors = false): THREE.BufferGeometry {
 		if (!Number.isInteger(paletteColumns) || paletteColumns <= 0 ||
 			!Number.isInteger(paletteRows) || paletteRows <= 0)
 			throw new RangeError("Palette dimensions must be positive integers.");
@@ -111,7 +112,10 @@ export class TerrainMesh {
 			return block ? block.getVoxel(vx, vy, vz) : 0;
 		};
 
-		for (const { x: bx, y: by, z: bz, block } of world.getBlocks()) {
+		for (const { x, y, z, block } of chunk.getBlocks()) {
+			const bx = x + chunk.originX;
+			const by = y;
+			const bz = z + chunk.originZ;
 			if (block.isRefined) {
 				TerrainMesh.addRefinedBlock(block, bx, by, bz, getVoxelMaterial, addFace);
 				continue;

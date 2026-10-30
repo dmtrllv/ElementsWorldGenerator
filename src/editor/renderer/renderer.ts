@@ -15,7 +15,7 @@ export class Renderer {
 	private renderer: WebGLRenderer | null = null;
 	private controls: OrbitControls | null = null;
 	private resizeObserver: ResizeObserver | null = null;
-	private terrain: Mesh | null = null;
+	private readonly terrain = new Map<string, Mesh>();
 
 	private currentWorld: World | null = null;
 
@@ -100,6 +100,8 @@ export class Renderer {
 	}
 
 	public terminate() {
+		this.clearTerrain();
+
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
 
@@ -119,56 +121,22 @@ export class Renderer {
 	}
 
 
-	public render(world: World) {
+	public render(world: World): void {
 		if (!this.scene)
 			throw new Error("Renderer is not initialized!");
 
 		this.currentWorld = world;
+		this.clearTerrain();
 
-		if (this.terrain) {
-			this.scene.remove(this.terrain);
-			this.terrain.geometry.dispose();
-			if (Array.isArray(this.terrain.material)) {
-				for (const material of this.terrain.material)
-					material.dispose();
-			} else {
-				this.terrain.material.dispose();
-			}
-			this.terrain = null;
+		for (const chunk of world.getChunks()) {
+			const key = `${chunk.x},${chunk.z}`;
+			const geometry = TerrainMesh.build(world, chunk, 8, 8, this._renderMode === "biomes");
+			const material = TerrainMesh.createMaterials();
+			const mesh = new Mesh(geometry, material);
+
+			this.terrain.set(key, mesh);
+			this.scene.add(mesh);
 		}
-
-		const width = world.width;
-		const depth = world.depth;
-
-		const positions = new Float32Array(width * depth * 3);
-		const indices: number[] = [];
-
-		for (let z = 0; z < depth; z++) {
-			for (let x = 0; x < width; x++) {
-				const index = (z * width + x) * 3;
-
-				positions[index] = x - (width - 1) / 2;
-				positions[index + 1] = world.getHeight(x, z);
-				positions[index + 2] = z - (depth - 1) / 2;
-			}
-		}
-
-		for (let z = 0; z < depth - 1; z++) {
-			for (let x = 0; x < width - 1; x++) {
-				const a = z * width + x;
-				const b = a + 1;
-				const c = a + width;
-				const d = c + 1;
-
-				indices.push(a, c, b);
-				indices.push(b, c, d);
-			}
-		}
-
-		const geometry = TerrainMesh.build(world, 8, 8, this._renderMode === "biomes");
-		const material = TerrainMesh.createMaterials();
-		this.terrain = new Mesh(geometry, material);
-		this.scene.add(this.terrain);
 	}
 
 	public setRenderMode(mode: TerrainRenderMode): void {
@@ -176,5 +144,24 @@ export class Renderer {
 
 		if (this.currentWorld)
 			this.render(this.currentWorld);
+	}
+
+	private clearTerrain(): void {
+		if (!this.scene)
+			return;
+
+		for (const mesh of this.terrain.values()) {
+			this.scene.remove(mesh);
+			mesh.geometry.dispose();
+
+			if (Array.isArray(mesh.material)) {
+				for (const material of mesh.material)
+					material.dispose();
+			} else {
+				mesh.material.dispose();
+			}
+		}
+
+		this.terrain.clear();
 	}
 }
