@@ -137,11 +137,14 @@ export class Renderer {
 		if (!this.scene)
 			throw new Error("Renderer is not initialized!");
 
+
 		this.currentWorld = world;
 		this.clearTerrain();
 
-		for (const chunk of world.getChunks())
+		
+		for (const chunk of world.getChunks()) {
 			this.renderChunk(world, chunk.x, chunk.z);
+		}
 	}
 
 	public setRenderMode(mode: TerrainRenderMode): void {
@@ -182,7 +185,6 @@ export class Renderer {
 	public renderChunk(world: World, chunkX: number, chunkZ: number): void {
 		if (!this.scene)
 			throw new Error("Renderer is not initialized!");
-
 		const chunk = world.getChunkAt(chunkX, chunkZ);
 
 		if (!chunk)

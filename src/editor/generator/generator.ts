@@ -92,8 +92,7 @@ export class Generator {
 
 		const allBiomes = this.biomes.getAll();
 		this.maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));
-
-		this.generateChunksAroundView(this.chunkGenerationRadius);
+		this.generateChunksAroundView(this.chunkGenerationRadius, true, true);
 
 		this.editor.get(Renderer).render(world);
 	}
@@ -266,13 +265,13 @@ export class Generator {
 		this.generatedChunks.add(key);
 	}
 
-	public generateChunksAround(chunkX: number, chunkZ: number, radius: number, circular: boolean = true): void {
-		if (!this.chunkGenerationEnabled)
+	public generateChunksAround(chunkX: number, chunkZ: number, radius: number, circular: boolean = true, force: boolean = false): void {
+		if (!force && !this.chunkGenerationEnabled)
 			return;
 
 		if (!Number.isSafeInteger(radius) || radius < 0)
 			throw new RangeError("Chunk radius must be a non-negative safe integer.");
-
+		
 		const world = this.currentWorld;
 
 		if (!world)
@@ -287,7 +286,7 @@ export class Generator {
 					if (dx * dx + dz * dz > radius * radius)
 						continue;
 
-					if (!world.getChunkAt(x, z))
+					if (!world.getChunkAt(x, z, true))
 						continue;
 
 					this.generateChunk(x, z);
@@ -296,7 +295,7 @@ export class Generator {
 		} else {
 			for (let z = chunkZ - radius; z <= chunkZ + radius; z++) {
 				for (let x = chunkX - radius; x <= chunkX + radius; x++) {
-					if (!world.getChunkAt(x, z))
+					if (!world.getChunkAt(x, z, true))
 						continue;
 
 					this.generateChunk(x, z);
@@ -305,7 +304,7 @@ export class Generator {
 		}
 	}
 
-	public generateChunksAroundView(radius: number): void {
+	public generateChunksAroundView(radius: number, circular: boolean = true, force: boolean = false): void {
 		const world = this.currentWorld;
 
 		if (!world)
@@ -316,7 +315,7 @@ export class Generator {
 		const chunkX = Math.floor((target.x + world.width / 2) / world.chunkSize);
 		const chunkZ = Math.floor((target.z + world.depth / 2) / world.chunkSize);
 
-		this.generateChunksAround(chunkX, chunkZ, radius);
+		this.generateChunksAround(chunkX, chunkZ, radius, circular, force);
 	}
 }
 
