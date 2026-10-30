@@ -23,7 +23,7 @@ export class Generator {
 	private biomeSource: ProceduralBiomeSource | null = null;
 	private maxTransitionWidth = 0;
 
-	private unsubscribeViewTargetChanged: (() => void) | null = null;
+	private unsubscribeViewTargetChanged: { fn: (() => void) } | null = null;
 
 	@state
 	public chunkGenerationEnabled = true;
@@ -34,20 +34,22 @@ export class Generator {
 	public constructor(editor: Editor) {
 		this.editor = editor;
 		this.biomes = new BiomeRegistry(editor);
-		this.unsubscribeViewTargetChanged = this.editor.get(Renderer).subscribeViewTargetChanged(() => {
-			if (!this.currentWorld || !this.chunkGenerationEnabled)
-				return;
+		this.unsubscribeViewTargetChanged = {
+			fn: this.editor.get(Renderer).subscribeViewTargetChanged(() => {
+				if (!this.currentWorld || !this.chunkGenerationEnabled)
+					return;
 
-			this.generateChunksAroundView(this.chunkGenerationRadius);
-		});
+				this.generateChunksAroundView(this.chunkGenerationRadius);
+			})
+		};
 	}
 
 	public dispose(): void {
-		this.unsubscribeViewTargetChanged?.();
+		this.unsubscribeViewTargetChanged?.fn();
 		this.unsubscribeViewTargetChanged = null;
 	}
 
-	public readonly generate = () => {
+	public generate(){
 		let {
 			seed,
 			size,

@@ -15,7 +15,7 @@ export const SaveModal = createModal({
 		return (
 			<div>
 				<TextInput name="name" value={saveName} onChange={setValue} />
-				<button onClick={() => manager.saveAs(saveName)}>Save</button>
+				<button onClick={() => manager.saveAs(saveName).then(s => { console.log(s); s && modal.close() })}>Save</button>
 				<button onClick={modal.close}>Cancel</button>
 			</div>
 		)

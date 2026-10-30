@@ -46,7 +46,7 @@ export class MenuItem {
 	public text: string;
 
 	@state
-	public action: Function | null;
+	public action: { fn: Function } | null;
 
 	@state
 	public children: MenuChild[];
@@ -56,7 +56,7 @@ export class MenuItem {
 	public constructor(text: string, ...args: any[]) {
 		this.text = text;
 		if (typeof args[0] === "function") {
-			this.action = args[0];
+			this.action = { fn: args[0] };
 			this.children = args[1] || [];
 		} else {
 			this.action = null;

@@ -14,17 +14,17 @@ export class NotificationManager {
 		this.editor = editor;
 	}
 
-	public readonly notify = (notification: NotificationData) => {
+	public notify(notification: NotificationData) {
 		this.notifications.push({ ...notification, id: this.#idCounter++ });
 	}
 
-	public readonly close = (id: number) => {
+	public close(id: number) {
 		const index = this.notifications.findIndex(n => n.id === id);
 		if (index > -1)
 			this.notifications.splice(index, 1);
 	}
 
-	public readonly error = (message: string) => {
+	public error(message: string) {
 		this.notify({ type: "Error", message, title: "Error" });
 		throw new Error(message);
 	}

@@ -29,7 +29,7 @@ export class ModalManager {
 		})
 	};
 
-	public readonly open = (modal: ModalProps) => {
+	public open(modal: ModalProps) {
 		const found = this.modals.find(m => m.title === modal.title);
 		if (found) {
 			this.focus(found.id);
@@ -38,13 +38,13 @@ export class ModalManager {
 		}
 	}
 
-	public readonly focus = (id: number) => {
+	public focus(id: number) {
 		const foundIndex = this.modals.findIndex(m => m.id === id);
 		const [item] = this.modals.splice(foundIndex, 1);
 		this.modals.push(item);
 	}
 
-	public readonly close = (id: number) => {
+	public close(id: number) {
 		const index = this.modals.findIndex(n => n.id === id);
 		if (index > -1)
 			this.modals.splice(index, 1);
@@ -66,7 +66,7 @@ export class Modal {
 
 	@state
 	public Component!: ModalFC;
-	
+
 	@state
 	public width: number = 640;
 
@@ -79,7 +79,9 @@ export class Modal {
 		Object.assign(this, props);
 	}
 
-	public readonly close = () => this.manager.close(this.id);
+	public close() {
+		this.manager.close(this.id)
+	}
 }
 
 @store
@@ -97,11 +99,11 @@ export class ConfirmModal {
 		this.confirmer = confirm;
 	}
 
-	public readonly close = () => {
+	public close() {
 		this.confirmer(false);
 	}
 
-	public readonly confirm = () => {
+	public confirm() {
 		this.confirmer(true);
 	}
 }

@@ -132,8 +132,15 @@ export const store = (Class: any): any => {
 			OBSERVABLES.set(proxiedSelf, classDispatchers);
 
 			for (const key in this) {
-				if (typeof this[key] === "function")
-					this[key] = this[key].bind(proxiedSelf);
+				const value = this[key];
+
+				if (typeof value !== "function")
+					continue;
+
+				if (!Object.prototype.hasOwnProperty.call(value, "prototype"))
+					throw new Error(`Arrow function "${Class.name}.${key}" cannot be used as a store method. Use a regular method instead.`);
+
+				this[key] = value.bind(proxiedSelf);
 			}
 
 			return proxiedSelf;

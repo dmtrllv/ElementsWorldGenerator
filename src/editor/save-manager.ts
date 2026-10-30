@@ -28,13 +28,11 @@ export class SaveManager {
 	public async saveAs(name: string, force: boolean = false) {
 		if (!force && this.getSaves().includes(name)) {
 			if (!await this.editor.get(ModalManager).confirm(`Save ${name} already exists, do you want to overwrite?`))
-				return;
+				return false;
 		}
-
 
 		const world = this.editor.get(Generator).worldSettings;
 		const biomes = this.editor.get(Generator).biomes.biomes;
-
 
 		localStorage.setItem("editor.saves." + name, JSON.stringify({
 			world: Serializer.serialize(world),
@@ -46,9 +44,10 @@ export class SaveManager {
 			this.saves.push(name);
 		localStorage.setItem("editor.saves", JSON.stringify(this.saves));
 		this.currentSave = name;
+		return true;
 	}
 
-	public readonly save = ()=> {
+	public save() {
 		if (!this.currentSave) {
 			return this.editor.get(ModalManager).open(SaveModal);
 		}
@@ -58,7 +57,6 @@ export class SaveManager {
 
 		const world = this.editor.get(Generator).worldSettings;
 		const biomes = this.editor.get(Generator).biomes.biomes;
-
 		localStorage.setItem("editor.saves." + this.currentSave, JSON.stringify({
 			world: Serializer.serialize(world),
 			biomes: biomes.map(biome => Serializer.serialize(biome))
@@ -75,5 +73,6 @@ export class SaveManager {
 		biomes = biomes.map((b: any) => Serializer.deserialize(Biome, b));
 		this.editor.get(Generator).biomes.load(biomes);
 		Object.assign(this.editor.get(Generator).worldSettings, world);
+		this.currentSave = name;
 	}
 }
