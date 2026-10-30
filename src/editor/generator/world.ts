@@ -11,17 +11,25 @@ export class World {
 	public readonly size: Vector3;
 	public readonly biomes: BiomeRegistry;
 
-	private readonly heights: Uint16Array;
-	private readonly blocks = new Map<bigint, Block>();
 	private readonly surfaces: SurfaceMesh[] = [];
-	private readonly biomeIds: Uint32Array;
 	public readonly chunkSize: number;
+	private readonly chunks = new Map<number, Chunk>();
+	private readonly chunkColumns: number;
 
 	public get width() { return this.size.x; }
 	public get height() { return this.size.y; }
 	public get depth() { return this.size.z; }
 
-	public get blockCount() { return this.blocks.size; }
+	public get blockCount(): number {
+		let count = 0;
+
+		for (const chunk of this.chunks.values()) {
+			for (const _ of chunk.getBlocks())
+				count++;
+		}
+
+		return count;
+	}
 
 	public constructor(seed: number, size: Vector3, biomes: BiomeRegistry, chunkSize: number) {
 		if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0)
@@ -29,57 +37,61 @@ export class World {
 
 		this.seed = seed;
 		this.size = size.clone();
-		this.heights = new Uint16Array(size.x * size.z);
-		this.biomeIds = new Uint32Array(size.x * size.z);
+		this.chunkColumns = Math.ceil(size.x / chunkSize);
+		const chunkRows = Math.ceil(size.z / chunkSize);
 		this.biomes = biomes;
 		this.chunkSize = chunkSize;
 	}
 
-	private getBlockKey(x: number, y: number, z: number): bigint {
-		if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || !Number.isSafeInteger(z))
-			throw new RangeError("Block coordinates must be safe integers.");
+	private getChunk(x: number, z: number, create = false): Chunk | undefined {
+		const chunkX = Math.floor(x / this.chunkSize);
+		const chunkZ = Math.floor(z / this.chunkSize);
+		const key = chunkZ * this.chunkColumns + chunkX;
 
-		const encode = (value: number): bigint => {
-			const n = BigInt(value);
-			return n >= 0n ? n * 2n : -n * 2n - 1n;
-		};
+		let chunk = this.chunks.get(key);
 
-		const bx = encode(x);
-		const by = encode(y);
-		const bz = encode(z);
+		if (!chunk && create) {
+			chunk = new Chunk(chunkX, chunkZ, this.chunkSize, this.width, this.depth);
+			this.chunks.set(key, chunk);
+		}
 
-		return (bx << 128n) | (by << 64n) | bz;
+		return chunk;
 	}
 
 	public setBlock(x: number, y: number, z: number, materialId: MaterialId): void {
 		if (x < 0 || x >= this.width || y < 0 || y >= this.height || z < 0 || z >= this.depth)
 			throw new RangeError("Block coordinates are outside the world.");
 
-		this.blocks.set(this.getBlockKey(x, y, z), new Block(materialId));
+		const chunk = this.getChunk(x, z, true)!;
+		chunk.setBlock(x - chunk.originX, y, z - chunk.originZ, materialId);
 	}
 
 	public getBlock(x: number, y: number, z: number): Block | undefined {
-		return this.blocks.get(this.getBlockKey(x, y, z));
+		if (x < 0 || x >= this.width || y < 0 || y >= this.height || z < 0 || z >= this.depth)
+			return undefined;
+
+		const chunk = this.getChunk(x, z);
+		return chunk?.getBlock(x - chunk.originX, y, z - chunk.originZ);
 	}
 
 	public removeBlock(x: number, y: number, z: number): boolean {
-		return this.blocks.delete(this.getBlockKey(x, y, z));
+		if (x < 0 || x >= this.width || y < 0 || y >= this.height || z < 0 || z >= this.depth)
+			return false;
+
+		const chunk = this.getChunk(x, z);
+		return chunk?.removeBlock(x - chunk.originX, y, z - chunk.originZ) ?? false;
 	}
 
 	public *getBlocks(): IterableIterator<{ x: number; y: number; z: number; block: Block }> {
-		// Coordinates are decoded from the key below.
-		for (const [key, block] of this.blocks) {
-			const mask = (1n << 64n) - 1n;
-			const bz = key & mask;
-			const by = (key >> 64n) & mask;
-			const bx = key >> 128n;
-
-			const decode = (value: bigint): number => {
-				const n = value % 2n === 0n ? value / 2n : -(value + 1n) / 2n;
-				return Number(n);
-			};
-
-			yield { x: decode(bx), y: decode(by), z: decode(bz), block };
+		for (const chunk of this.chunks.values()) {
+			for (const entry of chunk.getBlocks()) {
+				yield {
+					x: entry.x + chunk.originX,
+					y: entry.y,
+					z: entry.z + chunk.originZ,
+					block: entry.block
+				};
+			}
 		}
 	}
 
@@ -87,14 +99,16 @@ export class World {
 		if (x < 0 || x >= this.width || z < 0 || z >= this.depth)
 			throw new RangeError("Height coordinates are outside the world.");
 
-		this.heights[z * this.width + x] = height;
+		const chunk = this.getChunk(x, z, true)!;
+		chunk.setHeight(x - chunk.originX, z - chunk.originZ, height);
 	}
 
 	public getHeight(x: number, z: number): number {
 		if (x < 0 || x >= this.width || z < 0 || z >= this.depth)
 			throw new RangeError("Height coordinates are outside the world.");
 
-		return this.heights[z * this.width + x];
+		const chunk = this.getChunk(x, z);
+		return chunk?.getHeight(x - chunk.originX, z - chunk.originZ) ?? 0;
 	}
 
 	public setBiome(x: number, z: number, biomeId: number): void {
@@ -104,14 +118,16 @@ export class World {
 		if (x < 0 || x >= this.width || z < 0 || z >= this.depth)
 			throw new RangeError("Biome coordinates are outside the world.");
 
-		this.biomeIds[z * this.width + x] = biomeId;
+		const chunk = this.getChunk(x, z, true)!;
+		chunk.setBiome(x - chunk.originX, z - chunk.originZ, biomeId);
 	}
 
 	public getBiome(x: number, z: number): number {
 		if (x < 0 || x >= this.width || z < 0 || z >= this.depth)
 			throw new RangeError("Biome coordinates are outside the world.");
 
-		return this.biomeIds[z * this.width + x];
+		const chunk = this.getChunk(x, z);
+		return chunk?.getBiome(x - chunk.originX, z - chunk.originZ) ?? 0;
 	}
 
 	public addSurface(surface: SurfaceMesh): void {
@@ -123,13 +139,6 @@ export class World {
 	}
 
 	public *getChunks(): IterableIterator<Chunk> {
-		const columns = Math.ceil(this.width / this.chunkSize);
-		const rows = Math.ceil(this.depth / this.chunkSize);
-
-		for (let z = 0; z < rows; z++) {
-			for (let x = 0; x < columns; x++) {
-				yield new Chunk(x, z, this.chunkSize, this.width, this.depth);
-			}
-		}
+		yield* this.chunks.values();
 	}
 }
