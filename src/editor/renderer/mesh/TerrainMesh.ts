@@ -1,10 +1,10 @@
 
 import * as THREE from "three";
-import type { World, Block } from "../../generator/world";
-import { BLOCK_SIZE } from "../../generator/world";
+import type { World } from "../../generator/world";
 import { materials } from "../../generator/materials";
 import type { MaterialId, RenderGroup } from "../../generator/materials";
 import type { SurfaceMesh } from "../../generator/surfaces";
+import { Block, BLOCK_SIZE } from "../../generator/block";
 
 type Face = {
 	normal: [number, number, number];

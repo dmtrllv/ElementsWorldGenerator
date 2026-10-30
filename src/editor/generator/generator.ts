@@ -29,6 +29,7 @@ export class Generator {
 		let {
 			seed,
 			size,
+			chunkSize,
 			baseHeight,
 			seaLevel,
 			continentalScale,
@@ -43,6 +44,9 @@ export class Generator {
 		} = this.worldSettings;
 
 		size = size.floor();
+
+		if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0)
+			throw new RangeError("Chunk size must be a positive safe integer.");
 
 		if (!Number.isFinite(seaLevel) || seaLevel < 0 || seaLevel > size.y)
 			throw new RangeError("seaLevel must be between 0 and the world height.");
@@ -59,7 +63,7 @@ export class Generator {
 		if (![continentalStrength, detailStrength, roughnessStrength].every(Number.isFinite))
 			throw new RangeError("Noise strengths must be finite.");
 
-		const world = new World(seed, size, this.biomes);
+		const world = new World(seed, size, this.biomes, chunkSize);
 		const prng = alea(seed);
 		const noise2D = createNoise2D(prng);
 
@@ -198,6 +202,9 @@ export class WorldSettings extends Settings {
 
 	@input(Vector3Input)
 	public size: Vector3 = new Vector3(32, 32, 32);
+
+	@input(NumberInput)
+	public chunkSize: number = 16;
 
 	@input(NumberInput)
 	public baseHeight: number = 12;
