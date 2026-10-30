@@ -36,20 +36,20 @@ export class BiomeRegistry {
 
 	public register(options: BiomeOptions): BiomeId {
 		if (this.idsByName.has(options.name))
-			throw new Error(`Biome "${name}" is already registered.`);
+			throw new Error(`Biome "${options.name}" is already registered.`);
 
 		const id = this.nextId++;
-		const biome = new Biome(options)
+		const biome = new Biome(id, options);
 
 		this.validate(biome);
-		this.biomes[id] = biome;
+		this.biomes.push(biome);
 		this.idsByName.set(options.name, id);
 
 		return id;
 	}
 
 	public get(id: BiomeId): Biome | undefined {
-		return this.biomes[id];
+		return this.biomes[id - 1];
 	}
 
 	public getId(name: string): BiomeId | undefined {
@@ -192,8 +192,8 @@ export class Biome extends Settings {
 	//@input(NumberInput)
 	public constraints: BiomeConstraints = {};
 
-	public constructor(options: BiomeOptions) {
+	public constructor(id: BiomeId, options: BiomeOptions) {
 		super();
-		Object.assign(this, options);
+		Object.assign(this, { id, ...options });
 	}
 }
