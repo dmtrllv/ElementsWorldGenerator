@@ -310,7 +310,7 @@ export class Generator {
 		if (!world)
 			throw new Error("World has not been initialized.");
 
-		const target = this.editor.get(Renderer).getViewTarget();
+		const target = this.editor.get(Renderer).getViewPosition();
 
 		const chunkX = Math.floor((target.x + world.width / 2) / world.chunkSize);
 		const chunkZ = Math.floor((target.z + world.depth / 2) / world.chunkSize);

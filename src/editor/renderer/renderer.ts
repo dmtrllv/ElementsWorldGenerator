@@ -141,7 +141,7 @@ export class Renderer {
 		this.currentWorld = world;
 		this.clearTerrain();
 
-		
+
 		for (const chunk of world.getChunks()) {
 			this.renderChunk(world, chunk.x, chunk.z);
 		}
@@ -161,6 +161,21 @@ export class Renderer {
 			if (this.onViewTargetChanged === callback)
 				this.onViewTargetChanged = null;
 		};
+	}
+
+	public getViewPosition(): Vector3 {
+		if (!this.camera)
+			throw new Error("Renderer is not initialized!");
+
+		const direction = new Vector3();
+		this.camera.getWorldDirection(direction);
+
+		if (Math.abs(direction.y) < 0.0001)
+			return this.controls!.target.clone();
+
+		const distance = -this.camera.position.y / direction.y;
+
+		return this.camera.position.clone().addScaledVector(direction, distance);
 	}
 
 	private clearTerrain(): void {
@@ -196,6 +211,14 @@ export class Renderer {
 		if (previous) {
 			this.scene.remove(previous);
 			previous.geometry.dispose();
+
+			if (Array.isArray(previous.material)) {
+				for (const material of previous.material)
+					material.dispose();
+			} else {
+				previous.material.dispose();
+			}
+
 			this.terrain.delete(key);
 		}
 

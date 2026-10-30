@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Editor, Generator, NotificationManager, Renderer, type TerrainRenderMode } from "../../editor";
 import { Menubar } from "./menubar";
 
@@ -30,6 +31,7 @@ export const Topbar = () => {
 			<Menubar />
 			<div className="right">
 				<div className="render-mode">
+					<label>auto generate</label><input type="checkbox" checked={generator.chunkGenerationEnabled} onChange={e => generator.chunkGenerationEnabled = e.target.checked} />
 					<select name="render-mode" id="pet-select" value={renderer.renderMode.toString()} onChange={e => renderer.setRenderMode(e.target.value as TerrainRenderMode)}>
 						<option value="materials">Materials</option>
 						<option value="biomes">Biomes</option>
