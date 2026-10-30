@@ -27,11 +27,11 @@ const BiomeTitle = ({ biome }: { biome: Biome }) => {
 
 const Biomes = () => {
 	const generator = Editor.use(Generator);
-	const biomes = observe(generator.biomes);
-	console.log("biomes changed!");
+	const biomes = observe(generator.biomes.biomes);
+	console.log("biomes changed!", biomes);
 	return (
 		<>
-			{biomes.getAll().map(biome => {
+			{biomes.map(biome => {
 				return (
 					<DropdownPanel key={biome.name} title={<BiomeTitle biome={biome} />} open={false} >
 						<SettingsView type={Biome} settings={biome} />

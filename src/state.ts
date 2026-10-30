@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const STATE_META = Symbol("STATE_META");
 
@@ -121,8 +121,14 @@ export const observe = <T>(state: T) => {
 	const dispatchers = getDispatchers(state);
 	if (!dispatchers)
 		throw new Error(`value is not an observable state!`);
+	const lastState = useRef(state);
 
 	const [s, dispatcher] = useState({ state });
+
+	//const update = (val: { state: T }) => {
+	//	lastState.current = val.state;
+	//	dispatcher(val);
+	//}
 
 	useEffect(() => {
 		dispatchers.push(dispatcher);
@@ -132,6 +138,13 @@ export const observe = <T>(state: T) => {
 				dispatchers.splice(index, 1);
 		}
 	}, []);
+
+	useEffect(() => {
+		if(state !== lastState.current) {
+			lastState.current = state;
+			dispatcher({ state })
+		}
+	}, [state])
 
 	return s.state;
 };

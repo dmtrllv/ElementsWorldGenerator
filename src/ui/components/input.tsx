@@ -43,6 +43,7 @@ const rgbToHex = ([r, g, b]: [number, number, number]): string => {
 }
 
 export const ColorInput: InputComponent<[number, number, number]> = ({ onChange, value, label, ...props }) => {
+	console.log("Color render", value);
 	return (
 		<div className="input-field">
 			<div className="label">{label || nameToLabel(props.name)}:</div>
