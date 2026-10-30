@@ -52,7 +52,6 @@ export class BiomeRegistry {
 	public remove(name: string) {
 		if (!this.idsByName.has(name))
 			throw this.notifications.error(`Biome "${name}" is not registered.`);
-		console.log("remove name", name, this.biomes.forEach(b => console.log(b.name)))
 		const index = this.biomes.findIndex(b => b.name === name);
 		if (index > -1) {
 			delete this.biomes[index];
@@ -63,9 +62,11 @@ export class BiomeRegistry {
 
 	public readonly load = (biomes: Biome[]) => {
 		let highestId = 0;
-
-		this.biomes = biomes;
-		
+		let last = this.biomes.pop();
+		while(last) {
+			this.remove(last.name);
+			last = this.biomes.pop();
+		}
 		biomes.forEach(biome => {
 			this.biomes.push(biome);
 			this.idsByName.set(biome.name, biome.id);
