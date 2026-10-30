@@ -16,17 +16,20 @@ const nameToLabel = (name: string) => name.split("").map((s, i) => {
 });
 
 export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, value, label, ...props }) => {
-	const [state, setState] = useState(value);
+	const [state, setState] = useState(value.toString());
 
-	const update = (value: number) => {
-		setState(value);
-		onChange(value);
+	const update = (value: string) => {
+		const val = +value;
+		if(Number.isFinite(val) && !Number.isNaN(val)) {
+			setState(value);
+			onChange(val);
+		}
 	};
 
 	return (
 		<div className="input-field">
 			<div className="label">{label || nameToLabel(props.name)}:</div>
-			<input value={state} {...props} id={props.name} placeholder={props.name} type="number" onChange={e => update(+e.target.value)} />
+			<input value={state} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => update(e.target.value)} />
 		</div>
 	);
 };
