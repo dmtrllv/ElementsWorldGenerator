@@ -1,0 +1,59 @@
+#menubar {
+	float: left;
+	margin-left: 5px;
+	& > .menu-item {
+		position: relative;
+		display: inline-block;
+		padding: 5px 0px 4px 0px;
+		font-size: 12px;
+	}
+
+	.menu-item {
+		cursor: default;
+		position: relative;
+
+		.item {
+			padding: 3px 8px;
+			border-radius: 4px;
+		}
+
+		& > .children {
+			position: absolute;
+			visibility: hidden;
+		}
+
+		&:hover {
+			> .item {
+				background-color: var(--bg-2);
+			}
+
+			& > .children {
+				visibility: visible;
+				transition-delay: 0s;
+			}
+		}
+	}
+
+	.children {
+		padding: 5px 0px;
+		display: block;
+		min-width: 240px;
+		border: 1px solid var(--border-1);
+		background-color: var(--bg-1);
+		border-radius: 4px;
+		box-shadow: 0px 0px 8px 0px #000000a3;
+		& > .menu-item {
+			background-color: var(--bg-1);
+			& > .item {
+				border-radius: 0px;
+				padding: 8px 16px;
+				font-size: 14px;
+			}
+
+			& > .children {
+				left: 100%;
+				top: -5px;
+			}
+		}
+	}
+}

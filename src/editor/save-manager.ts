@@ -8,6 +8,9 @@ export class SaveManager {
 	@state
 	private readonly saves: Record<string, any> = JSON.parse(localStorage.getItem("editor.saves") || "{}");
 
+	@state
+	public currentSave: string | null = null;
+
 	public constructor(editor: Editor) {
 		this.editor = editor;
 	}
@@ -16,7 +19,7 @@ export class SaveManager {
 		return Object.keys(this.saves);
 	}
 
-	public save(name: string) {
+	public saveAs(name: string) {
 		this.saves[name] = name;
 	}
 }
