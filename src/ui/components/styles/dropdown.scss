@@ -28,7 +28,7 @@
 		padding: 15px 20px;
 	}
 
-	&.open .body {
+	&.open > .body {
 		display: block;
 	}
 }
