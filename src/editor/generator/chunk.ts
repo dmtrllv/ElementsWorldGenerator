@@ -23,7 +23,6 @@ export class Chunk {
 
 		this.heights = new Uint16Array(this.width * this.depth);
 		this.biomeIds = new Uint32Array(this.width * this.depth);
-		console.log(this);
 	}
 
 	private getIndex(x: number, z: number): number {

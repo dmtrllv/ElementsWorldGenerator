@@ -38,24 +38,12 @@ export class World {
 		this.seed = seed;
 		this.size = size.clone();
 		this.chunkColumns = Math.ceil(size.x / chunkSize);
-		const chunkRows = Math.ceil(size.z / chunkSize);
 		this.biomes = biomes;
 		this.chunkSize = chunkSize;
 	}
 
 	private getChunk(x: number, z: number, create = false): Chunk | undefined {
-		const chunkX = Math.floor(x / this.chunkSize);
-		const chunkZ = Math.floor(z / this.chunkSize);
-		const key = chunkZ * this.chunkColumns + chunkX;
-
-		let chunk = this.chunks.get(key);
-
-		if (!chunk && create) {
-			chunk = new Chunk(chunkX, chunkZ, this.chunkSize, this.width, this.depth);
-			this.chunks.set(key, chunk);
-		}
-
-		return chunk;
+		return this.getChunkAt(Math.floor(x / this.chunkSize), Math.floor(z / this.chunkSize), create);
 	}
 
 	public setBlock(x: number, y: number, z: number, materialId: MaterialId): void {
@@ -140,5 +128,25 @@ export class World {
 
 	public *getChunks(): IterableIterator<Chunk> {
 		yield* this.chunks.values();
+	}
+
+	public getChunkAt(chunkX: number, chunkZ: number, create = false): Chunk | undefined {
+		if (!Number.isSafeInteger(chunkX) || chunkX < 0 || chunkX >= this.chunkColumns)
+			return undefined;
+
+		const chunkRows = Math.ceil(this.depth / this.chunkSize);
+
+		if (!Number.isSafeInteger(chunkZ) || chunkZ < 0 || chunkZ >= chunkRows)
+			return undefined;
+
+		const key = chunkZ * this.chunkColumns + chunkX;
+		let chunk = this.chunks.get(key);
+
+		if (!chunk && create) {
+			chunk = new Chunk(chunkX, chunkZ, this.chunkSize, this.width, this.depth);
+			this.chunks.set(key, chunk);
+		}
+
+		return chunk;
 	}
 }

@@ -51,9 +51,6 @@ export class Generator {
 		if (!Number.isFinite(seaLevel) || seaLevel < 0 || seaLevel > size.y)
 			throw new RangeError("seaLevel must be between 0 and the world height.");
 
-		if (!Number.isFinite(seaLevel) || seaLevel < 0 || seaLevel > size.y)
-			throw new RangeError("seaLevel must be between 0 and the world height.");
-
 		if (!Number.isFinite(baseHeight))
 			throw new RangeError("baseHeight must be finite.");
 
@@ -69,14 +66,78 @@ export class Generator {
 
 		const biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, this.biomes);
 
-		const biomeGrid: BiomeId[][] = Array.from({ length: world.width }, (_, x) => Array.from({ length: world.depth }, (_, z) => biomeSource.getBiome(x, z)));
 		const allBiomes = this.biomes.getAll();
 		const maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));
 
-		for (let x = 0; x < world.width; x++) {
-			for (let z = 0; z < world.depth; z++) {
-				const biomeId = biomeGrid[x][z];
+		const chunkColumns = Math.ceil(world.width / chunkSize);
+		const chunkRows = Math.ceil(world.depth / chunkSize);
+
+		for (let chunkZ = 0; chunkZ < chunkRows; chunkZ++) {
+			for (let chunkX = 0; chunkX < chunkColumns; chunkX++) {
+				this.generateChunk(world, chunkX, chunkZ, noise2D, biomeSource, maxTransitionWidth);
+			}
+		}
+
+		if (seaLevel > 0) {
+			const sea = new SurfaceMesh(WATER);
+			const vertexIndices = new Map<string, number>();
+
+			const getVertex = (x: number, z: number): number => {
+				const key = `${x},${z}`;
+				const existing = vertexIndices.get(key);
+
+				if (existing !== undefined)
+					return existing;
+
+				const index = sea.addVertex(new Vector3(x - world.width / 2, seaLevel, z - world.depth / 2), [x / world.width, z / world.depth]);
+				vertexIndices.set(key, index);
+
+				return index;
+			};
+
+			for (let x = 0; x < world.width; x++) {
+				for (let z = 0; z < world.depth; z++) {
+					if (world.getHeight(x, z) >= seaLevel)
+						continue;
+
+					const a = getVertex(x, z);
+					const b = getVertex(x + 1, z);
+					const c = getVertex(x + 1, z + 1);
+					const d = getVertex(x, z + 1);
+
+					sea.addTriangle(a, c, b);
+					sea.addTriangle(a, d, c);
+				}
+			}
+
+			if (sea.triangles.length > 0)
+				world.addSurface(sea);
+		}
+
+		this.editor.get(Renderer).render(world);
+	}
+
+	private generateChunk(world: World, chunkX: number, chunkZ: number, noise2D: ReturnType<typeof createNoise2D>, biomeSource: ProceduralBiomeSource, maxTransitionWidth: number): void {
+		const { chunkSize, baseHeight, continentalScale, continentalStrength, detailScale, detailStrength, roughnessScale, roughnessStrength } = this.worldSettings;
+
+		const originX = chunkX * chunkSize;
+		const originZ = chunkZ * chunkSize;
+
+		const endX = Math.min(originX + chunkSize, world.width);
+		const endZ = Math.min(originZ + chunkSize, world.depth);
+
+		const minX = Math.max(0, originX - maxTransitionWidth);
+		const minZ = Math.max(0, originZ - maxTransitionWidth);
+		const maxX = Math.min(world.width, endX + maxTransitionWidth);
+		const maxZ = Math.min(world.depth, endZ + maxTransitionWidth);
+
+		const biomeGrid: BiomeId[][] = Array.from({ length: maxX - minX }, (_, ix) => Array.from({ length: maxZ - minZ }, (_, iz) => biomeSource.getBiome(minX + ix, minZ + iz)));
+
+		for (let x = originX; x < endX; x++) {
+			for (let z = originZ; z < endZ; z++) {
+				const biomeId = biomeGrid[x - minX][z - minZ];
 				world.setBiome(x, z, biomeId);
+
 				const biome = this.biomes.get(biomeId);
 
 				if (!biome)
@@ -89,10 +150,10 @@ export class Generator {
 						const sampleX = x + dx;
 						const sampleZ = z + dz;
 
-						if (sampleX < 0 || sampleX >= world.width || sampleZ < 0 || sampleZ >= world.depth)
+						if (sampleX < minX || sampleX >= maxX || sampleZ < minZ || sampleZ >= maxZ)
 							continue;
 
-						const neighborId = biomeGrid[sampleX][sampleZ];
+						const neighborId = biomeGrid[sampleX - minX][sampleZ - minZ];
 						const neighbor = this.biomes.get(neighborId);
 
 						if (!neighbor)
@@ -142,7 +203,7 @@ export class Generator {
 				}
 
 				const height = blendedHeight / totalWeight;
-				const clampedHeight = Math.max(1, Math.min(size.y, Math.round(height)));
+				const clampedHeight = Math.max(1, Math.min(world.height, Math.round(height)));
 
 				world.setHeight(x, z, clampedHeight);
 
@@ -153,44 +214,6 @@ export class Generator {
 				}
 			}
 		}
-
-		if (seaLevel > 0) {
-			const sea = new SurfaceMesh(WATER);
-			const vertexIndices = new Map<string, number>();
-
-			const getVertex = (x: number, z: number): number => {
-				const key = `${x},${z}`;
-				const existing = vertexIndices.get(key);
-
-				if (existing !== undefined)
-					return existing;
-
-				const index = sea.addVertex(new Vector3(x - world.width / 2, seaLevel, z - world.depth / 2), [x / world.width, z / world.depth]);
-				vertexIndices.set(key, index);
-
-				return index;
-			};
-
-			for (let x = 0; x < world.width; x++) {
-				for (let z = 0; z < world.depth; z++) {
-					if (world.getHeight(x, z) >= seaLevel)
-						continue;
-
-					const a = getVertex(x, z);
-					const b = getVertex(x + 1, z);
-					const c = getVertex(x + 1, z + 1);
-					const d = getVertex(x, z + 1);
-
-					sea.addTriangle(a, c, b);
-					sea.addTriangle(a, d, c);
-				}
-			}
-
-			if (sea.triangles.length > 0)
-				world.addSurface(sea);
-		}
-
-		this.editor.get(Renderer).render(world);
 	}
 }
 
