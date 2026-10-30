@@ -150,8 +150,10 @@ export class TerrainMesh {
 			}
 		}
 
-		for (const surface of world.getSurfaces())
-			TerrainMesh.appendSurface(surface, groupGeometries, renderGroups, paletteColumns, paletteRows);
+		if (chunk.x === 0 && chunk.z === 0) {
+			for (const surface of world.getSurfaces())
+				TerrainMesh.appendSurface(surface, groupGeometries, renderGroups, paletteColumns, paletteRows);
+		}
 
 		const geometry = new THREE.BufferGeometry();
 		const positions: number[] = [];

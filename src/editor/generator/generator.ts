@@ -228,6 +228,14 @@ export class Generator {
 				}
 			}
 		}
+
+		const renderer = this.editor.get(Renderer);
+
+		renderer.renderChunk(world, chunkX, chunkZ);
+		renderer.renderChunk(world, chunkX - 1, chunkZ);
+		renderer.renderChunk(world, chunkX + 1, chunkZ);
+		renderer.renderChunk(world, chunkX, chunkZ - 1);
+		renderer.renderChunk(world, chunkX, chunkZ + 1);
 	}
 }
 

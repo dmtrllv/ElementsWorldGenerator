@@ -128,15 +128,8 @@ export class Renderer {
 		this.currentWorld = world;
 		this.clearTerrain();
 
-		for (const chunk of world.getChunks()) {
-			const key = `${chunk.x},${chunk.z}`;
-			const geometry = TerrainMesh.build(world, chunk, 8, 8, this._renderMode === "biomes");
-			const material = TerrainMesh.createMaterials();
-			const mesh = new Mesh(geometry, material);
-
-			this.terrain.set(key, mesh);
-			this.scene.add(mesh);
-		}
+		for (const chunk of world.getChunks())
+			this.renderChunk(world, chunk.x, chunk.z);
 	}
 
 	public setRenderMode(mode: TerrainRenderMode): void {
@@ -163,5 +156,30 @@ export class Renderer {
 		}
 
 		this.terrain.clear();
+	}
+
+	public renderChunk(world: World, chunkX: number, chunkZ: number): void {
+		if (!this.scene)
+			throw new Error("Renderer is not initialized!");
+
+		const chunk = world.getChunkAt(chunkX, chunkZ);
+
+		if (!chunk)
+			return;
+
+		const key = `${chunkX},${chunkZ}`;
+		const previous = this.terrain.get(key);
+
+		if (previous) {
+			this.scene.remove(previous);
+			previous.geometry.dispose();
+			this.terrain.delete(key);
+		}
+
+		const geometry = TerrainMesh.build(world, chunk, 8, 8, this._renderMode === "biomes");
+		const mesh = new Mesh(geometry, TerrainMesh.createMaterials());
+
+		this.terrain.set(key, mesh);
+		this.scene.add(mesh);
 	}
 }
