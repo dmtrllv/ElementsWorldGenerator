@@ -11,7 +11,7 @@ export class World {
 	public readonly size: Vector3;
 	public readonly biomes: BiomeRegistry;
 
-	private readonly surfaces: SurfaceMesh[] = [];
+	private readonly surfaces = new Map<number, SurfaceMesh[]>();
 	public readonly chunkSize: number;
 	private readonly chunks = new Map<number, Chunk>();
 	private readonly chunkColumns: number;
@@ -118,12 +118,22 @@ export class World {
 		return chunk?.getBiome(x - chunk.originX, z - chunk.originZ) ?? 0;
 	}
 
-	public addSurface(surface: SurfaceMesh): void {
-		this.surfaces.push(surface);
+	public addSurface(chunkX: number, chunkZ: number, surface: SurfaceMesh): void {
+		const chunk = this.getChunkAt(chunkX, chunkZ);
+
+		if (!chunk)
+			throw new RangeError("Cannot add a surface to a non-existent chunk.");
+
+		const key = chunkZ * this.chunkColumns + chunkX;
+		const surfaces = this.surfaces.get(key) ?? [];
+
+		surfaces.push(surface);
+		this.surfaces.set(key, surfaces);
 	}
 
-	public getSurfaces(): readonly SurfaceMesh[] {
-		return this.surfaces;
+	public getSurfaces(chunkX: number, chunkZ: number): readonly SurfaceMesh[] {
+		const key = chunkZ * this.chunkColumns + chunkX;
+		return this.surfaces.get(key) ?? [];
 	}
 
 	public *getChunks(): IterableIterator<Chunk> {

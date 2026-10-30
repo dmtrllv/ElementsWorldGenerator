@@ -2,7 +2,7 @@ import { Vector3 } from "three";
 import type { Editor } from "../editor";
 import { input, section, Settings } from "../settings";
 import { randomSeed } from "../../utils";
-import { store } from "../../state";
+import { store, state } from "../../state";
 import { NumberInput, Vector3Input } from "../../ui/components";
 import { BiomeRegistry, type BiomeId } from "./biomes";
 import { World } from "./world";
@@ -19,14 +19,34 @@ export class Generator {
 
 	public readonly worldSettings = new WorldSettings();
 	public readonly biomes: BiomeRegistry;
+	private readonly generatedChunks = new Set<string>();
 	private currentWorld: World | null = null;
 	private noise2D: NoiseFunction2D | null = null;
 	private biomeSource: ProceduralBiomeSource | null = null;
 	private maxTransitionWidth = 0;
 
+	private unsubscribeViewTargetChanged: (() => void) | null = null;
+
+	@state
+	public chunkGenerationEnabled = true;
+
+	@state
+	public chunkGenerationRadius = 2;
+
 	public constructor(editor: Editor) {
 		this.editor = editor;
 		this.biomes = new BiomeRegistry(editor);
+		this.unsubscribeViewTargetChanged = this.editor.get(Renderer).subscribeViewTargetChanged(() => {
+			if (!this.currentWorld || !this.chunkGenerationEnabled)
+				return;
+
+			this.generateChunksAroundView(this.chunkGenerationRadius);
+		});
+	}
+
+	public dispose(): void {
+		this.unsubscribeViewTargetChanged?.();
+		this.unsubscribeViewTargetChanged = null;
 	}
 
 	public readonly generate = () => {
@@ -65,7 +85,7 @@ export class Generator {
 			throw new RangeError("Noise strengths must be finite.");
 
 		const world = new World(seed, size, this.biomes, chunkSize);
-
+		this.generatedChunks.clear();
 		this.currentWorld = world;
 		this.noise2D = createNoise2D(alea(seed));
 		this.biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, this.biomes);
@@ -73,50 +93,7 @@ export class Generator {
 		const allBiomes = this.biomes.getAll();
 		this.maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));
 
-		const chunkColumns = Math.ceil(world.width / chunkSize);
-		const chunkRows = Math.ceil(world.depth / chunkSize);
-
-		for (let chunkZ = 0; chunkZ < chunkRows; chunkZ++) {
-			for (let chunkX = 0; chunkX < chunkColumns; chunkX++) {
-				this.generateChunk(chunkX, chunkZ);
-			}
-		}
-
-		if (seaLevel > 0) {
-			const sea = new SurfaceMesh(WATER);
-			const vertexIndices = new Map<string, number>();
-
-			const getVertex = (x: number, z: number): number => {
-				const key = `${x},${z}`;
-				const existing = vertexIndices.get(key);
-
-				if (existing !== undefined)
-					return existing;
-
-				const index = sea.addVertex(new Vector3(x - world.width / 2, seaLevel, z - world.depth / 2), [x / world.width, z / world.depth]);
-				vertexIndices.set(key, index);
-
-				return index;
-			};
-
-			for (let x = 0; x < world.width; x++) {
-				for (let z = 0; z < world.depth; z++) {
-					if (world.getHeight(x, z) >= seaLevel)
-						continue;
-
-					const a = getVertex(x, z);
-					const b = getVertex(x + 1, z);
-					const c = getVertex(x + 1, z + 1);
-					const d = getVertex(x, z + 1);
-
-					sea.addTriangle(a, c, b);
-					sea.addTriangle(a, d, c);
-				}
-			}
-
-			if (sea.triangles.length > 0)
-				world.addSurface(sea);
-		}
+		this.generateChunksAroundView(this.chunkGenerationRadius);
 
 		this.editor.get(Renderer).render(world);
 	}
@@ -129,8 +106,18 @@ export class Generator {
 		if (!world || !noise2D || !biomeSource)
 			throw new Error("World has not been initialized.");
 
+		const chunk = world.getChunkAt(chunkX, chunkZ, true);
+
+		if (!chunk)
+			throw new RangeError(`Chunk coordinates (${chunkX}, ${chunkZ}) are outside the world.`);
+
+		const key = `${chunkX},${chunkZ}`;
+
+		if (this.generatedChunks.has(key))
+			return;
+
 		const maxTransitionWidth = this.maxTransitionWidth;
-		const { baseHeight, continentalScale, continentalStrength, detailScale, detailStrength, roughnessScale, roughnessStrength } = this.worldSettings;
+		const { seaLevel, baseHeight, continentalScale, continentalStrength, detailScale, detailStrength, roughnessScale, roughnessStrength } = this.worldSettings;
 
 		const chunkSize = world.chunkSize;
 
@@ -229,6 +216,45 @@ export class Generator {
 			}
 		}
 
+		if (seaLevel > 0) {
+			const sea = new SurfaceMesh(WATER);
+			const vertexIndices = new Map<string, number>();
+
+			const getVertex = (x: number, z: number): number => {
+				const key = `${x},${z}`;
+				const existing = vertexIndices.get(key);
+
+				if (existing !== undefined)
+					return existing;
+
+				const index = sea.addVertex(new Vector3(x - world.width / 2, seaLevel, z - world.depth / 2), [x / world.width, z / world.depth]);
+				vertexIndices.set(key, index);
+
+				return index;
+			};
+
+			const endX = Math.min(originX + chunkSize, world.width);
+			const endZ = Math.min(originZ + chunkSize, world.depth);
+
+			for (let x = originX; x < endX; x++) {
+				for (let z = originZ; z < endZ; z++) {
+					if (world.getHeight(x, z) >= seaLevel)
+						continue;
+
+					const a = getVertex(x, z);
+					const b = getVertex(x + 1, z);
+					const c = getVertex(x + 1, z + 1);
+					const d = getVertex(x, z + 1);
+
+					sea.addTriangle(a, c, b);
+					sea.addTriangle(a, d, c);
+				}
+			}
+
+			if (sea.triangles.length > 0)
+				world.addSurface(chunkX, chunkZ, sea);
+		}
+
 		const renderer = this.editor.get(Renderer);
 
 		renderer.renderChunk(world, chunkX, chunkZ);
@@ -236,6 +262,61 @@ export class Generator {
 		renderer.renderChunk(world, chunkX + 1, chunkZ);
 		renderer.renderChunk(world, chunkX, chunkZ - 1);
 		renderer.renderChunk(world, chunkX, chunkZ + 1);
+
+		this.generatedChunks.add(key);
+	}
+
+	public generateChunksAround(chunkX: number, chunkZ: number, radius: number, circular: boolean = true): void {
+		if (!this.chunkGenerationEnabled)
+			return;
+
+		if (!Number.isSafeInteger(radius) || radius < 0)
+			throw new RangeError("Chunk radius must be a non-negative safe integer.");
+
+		const world = this.currentWorld;
+
+		if (!world)
+			throw new Error("World has not been initialized.");
+
+		if (circular) {
+			for (let z = chunkZ - radius; z <= chunkZ + radius; z++) {
+				for (let x = chunkX - radius; x <= chunkX + radius; x++) {
+					const dx = x - chunkX;
+					const dz = z - chunkZ;
+
+					if (dx * dx + dz * dz > radius * radius)
+						continue;
+
+					if (!world.getChunkAt(x, z))
+						continue;
+
+					this.generateChunk(x, z);
+				}
+			}
+		} else {
+			for (let z = chunkZ - radius; z <= chunkZ + radius; z++) {
+				for (let x = chunkX - radius; x <= chunkX + radius; x++) {
+					if (!world.getChunkAt(x, z))
+						continue;
+
+					this.generateChunk(x, z);
+				}
+			}
+		}
+	}
+
+	public generateChunksAroundView(radius: number): void {
+		const world = this.currentWorld;
+
+		if (!world)
+			throw new Error("World has not been initialized.");
+
+		const target = this.editor.get(Renderer).getViewTarget();
+
+		const chunkX = Math.floor((target.x + world.width / 2) / world.chunkSize);
+		const chunkZ = Math.floor((target.z + world.depth / 2) / world.chunkSize);
+
+		this.generateChunksAround(chunkX, chunkZ, radius);
 	}
 }
 

@@ -1,8 +1,8 @@
 
-import { Color, DirectionalLight, GridHelper, HemisphereLight, Mesh, PerspectiveCamera, Scene, WebGLRenderer } from "three";
+import { Color, DirectionalLight, GridHelper, HemisphereLight, Mesh, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { World } from "../generator/world";
-import { TerrainMesh } from "./mesh/TerrainMesh";
+import { TerrainMesh } from "./mesh/terrain-mesh";
 import { state, store } from "../../state";
 
 export type TerrainRenderMode = "materials" | "biomes";
@@ -16,6 +16,8 @@ export class Renderer {
 	private controls: OrbitControls | null = null;
 	private resizeObserver: ResizeObserver | null = null;
 	private readonly terrain = new Map<string, Mesh>();
+
+	private onViewTargetChanged: (() => void) | null = null;
 
 	private currentWorld: World | null = null;
 
@@ -51,6 +53,9 @@ export class Renderer {
 			controls.minDistance = 2;
 			controls.maxDistance = 200;
 			controls.maxPolarAngle = Math.PI * 0.495;
+			controls.addEventListener("change", () => {
+				this.onViewTargetChanged?.();
+			});
 			controls.update();
 
 			const grid = new GridHelper(20, 20, 0x778899, 0x414751);
@@ -99,6 +104,13 @@ export class Renderer {
 		this.renderer.setSize(width, height);
 	}
 
+	public getViewTarget(): Vector3 {
+		if (!this.controls)
+			throw new Error("Renderer is not initialized!");
+
+		return this.controls.target.clone();
+	}
+
 	public terminate() {
 		this.clearTerrain();
 
@@ -137,6 +149,15 @@ export class Renderer {
 
 		if (this.currentWorld)
 			this.render(this.currentWorld);
+	}
+
+	public subscribeViewTargetChanged(callback: () => void): () => void {
+		this.onViewTargetChanged = callback;
+
+		return () => {
+			if (this.onViewTargetChanged === callback)
+				this.onViewTargetChanged = null;
+		};
 	}
 
 	private clearTerrain(): void {

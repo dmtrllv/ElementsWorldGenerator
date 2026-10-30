@@ -1,2 +1,2 @@
 export * from "./renderer";
-export * from "./mesh/TerrainMesh";
+export * from "./mesh/terrain-mesh";
