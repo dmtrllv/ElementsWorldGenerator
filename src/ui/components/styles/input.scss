@@ -19,7 +19,7 @@ form {
 			position: relative;
 			border-bottom: 1px solid rgb(112, 112, 112);
 
-			h2 {
+			h4 {
 				font-size: 18px;
 				height: 32px;
 				width: 100%;
@@ -45,6 +45,7 @@ form {
 		& > .label {
 			padding: 0 5px;
 			color: rgb(184, 184, 184);
+			user-select: none;
 		}
 
 		& > input,

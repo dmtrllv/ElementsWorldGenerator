@@ -104,7 +104,7 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, l
 	);
 };
 
-export const SettingsView = <T extends Settings>({ settings, type, onChange }: { settings: T, type: new () => T, onChange?: SettingsChangeHandler<T> }) => {
+export const SettingsView = <T extends Settings>({ settings, type, onChange }: { settings: T, type: new (...args: any[]) => T, onChange?: SettingsChangeHandler<T> }) => {
 	const state = use(settings) as any;
 	const inputs = Settings.getInputs(type);
 

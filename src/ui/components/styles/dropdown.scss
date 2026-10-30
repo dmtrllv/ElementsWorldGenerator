@@ -2,9 +2,11 @@
 	.header {
 		position: relative;
 		border-bottom: 1px solid white;
-		h2 {
+		user-select: none;
+		h4 {
 			padding: 15px;
 			margin: 0;
+			text-transform: capitalize;
 		}
 	}
 	.icon {

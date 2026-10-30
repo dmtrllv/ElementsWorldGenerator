@@ -152,6 +152,7 @@ export type BiomeOptions = Omit<Biome, "id" | "name" | "color"> & {
 	color: [number, number, number];
 };
 
+@store
 export class Biome extends Settings {
 	public readonly id!: BiomeId;
 
