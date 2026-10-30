@@ -17,7 +17,7 @@ export type BiomeConstraints = {
 @store
 export class BiomeRegistry {
 	@state
-	public readonly biomes: Biome[] = [];
+	public biomes: Biome[] = [];
 	private readonly idsByName = new Map<string, BiomeId>();
 	private readonly notifications: NotificationManager;
 	private idCounter = 0;
@@ -25,7 +25,7 @@ export class BiomeRegistry {
 
 	private nextId() {
 		let id = this.freeIds.pop();
-		if(id !== undefined)
+		if (id !== undefined)
 			return id;
 		return this.idCounter++;
 	}
@@ -52,12 +52,29 @@ export class BiomeRegistry {
 	public remove(name: string) {
 		if (!this.idsByName.has(name))
 			throw this.notifications.error(`Biome "${name}" is not registered.`);
+		console.log("remove name", name, this.biomes.forEach(b => console.log(b.name)))
 		const index = this.biomes.findIndex(b => b.name === name);
-		if(index > -1) {
+		if (index > -1) {
 			delete this.biomes[index];
 			this.freeIds.push(index);
 		}
 		this.idsByName.delete(name);
+	}
+
+	public readonly load = (biomes: Biome[]) => {
+		let highestId = 0;
+
+		this.biomes = biomes;
+		
+		biomes.forEach(biome => {
+			this.biomes.push(biome);
+			this.idsByName.set(biome.name, biome.id);
+			if (biome.id > highestId)
+				highestId = biome.id;
+		});
+
+		this.idCounter = highestId + 1;
+		this.freeIds = [];
 	}
 
 	public get(id: BiomeId): Biome | undefined {
@@ -167,15 +184,15 @@ export type BiomeOptions = Omit<Biome, "id" | "name" | "color"> & {
 @store
 export class Biome extends Settings {
 	@serializable()
-	public readonly id!: BiomeId;
+	public readonly id: BiomeId = 0;
 
 	@input(TextInput)
 	@serializable()
-	public name!: string;
+	public name: string = "";
 
 	@input(ColorInput)
 	@serializable()
-	public color!: [number, number, number];
+	public color: [number, number, number] = [0, 0, 0];
 
 	@input(NumberInput)
 	@serializable()
@@ -218,8 +235,9 @@ export class Biome extends Settings {
 	@serializable()
 	public constraints: BiomeConstraints = {};
 
-	public constructor(id: BiomeId, options: BiomeOptions) {
+	public constructor(id?: BiomeId, options?: BiomeOptions) {
 		super();
-		Object.assign(this, { id, ...options });
+		if (id !== undefined)
+			Object.assign(this, { id, ...options });
 	}
 }

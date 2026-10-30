@@ -35,7 +35,7 @@ export abstract class Serializer<T> {
 			const val = parsed[k];
 			if (types[k].serializer)
 				parsed[k] = new types[k].serializer().deserialize(types[k].type, val);
-			else if([!Json, Number, String, Boolean].includes(types[k].type as any))
+			else if(![Json, Number, String, Boolean].includes(types[k].type as any))
 				parsed[k] = Object.assign(new (types[k].type as any)(), parsed[k]);
 		}
 		return Object.assign(new type(), parsed);;

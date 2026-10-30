@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { createModal, ModalManager } from "../../editor/modals";
+import { createModal } from "../../editor/modals";
 import { TextInput } from "../components";
-import { Editor, NotificationManager, SaveManager } from "../../editor";
+import { Editor, SaveManager } from "../../editor";
 
 export const SaveModal = createModal({
 	title: "Save As",
@@ -11,20 +11,11 @@ export const SaveModal = createModal({
 		const [saveName, setValue] = useState("");
 
 		const manager = Editor.use(SaveManager);
-		const modals = Editor.use(ModalManager);
-
-		const save = async () => {
-			if (manager.getSaves().includes(saveName))
-				if(!await modals.confirm(`Project ${saveName} already exists, do you want to overwrite?`))
-					return;
-			manager.saveAs(saveName);
-			modal.close();
-		}
 
 		return (
 			<div>
 				<TextInput name="name" value={saveName} onChange={setValue} />
-				<button onClick={save}>Save</button>
+				<button onClick={() => manager.saveAs(saveName)}>Save</button>
 				<button onClick={modal.close}>Cancel</button>
 			</div>
 		)

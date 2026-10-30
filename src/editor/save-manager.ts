@@ -2,6 +2,7 @@ import { state, store } from "../state";
 import { SaveModal } from "../ui/modals/saves";
 import type { Editor } from "./editor";
 import { Generator } from "./generator";
+import { Biome } from "./generator/biomes";
 import { WorldSettings } from "./generator/world-settings";
 import { ModalManager } from "./modals";
 import { Serializer } from "./serializer";
@@ -47,7 +48,7 @@ export class SaveManager {
 		this.currentSave = name;
 	}
 
-	public save() {
+	public readonly save = ()=> {
 		if (!this.currentSave) {
 			return this.editor.get(ModalManager).open(SaveModal);
 		}
@@ -57,7 +58,6 @@ export class SaveManager {
 
 		const world = this.editor.get(Generator).worldSettings;
 		const biomes = this.editor.get(Generator).biomes.biomes;
-
 
 		localStorage.setItem("editor.saves." + this.currentSave, JSON.stringify({
 			world: Serializer.serialize(world),
@@ -73,10 +73,9 @@ export class SaveManager {
 		let { world, biomes } = JSON.parse(data);
 		console.log(world);
 		world = Serializer.deserialize(WorldSettings, world);
-		//world = Serializer.deserialize(WorldSettings, world);
-		this.editor.get(Generator).worldSettings.seed = world.seed;
-
+		biomes = biomes.map((b: any) => Serializer.deserialize(Biome, b));
+		console.log(biomes);
+		this.editor.get(Generator).biomes.load(biomes);
 		Object.assign(this.editor.get(Generator).worldSettings, world);
-		//const biomes = this.editor.get(Generator).biomes.biomes;
 	}
 }
