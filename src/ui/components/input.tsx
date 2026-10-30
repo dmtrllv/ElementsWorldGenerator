@@ -1,7 +1,7 @@
 import { Fragment, useState, type JSX } from "react";
 import { Vector2, Vector3 } from "three";
 import { Settings, type InputComponent } from "../../editor/settings";
-import { use } from "../../state";
+import { observe } from "../../state";
 import { DropdownPanel } from "./dropdown";
 import { useSlider } from "../hooks/slider";
 
@@ -155,7 +155,7 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, l
 };
 
 export const SettingsView = <T extends Settings>({ settings, type, onChange }: { settings: T, type: new (...args: any[]) => T, onChange?: SettingsChangeHandler<T> }) => {
-	const state = use(settings) as any;
+	const state = observe(settings) as any;
 	const inputs = Settings.getInputs(type);
 
 	const elements = [];

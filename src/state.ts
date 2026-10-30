@@ -53,7 +53,7 @@ export const store = (Class: any): any => {
 					}
 				});
 
-				return proxies[key];
+				return value && (typeof value === "object") ? proxies[key] : value;
 			};
 
 			for (const k of meta) {
@@ -79,11 +79,22 @@ export const store = (Class: any): any => {
 								return val;
 						}
 					}
-					return target[p as keyof typeof target];
+
+					const value = target[p as keyof typeof target];
+
+					if (typeof value === "function") {
+						return value.bind(proxiedSelf);
+					}
+					return value;
 				},
 				set(target, p, newValue) {
 					if (p in values) {
-						setProxy(p, newValue);
+						if (newValue && typeof newValue === "object")
+							target[p as keyof typeof target] = setProxy(p, newValue);
+						else {
+							target[p as keyof typeof target] = newValue
+							values[p as keyof typeof values] = newValue;
+						}
 						dispatchers[p].forEach(d => d({ state: proxies[p] }));
 						classDispatchers.forEach(d => d({ state: proxiedSelf }));
 					} else {
@@ -102,7 +113,7 @@ export const state = (target: any, key: any) => {
 	getMeta(target.constructor).push(key);
 };
 
-export const use = <T>(state: T) => {
+export const observe = <T>(state: T) => {
 	const dispatchers = getDispatchers(state);
 	if (!dispatchers)
 		throw new Error(`value is not an observable state!`);

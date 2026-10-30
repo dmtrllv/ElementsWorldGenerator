@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useRef, type PropsWithChildren } from "react";
-import { use } from "../state";
+import { observe } from "../state";
 
 export class Editor {
 	public static readonly get = () => {
@@ -11,7 +11,7 @@ export class Editor {
 
 	public static readonly use = <T extends new (editor: Editor) => any>(type: T): InstanceType<T> => {
 		const editor = Editor.get();
-		return use(editor.get(type));
+		return observe(editor.get(type));
 	}
 
 	private readonly stores: Map<new (editor: Editor) => any, any> = new Map();

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Editor } from "../editor";
-import { Renderer } from "../editor/renderer";
+import { Editor, Renderer } from "../../editor";
 
 export const Viewport = () => {
 	const renderer = Editor.use(Renderer);

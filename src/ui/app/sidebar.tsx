@@ -1,48 +1,25 @@
 import { useState } from "react";
-import { Editor } from "../editor";
-import { Generator, WorldSettings } from "../editor/generator";
-import { SettingsView } from "./components";
-import { useSlider } from "./hooks/slider";
-import { NotificationManager } from "../editor/notifications";
-import { Biome } from "../editor/generator/biomes";
-import { DropdownPanel } from "./components/dropdown";
+import { Editor, Generator, WorldSettings } from "../../editor";
+import { Biome } from "../../editor/generator/biomes";
+import { SettingsView } from "../components";
+import { DropdownPanel } from "../components/dropdown";
+import { useSlider } from "../hooks/slider";
+import { observe } from "../../state";
 
 import "./styles/sidebar.scss";
-import { use } from "../state";
 
 const World = () => {
 	const generator = Editor.use(Generator);
-	const notifications = Editor.use(NotificationManager);
-
-	const generate = () => {
-		try {
-			generator.generate()
-		} catch (e) {
-			if (e instanceof Error) {
-				notifications.notify({
-					type: "Error",
-					message: e.message,
-					title: e.name
-				});
-				console.error(e);
-			} else {
-				throw e;
-			}
-		}
-	}
 
 	return (
-		<>
-			<SettingsView type={WorldSettings} settings={generator.worldSettings} />
-			<button onClick={generate}>Generate</button>
-		</>
+		<SettingsView type={WorldSettings} settings={generator.worldSettings} />
 	);
 };
 
 const BiomeTitle = ({ biome }: { biome: Biome }) => {
-	const { color } = use(biome);
+	const { color } = observe(biome);
 	const c = `rgb(${color[0]},${color[1]},${color[2]})`;
-	
+
 	return (
 		<h4><div style={{ backgroundColor: c }} className="biome-color" />{biome.name}</h4>
 	)
@@ -50,7 +27,6 @@ const BiomeTitle = ({ biome }: { biome: Biome }) => {
 
 const Biomes = () => {
 	const generator = Editor.use(Generator);
-	console.log(generator.biomes.getAll());
 	return (
 		<>
 			{generator.biomes.getAll().map(biome => {

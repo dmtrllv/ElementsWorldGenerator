@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { Editor } from "../editor";
-import { NotificationManager, type Notification } from "../editor/notifications";
+import { Editor, NotificationManager, type Notification } from "../../editor";
 
 import "./styles/notifications.scss";
 

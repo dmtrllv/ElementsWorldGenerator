@@ -1,0 +1,26 @@
+#root {
+	position: relative;
+	width: 100vw;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	
+	#workarea {
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		
+		#viewport {
+			flex: 1 0 auto;
+			position: relative;
+
+			.renderer {
+				position: absolute;
+				left: 0;
+				top: 0;
+				right: 0;
+				bottom: 0;
+			}
+		}
+	}
+}

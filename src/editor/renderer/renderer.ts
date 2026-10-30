@@ -3,9 +3,9 @@ import { Color, DirectionalLight, GridHelper, HemisphereLight, Mesh, Perspective
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { World } from "../generator/world";
 import { TerrainMesh } from "./mesh/TerrainMesh";
-import { store } from "../../state";
+import { state, store } from "../../state";
 
-export type TerrainDebugMode = "materials" | "biomes";
+export type TerrainRenderMode = "materials" | "biomes";
 
 @store
 export class Renderer {
@@ -18,7 +18,11 @@ export class Renderer {
 	private terrain: Mesh | null = null;
 
 	private currentWorld: World | null = null;
-	private debugMode: TerrainDebugMode = "materials";
+
+	@state
+	private _renderMode: TerrainRenderMode = "materials";
+
+	public get renderMode() { return this._renderMode; }
 
 	public constructor() { }
 
@@ -33,7 +37,8 @@ export class Renderer {
 			scene.background = new Color(0x20242b);
 
 			const camera = new PerspectiveCamera(50, 1, 0.1, 1000);
-			camera.position.set(20, 20, 20);
+			const distance = 50;
+			camera.position.set(distance, distance, distance);
 
 			const renderer = new WebGLRenderer({ antialias: true });
 			renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -160,17 +165,16 @@ export class Renderer {
 			}
 		}
 
-		const geometry = TerrainMesh.build(world, 8, 8, this.debugMode === "biomes");
+		const geometry = TerrainMesh.build(world, 8, 8, this._renderMode === "biomes");
 		const material = TerrainMesh.createMaterials();
 		this.terrain = new Mesh(geometry, material);
 		this.scene.add(this.terrain);
 	}
 
-	public setDebugMode(mode: TerrainDebugMode): void {
-		this.debugMode = mode;
+	public setRenderMode(mode: TerrainRenderMode): void {
+		this._renderMode = mode;
 
 		if (this.currentWorld)
 			this.render(this.currentWorld);
 	}
-
 }
