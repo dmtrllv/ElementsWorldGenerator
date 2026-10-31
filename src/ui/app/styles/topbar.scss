@@ -12,7 +12,28 @@
 		float: right;
 
 		> * {
+			vertical-align: top;
 			display: inline-block;
+		}
+	}
+
+	.camera-mode {
+		border: 1px solid var(--border-1);
+		border-radius: 4px;
+		overflow: hidden;
+		margin: 4px;
+		font-size: 12px;
+		.btn {
+			border: none;
+			background-color: inherit;
+			color: var(--fg-1);
+			padding: 3px 8px;
+			display: inline-block;
+
+			&.active {
+				background-color: var(--bg-2);
+				color: white;
+			}
 		}
 	}
 }

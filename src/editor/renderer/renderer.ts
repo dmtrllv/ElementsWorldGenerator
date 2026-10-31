@@ -24,6 +24,9 @@ export class Renderer {
 	@state
 	private _renderMode: TerrainRenderMode = "materials";
 
+	@state
+	public cameraMode: "orbital" | "third-person" = "orbital";
+
 	public get renderMode() { return this._renderMode; }
 
 	public constructor() { }
