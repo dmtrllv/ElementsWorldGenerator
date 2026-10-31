@@ -1,12 +1,9 @@
 import { Vector3 } from "three";
 import type { Editor } from "../editor";
 import { store, state } from "../../state";
-import { BiomeRegistry, type BiomeId } from "./biomes";
+import { BiomeRegistry } from "./biomes";
 import { World } from "./world";
-import alea from "alea";
-import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
-import { ProceduralBiomeSource } from "./biome-source";
-import { GRASS, DIRT, ROCK, WATER } from "./materials";
+import { WATER } from "./materials";
 import { SurfaceMesh } from "./surfaces";
 import { Renderer } from "../renderer";
 import { WorldSettings } from "./world-settings";
@@ -19,11 +16,8 @@ export class Generator {
 	public readonly worldSettings = new WorldSettings();
 	public readonly biomes: BiomeRegistry;
 	private readonly generatedChunks = new Set<string>();
-	private currentWorld: World | null = null;
-	//private noise2D: NoiseFunction2D | null = null;
-	//private biomeSource: ProceduralBiomeSource | null = null;
-	//private maxTransitionWidth = 0;
 	private readonly generatingChunks = new WeakMap<World, Map<string, Promise<void>>>();
+	private currentWorld: World | null = null;
 
 	private unsubscribeViewTargetChanged: { fn: (() => void) } | null = null;
 
@@ -67,9 +61,6 @@ export class Generator {
 			detailStrength,
 			roughnessScale,
 			roughnessStrength,
-			biomeElevationScale,
-			biomeMoistureScale,
-			biomeTemperatureScale
 		} = this.worldSettings;
 
 		const size = configuredSize.clone().floor();
@@ -94,11 +85,8 @@ export class Generator {
 		const world = new World(seed, size, this.biomes, chunkSize);
 		this.generatedChunks.clear();
 		this.currentWorld = world;
-		//this.noise2D = createNoise2D(alea(seed));
-		//this.biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, this.biomes.getAll());
 
 		const allBiomes = this.biomes.getAll();
-		//this.maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));
 		await this.generateChunksAroundView(this.chunkGenerationRadius, true, true);
 
 		this.editor.get(Renderer).render(world);

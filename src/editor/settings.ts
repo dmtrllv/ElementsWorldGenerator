@@ -89,4 +89,6 @@ export type SettingTypes = {
 	vec2: {};
 	vec3: {};
 	color: {};
+	dropdown: string[];
+	scalar: {};
 }

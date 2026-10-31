@@ -3,17 +3,18 @@ import { store } from "../../state";
 import { randomSeed } from "../../utils";
 import { serializable } from "../serializer";
 import { Settings, section, input, Vector3Serializer } from "../settings";
+import { Scalar } from "../scalar";
 
 @store
 export class WorldSettings extends Settings {
 	@section("World Settings")
-	@input("number", { step: 1 })
+	@input("number")
 	@serializable()
 	public seed: number = randomSeed();
 
 	@input("vec3")
 	@serializable(Vector3, Vector3Serializer)
-	public size: Vector3 = new Vector3(32, 32, 32);
+	public size: Vector3 = new Vector3(512, 64, 512);
 
 	@input("number")
 	@serializable()
@@ -23,10 +24,31 @@ export class WorldSettings extends Settings {
 	@serializable()
 	public baseHeight: number = 12;
 
-	@input("number", { step: 1 })
+	@input("number")
 	@serializable()
 	public seaLevel: number = 7;
 
+	@section("Latitude")
+	@input("number")
+	@input("dropdown", ["x", "z"])
+	@serializable()
+	public axis: LatitudeAxis = "x";
+
+	@input("number")
+	@serializable()
+	public stepDistance: number = 0;
+
+	@input("number")
+	@serializable()
+	public offset: number = 0;
+
+	@input("scalar")
+	@serializable(Scalar)
+	public distortion: Scalar = new Scalar(0);
+
+	@input("scalar")
+	@serializable(Scalar)
+	public distortion2: Scalar = new Scalar(0);
 
 	@section("World Scales")
 	@input("number")
@@ -55,15 +77,17 @@ export class WorldSettings extends Settings {
 
 
 	@section("Biome Scales")
-	@input("number", { step: 1 })
+	@input("number")
 	@serializable()
 	public biomeTemperatureScale: number = 192;
 
-	@input("number", { step: 1 })
+	@input("number")
 	@serializable()
 	public biomeMoistureScale: number = 148;
 
-	@input("number", { step: 1 })
+	@input("number")
 	@serializable()
 	public biomeElevationScale: number = 256;
 }
+
+export type LatitudeAxis = "x" | "z";

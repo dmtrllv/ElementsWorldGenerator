@@ -101,7 +101,7 @@ export class Renderer {
 			controls.dampingFactor = 0.08;
 			controls.minDistance = 2;
 			controls.maxDistance = 200;
-			controls.maxPolarAngle = Math.PI * 0.495;
+			controls.maxPolarAngle = Math.PI;
 			controls.addEventListener("change", () => {
 				this.onViewTargetChanged?.();
 			});
@@ -200,25 +200,32 @@ export class Renderer {
 		if (this._cameraMode === mode)
 			return;
 
-		this._cameraMode = mode;
 		this.movementKeys.clear();
 
-		if (!this.camera || !this.controls)
+		if (!this.camera || !this.controls) {
+			this._cameraMode = mode;
 			return;
+		}
 
 		if (mode === "first-person") {
+			this.controls.enableDamping = false;
+			this.controls.update();
+			this.controls.enableDamping = true;
 			this.controls.enabled = false;
+			this._cameraMode = mode;
 			return;
 		}
 
 		this.pointerControls?.unlock();
 
-		const direction = new Vector3();
-		this.camera.getWorldDirection(direction);
+		const direction = this.camera.getWorldDirection(new Vector3());
 
 		this.controls.target.copy(this.camera.position).addScaledVector(direction, 10);
+		this.controls.enableDamping = false;
 		this.controls.enabled = true;
+		this._cameraMode = mode;
 		this.controls.update();
+		this.controls.enableDamping = true;
 	}
 
 	private resize() {
@@ -309,21 +316,13 @@ export class Renderer {
 	}
 
 	public getViewPosition(): Vector3 {
-		if (!this.camera)
+		if (!this.camera || !this.controls)
 			throw new Error("Renderer is not initialized!");
 
-		if (this._cameraMode === "first-person")
+		if (this.cameraMode === "first-person")
 			return this.camera.position.clone();
 
-		const direction = new Vector3();
-		this.camera.getWorldDirection(direction);
-
-		if (Math.abs(direction.y) < 0.0001)
-			return this.controls!.target.clone();
-
-		const distance = -this.camera.position.y / direction.y;
-
-		return this.camera.position.clone().addScaledVector(direction, distance);
+		return this.controls.target.clone();
 	}
 
 	private clearTerrain(): void {

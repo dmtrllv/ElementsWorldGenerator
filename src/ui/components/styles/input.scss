@@ -16,10 +16,18 @@ form {
 		}
 		&:last-child {
 			border-bottom: 1px solid rgb(112, 112, 112);
-
 		}
 		.body {
 			border: none;
+			margin: 5px;
+		}
+
+		.header {
+			padding: 2px;
+			h4 {
+				font-size: 14px;
+				padding: 4px;
+			}
 		}
 	}
 
@@ -27,7 +35,8 @@ form {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		align-items: center;
-		padding: 2px 0;
+		padding: 2px 2px 2px 0px;
+		margin-bottom: 2px;
 
 		& > .label {
 			padding: 0 5px;
@@ -41,13 +50,14 @@ form {
 			min-width: 0;
 		}
 
-		input {
+		input,
+		select {
 			position: relative;
 			box-sizing: border-box;
 			width: 100%;
 			min-width: 0;
 			height: 24px;
-			padding: 4px 8px;
+			padding: 4px 12px;
 			border-radius: 4px;
 			border: 1px solid var(--border-1);
 			background-color: rgba(54, 54, 54, 1);
@@ -75,18 +85,28 @@ form {
 
 					.label {
 						position: absolute;
-						top: calc(50% - 2px);
-						left: 6px;
+						top: calc(50% - 1px);
+						left: 7px;
 						transform: translateY(-50%);
 						color: var(--fg-1);
 						z-index: 1;
 						user-select: none;
 						cursor: ns-resize;
+
+						&.x {
+							color: #f06d6d;
+						}
+						&.y {
+							color: #1889cb;
+						}
+						&.z {
+							color: #25ac3b;
+						}
 					}
 
 					input {
 						display: block;
-						padding: 4px 0 4px 20px;
+						padding: 4px 0 4px 24px;
 						border-radius: 0;
 					}
 
@@ -99,6 +119,49 @@ form {
 					}
 				}
 			}
+		}
+	}
+
+	.scalar-input {
+		border-top: 1px solid var(--border-1);
+		padding: 0px 5px;
+		margin-bottom: 5px;
+		margin-top: 5px;
+
+		.scalar-label {
+			padding: 5px 0px;
+		}
+
+		.label {
+			flex: 1;
+			padding: 0 5px;
+			color: var(--fg-1);
+			user-select: none;
+		}
+
+		.type-input {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			align-items: center;
+			padding: 2px 2px 2px 0px;
+			margin-bottom: 2px;
+		}
+	}
+
+	select {
+		position: relative;
+		box-sizing: border-box;
+		width: 100%;
+		min-width: 0;
+		height: 24px;
+		padding: 4px 8px;
+		border-radius: 4px;
+		border: 1px solid var(--border-1);
+		background-color: rgba(54, 54, 54, 1);
+		color: var(--fg-1);
+		outline: none;
+		&:focus {
+			color: white;
 		}
 	}
 }

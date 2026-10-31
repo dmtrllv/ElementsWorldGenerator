@@ -6,10 +6,11 @@ import { DropdownPanel } from "./dropdown";
 import { useSlider } from "../hooks/slider";
 
 import "./styles/input.scss";
+import type { Scalar, ScalarType } from "../../editor/scalar";
 
 type InputComponentProps<T> = {
 	readonly name: string;
-	readonly label?: string;
+	//readonly label?: string;
 	readonly value: T,
 	readonly onChange: (value: T) => void
 };
@@ -24,10 +25,10 @@ const nameToLabel = (name: string) => name.split("").map((s, i) => {
 	return s;
 });
 
-export const TextInput: InputComponent<string, StringProps> = ({ onChange, value, label, ...props }) => {
+export const TextInput: InputComponent<string, StringProps> = ({ onChange, value, ...props }) => {
 	return (
 		<div className="input-field">
-			<div className="label">{label || nameToLabel(props.name)}:</div>
+			<div className="label">{nameToLabel(props.name)}:</div>
 			<input value={value} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => onChange(e.target.value)} />
 		</div>
 	);
@@ -51,27 +52,27 @@ const rgbToHex = ([r, g, b]: [number, number, number]): string => {
 	return `#${[r, g, b].map(v => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
 }
 
-export const ColorInput: InputComponent<[number, number, number]> = ({ onChange, value, label, ...props }) => {
+export const ColorInput: InputComponent<[number, number, number]> = ({ onChange, value, ...props }) => {
 	return (
 		<div className="input-field">
-			<div className="label">{label || nameToLabel(props.name)}:</div>
+			<div className="label">{nameToLabel(props.name)}:</div>
 			<input value={rgbToHex(value)} {...props} id={props.name} placeholder={props.name} type="color" onChange={e => onChange(hexToRgb(e.target.value))} />
 		</div>
 	);
 };
 
 
-export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, value, label, ...props }) => {
+export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, value, ...props }) => {
 	const update = (value: string) => {
 		const val = +value;
 		if (Number.isFinite(val) && !Number.isNaN(val)) {
 			onChange(val);
 		}
 	};
-	
+
 	return (
 		<div className="input-field">
-			<div className="label">{label || nameToLabel(props.name)}:</div>
+			<div className="label">{nameToLabel(props.name)}:</div>
 			<input value={value} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => update(e.target.value)} />
 		</div>
 	);
@@ -83,7 +84,7 @@ export type NumberProps = {
 	step: number;
 };
 
-export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, label, ...props }) => {
+export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, ...props }) => {
 	const sx = useSlider(value.x, -Infinity, Infinity, "y");
 	const sy = useSlider(value.y, -Infinity, Infinity, "y");
 
@@ -96,7 +97,7 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, l
 
 	return (
 		<div className="input-field vec3">
-			<div className="label">{label || nameToLabel(name)}:</div>
+			<div className="label">{nameToLabel(name)}:</div>
 			<div className="inputs">
 				<div className="input">
 					<div className="label x" onMouseDown={sx.onMouseDown}>x</div>
@@ -111,7 +112,7 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, l
 	);
 };
 
-export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, label, ...props }) => {
+export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, ...props }) => {
 	const sx = useSlider(value.x, -Infinity, Infinity, "y");
 	const sy = useSlider(value.y, -Infinity, Infinity, "y");
 	const sz = useSlider(value.z, -Infinity, Infinity, "y");
@@ -125,19 +126,19 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, l
 	};
 
 	useEffect(() => {
-		if(value.x !== sx.size)
+		if (value.x !== sx.size)
 			sx.set(value.x);
-		
-		if(value.y !== sy.size)
+
+		if (value.y !== sy.size)
 			sy.set(value.y);
-		
-		if(value.z !== sz.size)
+
+		if (value.z !== sz.size)
 			sz.set(value.z);
 	}, [value]);
 
 	return (
 		<div className="input-field vec3">
-			<div className="label">{label || nameToLabel(name)}:</div>
+			<div className="label">{nameToLabel(name)}:</div>
 			<div className="inputs">
 				<div className="input">
 					<div className="label x" onMouseDown={sx.onMouseDown}>x</div>
@@ -156,9 +157,55 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, l
 	);
 };
 
-const registry = new Map<string, InputComponent<any,any>>();
+export const ScalarInput: InputComponent<Scalar, {}> = ({ name, value }) => {
+	const scalar = observe(value);
+	return (
+		<div className="scalar-input">
+			<div className="scalar-label">
+				{nameToLabel(name)}:
+			</div>
+			<div className="type-input">
+				<div className="label">
+					Type:
+				</div>
+				<select name="render-mode" id="pet-select" value={scalar.type} onChange={e => scalar.type = e.target.value as ScalarType}>
+					<option value="static">Static</option>
+					<option value="procedural">Procedural</option>
+					<option value="texture">Texture</option>
+				</select>
+			</div>
+			{scalar.type === "static" && <NumberInput name="value" value={scalar.value} onChange={v => scalar.value = v} />}
+			{scalar.type === "texture" && (
+				<>
+					<TextInput name="texture" value={scalar.texturePath || "???"} onChange={v => { }} />
+					{!scalar.texturePath && (
+						<div style={{ display: "flex" }}>
+							<div className="label" style={{ flex: 1 }}>
 
-export const registerInputComponent = (name: string, component: InputComponent<any,any>) => {
+							</div>
+							<div className="error" style={{ flex: 1, color: "rgb(233, 77, 77)" }}>
+								Missing texture!
+							</div>
+						</div>
+					)}
+					<NumberInput name="scale" value={scalar.scale} onChange={v => scalar.scale = v} />
+					<NumberInput name="strength" value={scalar.strength} onChange={v => scalar.strength = v} />
+				</>
+			)}
+			{scalar.type === "procedural" && (
+				<>
+					<NumberInput name="frequency" value={scalar.frequency} onChange={v => scalar.frequency = v} />
+					<NumberInput name="scale" value={scalar.scale} onChange={v => scalar.scale = v} />
+					<NumberInput name="strength" value={scalar.strength} onChange={v => scalar.strength = v} />
+				</>
+			)}
+		</div>
+	);
+}
+
+const registry = new Map<string, InputComponent<any, any>>();
+
+export const registerInputComponent = (name: string, component: InputComponent<any, any>) => {
 	registry.set(name, component);
 	return component;
 };
@@ -168,6 +215,7 @@ registerInputComponent("text", TextInput);
 registerInputComponent("color", ColorInput);
 registerInputComponent("vec2", Vector2Input);
 registerInputComponent("vec3", Vector3Input);
+registerInputComponent("scalar", ScalarInput);
 
 export const SettingsView = <T extends Settings>({ settings, type, onChange }: { settings: T, type: new (...args: any[]) => T, onChange?: SettingsChangeHandler<T> }) => {
 	const state = observe(settings) as any;
@@ -180,11 +228,11 @@ export const SettingsView = <T extends Settings>({ settings, type, onChange }: {
 
 	Object.keys(inputs).forEach((key) => {
 		const { type, section, header, props } = inputs[key]!;
-		if(!type)
+		if (!type)
 			return;
 
 		const Component = registry.get(type);
-		if(!Component) {
+		if (!Component) {
 			console.warn(`Could not get setting input component for ${type}!`);
 		}
 
