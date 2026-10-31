@@ -1,18 +1,18 @@
 import { useEffect, useRef } from "react";
-import { Editor, Renderer } from "../../editor";
+//import { Editor } from "../../editor";
 
 export const Viewport = () => {
-	const renderer = Editor.use(Renderer);
+	//const renderer = Editor.useStore(Renderer);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		const container = containerRef.current;
-		if (!container)
-			return;
+		//const container = containerRef.current;
+		//if (!container)
+		//	return;
 
-		renderer.initialize(container);
+		//renderer.initialize(container);
 
-		return () => renderer.terminate();
+		//return () => renderer.terminate();
 	}, []);
 
 	return (

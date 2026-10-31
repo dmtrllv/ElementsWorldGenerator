@@ -7,7 +7,7 @@ import { useEvent } from "../hooks/event";
 import "./styles/modal.scss";
 
 export const Modals = () => {
-	const manager = Editor.use(ModalManager);
+	const manager = Editor.useStore(ModalManager);
 
 	const closeLast = () => {
 		const modal = last(manager.modals);

@@ -149,7 +149,7 @@ export const store = (Class: any): any => {
 	};
 };
 
-export const state = (target: any, key: string | symbol) => {
+export const state = <T extends object>(target: T, key: string | symbol | number) => {
 	const meta = getMeta(target.constructor);
 
 	if (!meta.includes(key as string))

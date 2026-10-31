@@ -3,16 +3,16 @@ import { SaveModal } from "../ui/modals/saves";
 import type { Editor } from "./editor";
 import { ModalManager } from "./modals";
 import { SaveManager } from "./save-manager";
+import { Store } from "./store";
 
 @store
-export class Menu {
-	public readonly editor: Editor;
-
+export class Menu extends Store {
 	@state
 	public items: MenuItem[];
 
 	public constructor(editor: Editor) {
-		this.editor = editor;
+		super(editor);
+
 		const saves = editor.get(SaveManager);
 
 		const recentSaves = Array.from(saves.getSaves().values()).slice(0, 5).map(s => new MenuItem(s, () => saves.open(s)));

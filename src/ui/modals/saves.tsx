@@ -10,7 +10,7 @@ export const SaveModal = createModal({
 	Component: ({ modal }) => {
 		const [saveName, setValue] = useState("");
 
-		const manager = Editor.use(SaveManager);
+		const manager = Editor.useStore(SaveManager);
 
 		return (
 			<div>

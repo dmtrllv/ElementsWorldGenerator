@@ -4,7 +4,7 @@ import { observe } from "../../state";
 import "./styles/menubar.scss";
 
 export const Menubar = () => {
-	const menubar = Editor.use(Menu);
+	const menubar = Editor.useStore(Menu);
 
 	return (
 		<div id="menubar">

@@ -1,18 +1,13 @@
 import { state, store } from "../state";
 import type { Editor } from "./editor";
+import { Store } from "./store";
 
 @store
-export class NotificationManager {
+export class NotificationManager extends Store {
 	#idCounter = 0;
 
 	@state
 	public readonly notifications: Notification[] = [];
-
-	public readonly editor: Editor;
-
-	public constructor(editor: Editor) {
-		this.editor = editor;
-	}
 
 	public notify(notification: NotificationData) {
 		this.notifications.push({ ...notification, id: this.#idCounter++ });

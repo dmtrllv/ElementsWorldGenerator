@@ -1,20 +1,14 @@
 import type React from "react";
 import { state, store } from "../state";
-import type { Editor } from "./editor";
+import { Store } from "./store";
 
 @store
-export class ModalManager {
+export class ModalManager extends Store {
 	@state
 	public readonly modals: Modal[] = [];
 
 	@state
 	public confirmModal: ConfirmModal | null = null;
-
-	public readonly editor: Editor;
-
-	public constructor(editor: Editor) {
-		this.editor = editor;
-	}
 
 	public confirm(message: string, title: string = "Confirm") {
 		if (this.confirmModal)

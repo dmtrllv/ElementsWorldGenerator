@@ -3,13 +3,14 @@
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
- 	"scripts": {
+	"scripts": {
 		"dev": "vite",
 		"build": "tsc -b && vite build",
 		"serve": "vite preview --host 0.0.0.0 --port 1337"
 	},
 	"dependencies": {
 		"alea": "^1.0.1",
+		"fast-fnv1a": "^1.0.0",
 		"react": "^19.3.1",
 		"react-dom": "^19.3.1",
 		"simplex-noise": "^4.0.3",

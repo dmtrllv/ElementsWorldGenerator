@@ -1,32 +1,28 @@
 import React, { createContext, useContext, useRef, type PropsWithChildren } from "react";
 import { observe } from "../state";
-import { Serializer } from "./serializer";
-import { Generator } from "./generator";
-import { WorldSettings } from "./generator/world-settings";
+import type { Store, StoreType } from "./store";
 
 export class Editor {
-	public static readonly get = () => {
+	public static readonly useContext = () => {
 		const editor = useContext(EditorCtx);
 		if (editor === null)
 			throw new Error(`Not EditorContext provided!`);
 		return editor;
 	}
 
-	public static readonly use = <T extends new (editor: Editor) => any>(type: T): InstanceType<T> => {
-		const editor = Editor.get();
+	public static readonly useStore = <T extends Store>(type: StoreType<T>): T => {
+		const editor = Editor.useContext();
 		return observe(editor.get(type));
 	}
 
-	private readonly stores: Map<new (editor: Editor) => any, any> = new Map();
+	private readonly stores: Map<StoreType<any>, Store> = new Map();
 
-	public readonly get = <T extends new (editor: Editor) => any>(type: T): InstanceType<T> => {
+	public get<T extends Store>(type: StoreType<T>): T {
 		if (!this.stores.has(type))
 			this.stores.set(type, new type(this));
-		return this.stores.get(type);
+		return this.stores.get(type) as T;
 	}
 }
-
-export type ObserveCallback<T extends {}> = (editor: Editor) => T;
 
 const EditorCtx = createContext<Editor | null>(null);
 
