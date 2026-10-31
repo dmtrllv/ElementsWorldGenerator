@@ -7,7 +7,7 @@ const INPUTS = Symbol("INPUTS");
 type InputMap = Record<string, {
 	header?: string,
 	section?: string,
-	Component?: InputComponent<any, any>,
+	type?: keyof SettingTypes
 	props?: any;
 }>;
 
@@ -34,20 +34,24 @@ export class Vector3Serializer extends Serializer<Vector3> {
 		return JSON.stringify(v);
 	}
 
-	protected deserialize(target: new () => Vector3, string: string): Vector3 {
+	protected deserialize(_: new () => Vector3, string: string): Vector3 {
 		const { x, y, z } = JSON.parse(string);
 		return new Vector3(x, y, z);
 	}
 }
 
-export const input = <T extends Settings, K extends keyof T, P extends {}>(Component: InputComponent<T[K], P>, { label, ...props }: Partial<P & { label?: string }> = {}) => (target: T, key: K) => {
-	state(target, key);
-	const inputs = Settings.getInputs(target.constructor as any);
-	const k = key as any;
-	if (!(key in inputs))
-		inputs[k] = {};
-	Object.assign(inputs[k], { Component, props: { ...props }, label });
-};
+export function input<T extends Settings, K extends keyof T, U extends keyof SettingTypes>(type: U, props?: Partial<SettingTypes[U]>): (target: T, key: K) => void;
+export function input<T extends Settings, K extends keyof T>(type: string, props: any): (target: T, key: K) => void;
+export function input<T extends Settings, K extends keyof T>(type: string, props: any = {}) {
+	return (target: T, key: K) => {
+		state(target, key as any);
+		const inputs = Settings.getInputs(target.constructor as any);
+		const k = key as any;
+		if (!(key in inputs))
+			inputs[k] = {};
+		Object.assign(inputs[k], { type, props });
+	};
+}
 
 export const header = <T extends Settings, K extends keyof T>(title: string) => (target: T, key: K) => {
 	const inputs = Settings.getInputs(target.constructor as any);
@@ -65,11 +69,24 @@ export const section = <T extends Settings, K extends keyof T>(title: string) =>
 	Object.assign(inputs[k], { section: title, });
 };
 
-export type InputComponent<T, P extends {} = {}> = React.FC<InputComponentProps<T> & Partial<P>>;
-
 export type InputComponentProps<T> = {
 	readonly name: string;
 	readonly label?: string;
 	readonly value: T,
 	readonly onChange: (value: T) => void
 };
+
+export type NumberProps = {
+	min?: number;
+	max?: number;
+	step?: number;
+}
+
+export type SettingTypes = {
+	slider: NumberProps;
+	number: NumberProps;
+	text: {};
+	vec2: {};
+	vec3: {};
+	color: {};
+}

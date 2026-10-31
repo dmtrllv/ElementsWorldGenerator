@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { App } from "./ui";
 import { EditorContext } from "./editor";
+import { ThreadManager } from "./editor/thread-manager";
 
 createRoot(document.getElementById("root")!).render(
 	<EditorContext>

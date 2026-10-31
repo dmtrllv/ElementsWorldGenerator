@@ -1,11 +1,20 @@
 import { Fragment, useEffect, type JSX } from "react";
 import { Vector2, Vector3 } from "three";
-import { Settings, type InputComponent } from "../../editor/settings";
+import { Settings } from "../../editor/settings";
 import { observe } from "../../state";
 import { DropdownPanel } from "./dropdown";
 import { useSlider } from "../hooks/slider";
 
 import "./styles/input.scss";
+
+type InputComponentProps<T> = {
+	readonly name: string;
+	readonly label?: string;
+	readonly value: T,
+	readonly onChange: (value: T) => void
+};
+
+type InputComponent<T, P extends {} = {}> = React.FC<InputComponentProps<T> & Partial<P>>;
 
 const nameToLabel = (name: string) => name.split("").map((s, i) => {
 	if (i === 0)
@@ -147,6 +156,19 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, l
 	);
 };
 
+const registry = new Map<string, InputComponent<any,any>>();
+
+export const registerInputComponent = (name: string, component: InputComponent<any,any>) => {
+	registry.set(name, component);
+	return component;
+};
+
+registerInputComponent("number", NumberInput);
+registerInputComponent("text", TextInput);
+registerInputComponent("color", ColorInput);
+registerInputComponent("vec2", Vector2Input);
+registerInputComponent("vec3", Vector3Input);
+
 export const SettingsView = <T extends Settings>({ settings, type, onChange }: { settings: T, type: new (...args: any[]) => T, onChange?: SettingsChangeHandler<T> }) => {
 	const state = observe(settings) as any;
 	const inputs = Settings.getInputs(type);
@@ -157,7 +179,15 @@ export const SettingsView = <T extends Settings>({ settings, type, onChange }: {
 	let currentSection: string | null = null;
 
 	Object.keys(inputs).forEach((key) => {
-		const { Component, section, header, props } = inputs[key]!;
+		const { type, section, header, props } = inputs[key]!;
+		if(!type)
+			return;
+
+		const Component = registry.get(type);
+		if(!Component) {
+			console.warn(`Could not get setting input component for ${type}!`);
+		}
+
 		if (section) {
 			if (currentSection) {
 				elements.push(

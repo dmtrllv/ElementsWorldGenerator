@@ -9,9 +9,9 @@ export const Topbar = () => {
 	const notifications = Editor.use(NotificationManager);
 	const renderer = Editor.use(Renderer);
 
-	const generate = () => {
+	const generate = async () => {
 		try {
-			generator.generate();
+			await generator.generate();
 		} catch (e) {
 			if (e instanceof Error) {
 				notifications.notify({

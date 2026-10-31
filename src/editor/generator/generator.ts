@@ -10,6 +10,7 @@ import { GRASS, DIRT, ROCK, WATER } from "./materials";
 import { SurfaceMesh } from "./surfaces";
 import { Renderer } from "../renderer";
 import { WorldSettings } from "./world-settings";
+import { ThreadManager } from "../thread-manager";
 
 @store
 export class Generator {
@@ -30,9 +31,12 @@ export class Generator {
 
 	@state
 	public chunkGenerationRadius = 2;
+	
+	private readonly threadManager: ThreadManager;
 
 	public constructor(editor: Editor) {
 		this.editor = editor;
+		this.threadManager = editor.get(ThreadManager);
 		this.biomes = new BiomeRegistry(editor);
 		this.unsubscribeViewTargetChanged = {
 			fn: this.editor.get(Renderer).subscribeViewTargetChanged(() => {
@@ -49,7 +53,9 @@ export class Generator {
 		this.unsubscribeViewTargetChanged = null;
 	}
 
-	public generate(){
+	public async generate() {
+		await this.threadManager.sync(this.worldSettings, this.biomes);
+		
 		let {
 			seed,
 			size,

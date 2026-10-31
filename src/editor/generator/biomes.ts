@@ -1,5 +1,4 @@
 import { state, store } from "../../state";
-import { ColorInput, NumberInput, TextInput } from "../../ui/components";
 import { rgb } from "../../utils";
 import { Editor } from "../editor";
 import { NotificationManager } from "../notifications";
@@ -190,52 +189,52 @@ export class Biome extends Settings {
 	@serializable()
 	public readonly id: BiomeId = 0;
 
-	@input(TextInput)
+	@input("text")
 	@serializable()
 	public name: string = "";
 
-	@input(ColorInput)
+	@input("color")
 	@serializable()
 	public color: [number, number, number] = [0, 0, 0];
 
-	@input(NumberInput)
+	@input("number")
 	@serializable()
 	public baseHeight: number = 12;
 
-	@input(NumberInput)
+	@input("number")
 	@serializable()
 	public continentalScale: number = 96;
 
-	@input(NumberInput)
+	@input("number")
 	@serializable()
 	public continentalStrength: number = 12;
 
-	@input(NumberInput)
+	@input("number")
 	@serializable()
 	public detailScale: number = 87 / 2.5;
 
-	@input(NumberInput)
+	@input("number")
 	@serializable()
 	public detailStrength: number = 4;
 
-	@input(NumberInput)
+	@input("number")
 	@serializable()
 	public roughnessScale: number = 87 / 2;
 
-	@input(NumberInput)
+	@input("number")
 	@serializable()
 	public roughnessStrength: number = 1.2;
 
 	@section("Transition")
-	@input(NumberInput)
+	@input("number")
 	@serializable()
 	public transitionWidth: number = 8;
 
-	@input(NumberInput)
+	@input("number")
 	@serializable()
 	public transitionSharpness: number = 1.5;
 
-	//@input(NumberInput)
+	//@input("number")
 	@serializable()
 	public constraints: BiomeConstraints = {};
 
