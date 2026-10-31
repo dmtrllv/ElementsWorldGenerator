@@ -69,7 +69,7 @@ export class WorkerGenerator {
 
 		for (let x = minX; x < maxX; x++) {
 			for (let z = minZ; z < maxZ; z++) {
-				biomeGrid[(z - minZ) * (maxX - minX) + x - minX] = biomeSource.getBiome(x, z);
+				biomeGrid[(z - minZ) * (maxX - minX) + x - minX] = biomeSource.getBiome(x - size.x / 2, z - size.z / 2);
 			}
 		}
 
@@ -121,6 +121,8 @@ export class WorkerGenerator {
 
 				let blendedHeight = 0;
 				let totalWeight = 0;
+				const worldX = x - size.x / 2;
+				const worldZ = z - size.z / 2;
 
 				for (const [weightedBiomeId, weight] of biomeWeights) {
 					const weightedBiome = biomeById.get(weightedBiomeId);
@@ -138,9 +140,9 @@ export class WorkerGenerator {
 					const biomeDetailStrength = (detailStrength + weightedBiome.detailStrength) / 2;
 					const biomeRoughnessStrength = (roughnessStrength + weightedBiome.roughnessStrength) / 2;
 
-					const large = noise2D(x / biomeContinentalScale, z / biomeContinentalScale);
-					const medium = noise2D(x / biomeDetailScale + 100, z / biomeDetailScale + 100);
-					const fine = noise2D(x / biomeRoughnessScale + 200, z / biomeRoughnessScale + 200);
+					const large = noise2D(worldX / biomeContinentalScale, worldZ / biomeContinentalScale);
+					const medium = noise2D(worldX / biomeDetailScale + 100, worldZ / biomeDetailScale + 100);
+					const fine = noise2D(worldX / biomeRoughnessScale + 200, worldZ / biomeRoughnessScale + 200);
 
 					const height = biomeBaseHeight + large * biomeContinentalStrength + medium * biomeDetailStrength + fine * biomeRoughnessStrength;
 
