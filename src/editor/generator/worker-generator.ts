@@ -76,7 +76,6 @@ export class WorkerGenerator {
 		const biomeById = new Map(this.biomes.filter(Boolean).map(biome => [biome.id, biome]));
 		const heights = new Uint16Array(width * depth);
 		const biomeIds = new Uint32Array(width * depth);
-		const blocks: number[] = [];
 
 		for (let x = originX; x < endX; x++) {
 			for (let z = originZ; z < endZ; z++) {
@@ -154,12 +153,30 @@ export class WorkerGenerator {
 				const clampedHeight = Math.max(1, Math.min(size.y, Math.round(height)));
 
 				heights[index] = clampedHeight;
+			}
+		}
 
-				for (let y = 0; y < clampedHeight; y++) {
-					const blockDepth = clampedHeight - 1 - y;
+		let blockCount = 0;
+
+		for (let i = 0; i < heights.length; i++)
+			blockCount += heights[i];
+
+		const blocks = new Uint32Array(blockCount * 4);
+		let blockIndex = 0;
+
+		for (let x = originX; x < endX; x++) {
+			for (let z = originZ; z < endZ; z++) {
+				const index = (z - originZ) * width + x - originX;
+				const height = heights[index];
+
+				for (let y = 0; y < height; y++) {
+					const blockDepth = height - 1 - y;
 					const materialId = blockDepth === 0 ? 1 : blockDepth <= 3 ? 2 : 4;
 
-					blocks.push(x - originX, y, z - originZ, materialId);
+					blocks[blockIndex++] = x - originX;
+					blocks[blockIndex++] = y;
+					blocks[blockIndex++] = z - originZ;
+					blocks[blockIndex++] = materialId;
 				}
 			}
 		}
@@ -171,7 +188,7 @@ export class WorkerGenerator {
 			depth,
 			heights,
 			biomeIds,
-			blocks: new Uint32Array(blocks),
+			blocks,
 		};
 	}
 }

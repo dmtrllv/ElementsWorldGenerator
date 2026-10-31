@@ -6,8 +6,8 @@ import { WorkerGenerator, type ChunkGenerationRequest, type ChunkGenerationResul
 
 console.log("Hello!");
 
-const emit = <K extends keyof WorkerEvents>(event: K, data: WorkerEvents[K]) => {
-	globalThis.postMessage([event, data])
+const emit = <K extends keyof WorkerEvents>(event: K, data: WorkerEvents[K], transfer: Transferable[] = []) => {
+	globalThis.postMessage([event, data], { transfer });
 };
 
 const handlers: Record<string, Function[]> = {};
@@ -23,7 +23,7 @@ const on = <K extends keyof MainEvents>(event: K, handler: (e: MainEvents[K]) =>
 	};
 }
 
-globalThis.onmessage = e => {
+self.onmessage = e => {
 	if (Array.isArray(e.data)) {
 		const [event, data] = e.data;
 		if (handlers[event])
@@ -64,8 +64,6 @@ class WorkerRuntime {
 
 const runtime = new WorkerRuntime();
 
-let settingsVersion = 0;
-
 on("sync", (data) => {
 	const settingsVersion = runtime.sync(data);
 	emit("synced", { settingsVersion });
@@ -75,11 +73,18 @@ on("generate", data => {
 	if (data.settingsVersion !== runtime.currentSettingsVersion)
 		return;
 
-	const result = runtime.generateChunk({ chunkX: data.chunkX, chunkZ: data.chunkZ });
+	const result = runtime.generateChunk({
+		chunkX: data.chunkX,
+		chunkZ: data.chunkZ
+	});
 
 	emit("generated", {
 		requestId: data.requestId,
 		settingsVersion: data.settingsVersion,
 		result,
-	});
+	}, [
+		result.heights.buffer as ArrayBuffer,
+		result.biomeIds.buffer as ArrayBuffer,
+		result.blocks.buffer as ArrayBuffer,
+	]);
 });
