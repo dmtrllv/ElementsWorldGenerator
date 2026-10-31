@@ -5,13 +5,16 @@ import { Serializer } from "./serializer";
 
 export class ThreadManager {
 	private readonly threads: Thread[];
+	private settingsVersion = 0;
 
 	public constructor(editor: Editor) {
 		this.threads = [new Thread()];
 	}
 
-	public async sync(worldSettings: WorldSettings, biomes: BiomeRegistry) {
-		await Promise.all(this.threads.map(t => t.sync(worldSettings, biomes)));
+	public async sync(worldSettings: WorldSettings, biomes: BiomeRegistry): Promise<void> {
+		const settingsVersion = ++this.settingsVersion;
+
+		await Promise.all(this.threads.map(thread => thread.sync(worldSettings, biomes, settingsVersion)));
 	}
 }
 
@@ -37,13 +40,18 @@ export class Thread {
 		});
 	}
 
-	public sync(world: WorldSettings, biomes: BiomeRegistry) {
+	public sync(world: WorldSettings, biomes: BiomeRegistry, settingsVersion: number): Promise<void> {
 		return new Promise<void>(res => {
-			this.once("synced", () => res());
+			this.once("synced", data => {
+				if (data.settingsVersion === settingsVersion)
+					res();
+			});
+
 			this.emit("sync", {
+				settingsVersion,
 				world: Serializer.serialize(world),
 				biomes: biomes.biomes.map(b => Serializer.serialize(b)),
-			})
+			});
 		});
 	}
 
@@ -75,9 +83,15 @@ export class Thread {
 }
 
 export type WorkerEvents = {
-	synced: {}
+	synced: {
+		settingsVersion: number;
+	}
 }
 
 export type MainEvents = {
-	sync: { world: string, biomes: string[] };
+	sync: {
+		settingsVersion: number;
+		world: string;
+		biomes: string[];
+	};
 }

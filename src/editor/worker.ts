@@ -30,9 +30,28 @@ globalThis.onmessage = e => {
 	}
 }
 
+class WorkerRuntime {
+	private settingsVersion = 0;
+	private worldSettings?: WorldSettings;
+	private biomes: Biome[] = [];
+
+	public sync(data: MainEvents["sync"]): number {
+		if (data.settingsVersion < this.settingsVersion)
+			return this.settingsVersion;
+
+		this.worldSettings = Serializer.deserialize(WorldSettings, data.world);
+		this.biomes = data.biomes.map(b => Serializer.deserialize(Biome, b));
+		this.settingsVersion = data.settingsVersion;
+
+		return this.settingsVersion;
+	}
+}
+
+const runtime = new WorkerRuntime();
+
+let settingsVersion = 0;
+
 on("sync", (data) => {
-	const world = Serializer.deserialize(WorldSettings, data.world);
-	const biomes = data.biomes.map(b => Serializer.deserialize(Biome, b));
-	console.log("worker synced :D!", world, biomes);
-	emit("synced", {});
-})
+	const settingsVersion = runtime.sync(data);
+	emit("synced", { settingsVersion });
+});
