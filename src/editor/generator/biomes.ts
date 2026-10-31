@@ -173,7 +173,7 @@ export class BiomeRegistry {
 			transitionWidth: 3,
 			transitionSharpness: 4,
 			constraints: {
-				elevation: { ">": 0.55 },
+				elevation: { ">": 0.1 },
 			},
 		});
 	}
