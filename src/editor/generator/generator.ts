@@ -94,7 +94,7 @@ export class Generator {
 		this.generatedChunks.clear();
 		this.currentWorld = world;
 		this.noise2D = createNoise2D(alea(seed));
-		this.biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, this.biomes);
+		this.biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, this.biomes.getAll());
 
 		const allBiomes = this.biomes.getAll();
 		this.maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));

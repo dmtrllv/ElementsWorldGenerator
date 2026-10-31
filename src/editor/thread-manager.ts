@@ -42,9 +42,12 @@ export class Thread {
 
 	public sync(world: WorldSettings, biomes: BiomeRegistry, settingsVersion: number): Promise<void> {
 		return new Promise<void>(res => {
-			this.once("synced", data => {
-				if (data.settingsVersion === settingsVersion)
-					res();
+			const unsubscribe = this.on("synced", data => {
+				if (data.settingsVersion !== settingsVersion)
+					return;
+
+				unsubscribe();
+				res();
 			});
 
 			this.emit("sync", {

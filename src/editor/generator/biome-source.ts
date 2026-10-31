@@ -1,6 +1,7 @@
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
 import alea from "alea";
 import type { BiomeId, BiomeRegistry } from "./biomes";
+import type {Biome} from "./biomes";
 
 export interface BiomeSource {
 	getBiome(x: number, z: number): BiomeId;
@@ -13,9 +14,9 @@ export class ProceduralBiomeSource implements BiomeSource {
 	private readonly temperatureScale: number;
 	private readonly moistureScale: number;
 	private readonly elevationScale: number;
-	private readonly biomes: BiomeRegistry;
+	private readonly biomes: readonly Biome[];
 
-	public constructor(seed: number, temperatureScale: number, moistureScale: number, elevationScale: number, biomes: BiomeRegistry) {
+	public constructor(seed: number, temperatureScale: number, moistureScale: number, elevationScale: number, biomes: readonly Biome[]) {
 		const temperatureRandom = alea(`${seed}:temperature`);
 		const moistureRandom = alea(`${seed}:moisture`);
 		const elevationRandom = alea(`${seed}:biome-elevation`);
@@ -34,7 +35,7 @@ export class ProceduralBiomeSource implements BiomeSource {
 		const temperature = this.temperatureNoise(x / this.temperatureScale, z / this.temperatureScale);
 		const moisture = this.moistureNoise(x / this.moistureScale + 100, z / this.moistureScale + 100);
 		const elevation = this.elevationNoise(x / this.elevationScale + 200, z / this.elevationScale + 200);
-		const iter = this.biomes.getAll().values();
+		const iter = this.biomes.values();
 		const fallback = iter.next();
 		for (const biome of iter) {
 			const constraints = biome.constraints;
