@@ -5,6 +5,7 @@ import type { SurfaceMesh } from "./surfaces";
 import type { BiomeRegistry } from "./biomes";
 import { Block } from "./block";
 import { Chunk } from "./chunk";
+import type { ChunkGenerationResult } from "./worker-generator";
 
 export class World {
 	public readonly seed: number;
@@ -158,5 +159,39 @@ export class World {
 		}
 
 		return chunk;
+	}
+
+	public applyChunkGenerationResult(result: ChunkGenerationResult): void {
+		const chunk = this.getChunkAt(result.chunkX, result.chunkZ, true);
+
+		if (!chunk)
+			throw new RangeError(`Chunk coordinates (${result.chunkX}, ${result.chunkZ}) are outside the world.`);
+
+		if (result.width !== chunk.width || result.depth !== chunk.depth)
+			throw new RangeError("Generated chunk dimensions do not match the world.");
+
+		if (result.heights.length !== result.width * result.depth || result.biomeIds.length !== result.width * result.depth)
+			throw new RangeError("Generated height or biome data has an invalid length.");
+
+		if (result.blocks.length % 4 !== 0)
+			throw new RangeError("Generated block data has an invalid length.");
+
+		for (let z = 0; z < result.depth; z++) {
+			for (let x = 0; x < result.width; x++) {
+				const index = z * result.width + x;
+
+				this.setHeight(chunk.originX + x, chunk.originZ + z, result.heights[index]);
+				this.setBiome(chunk.originX + x, chunk.originZ + z, result.biomeIds[index]);
+			}
+		}
+
+		for (let i = 0; i < result.blocks.length; i += 4) {
+			const x = result.blocks[i];
+			const y = result.blocks[i + 1];
+			const z = result.blocks[i + 2];
+			const materialId = result.blocks[i + 3];
+
+			this.setBlock(chunk.originX + x, y, chunk.originZ + z, materialId);
+		}
 	}
 }

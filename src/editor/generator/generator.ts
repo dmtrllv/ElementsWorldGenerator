@@ -20,9 +20,10 @@ export class Generator {
 	public readonly biomes: BiomeRegistry;
 	private readonly generatedChunks = new Set<string>();
 	private currentWorld: World | null = null;
-	private noise2D: NoiseFunction2D | null = null;
-	private biomeSource: ProceduralBiomeSource | null = null;
-	private maxTransitionWidth = 0;
+	//private noise2D: NoiseFunction2D | null = null;
+	//private biomeSource: ProceduralBiomeSource | null = null;
+	//private maxTransitionWidth = 0;
+	private readonly generatingChunks = new WeakMap<World, Map<string, Promise<void>>>();
 
 	private unsubscribeViewTargetChanged: { fn: (() => void) } | null = null;
 
@@ -31,7 +32,7 @@ export class Generator {
 
 	@state
 	public chunkGenerationRadius = 2;
-	
+
 	private readonly threadManager: ThreadManager;
 
 	public constructor(editor: Editor) {
@@ -43,7 +44,7 @@ export class Generator {
 				if (!this.currentWorld || !this.chunkGenerationEnabled)
 					return;
 
-				this.generateChunksAroundView(this.chunkGenerationRadius);
+				void this.generateChunksAroundView(this.chunkGenerationRadius);
 			})
 		};
 	}
@@ -54,11 +55,9 @@ export class Generator {
 	}
 
 	public async generate() {
-		await this.threadManager.sync(this.worldSettings, this.biomes);
-		
-		let {
+		const {
 			seed,
-			size,
+			size: configuredSize,
 			chunkSize,
 			baseHeight,
 			seaLevel,
@@ -73,7 +72,9 @@ export class Generator {
 			biomeTemperatureScale
 		} = this.worldSettings;
 
-		size = size.floor();
+		const size = configuredSize.clone().floor();
+
+		await this.threadManager.sync(this.worldSettings, this.biomes);
 
 		if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0)
 			throw new RangeError("Chunk size must be a positive safe integer.");
@@ -93,25 +94,50 @@ export class Generator {
 		const world = new World(seed, size, this.biomes, chunkSize);
 		this.generatedChunks.clear();
 		this.currentWorld = world;
-		this.noise2D = createNoise2D(alea(seed));
-		this.biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, this.biomes.getAll());
+		//this.noise2D = createNoise2D(alea(seed));
+		//this.biomeSource = new ProceduralBiomeSource(seed, biomeTemperatureScale, biomeMoistureScale, biomeElevationScale, this.biomes.getAll());
 
 		const allBiomes = this.biomes.getAll();
-		this.maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));
-		this.generateChunksAroundView(this.chunkGenerationRadius, true, true);
+		//this.maxTransitionWidth = Math.ceil(Math.max(0, ...allBiomes.map((biome) => biome.transitionWidth)));
+		await this.generateChunksAroundView(this.chunkGenerationRadius, true, true);
 
 		this.editor.get(Renderer).render(world);
-
-		console.log(await this.threadManager.generateChunk(0, 0))
 	}
 
-	public generateChunk(chunkX: number, chunkZ: number): void {
+	public generateChunk(chunkX: number, chunkZ: number): Promise<void> {
 		const world = this.currentWorld;
-		const noise2D = this.noise2D;
-		const biomeSource = this.biomeSource;
 
-		if (!world || !noise2D || !biomeSource)
+		if (!world)
 			throw new Error("World has not been initialized.");
+
+		const key = `${chunkX},${chunkZ}`;
+
+		let pending = this.generatingChunks.get(world);
+
+		if (!pending) {
+			pending = new Map();
+			this.generatingChunks.set(world, pending);
+		}
+
+		const existing = pending.get(key);
+
+		if (existing)
+			return existing;
+
+		if (this.generatedChunks.has(key))
+			return Promise.resolve();
+
+		const generation = this.generateChunkInternal(world, chunkX, chunkZ).finally(() => {
+			if (pending!.get(key) === generation)
+				pending!.delete(key);
+		});
+
+		pending.set(key, generation);
+
+		return generation;
+	}
+
+	private async generateChunkInternal(world: World, chunkX: number, chunkZ: number): Promise<void> {
 
 		const chunk = world.getChunkAt(chunkX, chunkZ, true);
 
@@ -123,105 +149,15 @@ export class Generator {
 		if (this.generatedChunks.has(key))
 			return;
 
-		const maxTransitionWidth = this.maxTransitionWidth;
-		const { seaLevel, baseHeight, continentalScale, continentalStrength, detailScale, detailStrength, roughnessScale, roughnessStrength } = this.worldSettings;
+		const { seaLevel } = this.worldSettings;
+		const result = await this.threadManager.generateChunk(chunkX, chunkZ);
 
-		const chunkSize = world.chunkSize;
+		// The world may have been replaced while the worker was generating.
+		if (this.currentWorld !== world)
+			return;
 
-		const originX = chunkX * chunkSize;
-		const originZ = chunkZ * chunkSize;
+		world.applyChunkGenerationResult(result);
 
-		const endX = Math.min(originX + chunkSize, world.width);
-		const endZ = Math.min(originZ + chunkSize, world.depth);
-
-		const minX = Math.max(0, originX - maxTransitionWidth);
-		const minZ = Math.max(0, originZ - maxTransitionWidth);
-		const maxX = Math.min(world.width, endX + maxTransitionWidth);
-		const maxZ = Math.min(world.depth, endZ + maxTransitionWidth);
-
-		const biomeGrid: BiomeId[][] = Array.from({ length: maxX - minX }, (_, ix) => Array.from({ length: maxZ - minZ }, (_, iz) => biomeSource.getBiome(minX + ix, minZ + iz)));
-
-		for (let x = originX; x < endX; x++) {
-			for (let z = originZ; z < endZ; z++) {
-				const biomeId = biomeGrid[x - minX][z - minZ];
-				world.setBiome(x, z, biomeId);
-
-				const biome = this.biomes.get(biomeId);
-
-				if (!biome)
-					throw new Error(`Unknown biome ID ${biomeId}.`);
-
-				const biomeWeights = new Map<BiomeId, number>();
-
-				for (let dx = -maxTransitionWidth; dx <= maxTransitionWidth; dx++) {
-					for (let dz = -maxTransitionWidth; dz <= maxTransitionWidth; dz++) {
-						const sampleX = x + dx;
-						const sampleZ = z + dz;
-
-						if (sampleX < minX || sampleX >= maxX || sampleZ < minZ || sampleZ >= maxZ)
-							continue;
-
-						const neighborId = biomeGrid[sampleX - minX][sampleZ - minZ];
-						const neighbor = this.biomes.get(neighborId);
-
-						if (!neighbor)
-							throw new Error(`Unknown biome ID ${neighborId}.`);
-
-						const distance = Math.sqrt(dx * dx + dz * dz);
-
-						if (distance > neighbor.transitionWidth && distance !== 0)
-							continue;
-
-						const weight = distance === 0 ? 1 : Math.pow(1 - distance / neighbor.transitionWidth, neighbor.transitionSharpness);
-
-						if (weight <= 0)
-							continue;
-
-						biomeWeights.set(neighborId, (biomeWeights.get(neighborId) ?? 0) + weight);
-					}
-				}
-
-				let blendedHeight = 0;
-				let totalWeight = 0;
-
-				for (const [weightedBiomeId, weight] of biomeWeights) {
-					const weightedBiome = this.biomes.get(weightedBiomeId);
-
-					if (!weightedBiome)
-						throw new Error(`Unknown biome ID ${weightedBiomeId}.`);
-
-					const biomeBaseHeight = (baseHeight + weightedBiome.baseHeight) / 2;
-
-					const biomeContinentalScale = (continentalScale + weightedBiome.continentalScale) / 2;
-					const biomeDetailScale = (detailScale + weightedBiome.detailScale) / 2;
-					const biomeRoughnessScale = (roughnessScale + weightedBiome.roughnessScale) / 2;
-
-					const biomeContinentalStrength = (continentalStrength + weightedBiome.continentalStrength) / 2;
-					const biomeDetailStrength = (detailStrength + weightedBiome.detailStrength) / 2;
-					const biomeRoughnessStrength = (roughnessStrength + weightedBiome.roughnessStrength) / 2;
-
-					const large = noise2D(x / biomeContinentalScale, z / biomeContinentalScale);
-					const medium = noise2D(x / biomeDetailScale + 100, z / biomeDetailScale + 100);
-					const fine = noise2D(x / biomeRoughnessScale + 200, z / biomeRoughnessScale + 200);
-
-					const height = biomeBaseHeight + large * biomeContinentalStrength + medium * biomeDetailStrength + fine * biomeRoughnessStrength;
-
-					blendedHeight += height * weight;
-					totalWeight += weight;
-				}
-
-				const height = blendedHeight / totalWeight;
-				const clampedHeight = Math.max(1, Math.min(world.height, Math.round(height)));
-
-				world.setHeight(x, z, clampedHeight);
-
-				for (let y = 0; y < clampedHeight; y++) {
-					const depth = clampedHeight - 1 - y;
-					const materialId = depth === 0 ? GRASS : depth <= 3 ? DIRT : ROCK;
-					world.setBlock(x, y, z, materialId);
-				}
-			}
-		}
 
 		if (seaLevel > 0) {
 			const sea = new SurfaceMesh(WATER);
@@ -240,18 +176,18 @@ export class Generator {
 				return index;
 			};
 
-			const endX = Math.min(originX + chunkSize, world.width);
-			const endZ = Math.min(originZ + chunkSize, world.depth);
+			for (let x = 0; x < chunk.width; x++) {
+				for (let z = 0; z < chunk.depth; z++) {
+					const worldX = chunk.originX + x;
+					const worldZ = chunk.originZ + z;
 
-			for (let x = originX; x < endX; x++) {
-				for (let z = originZ; z < endZ; z++) {
-					if (world.getHeight(x, z) >= seaLevel)
+					if (world.getHeight(worldX, worldZ) >= seaLevel)
 						continue;
 
-					const a = getVertex(x, z);
-					const b = getVertex(x + 1, z);
-					const c = getVertex(x + 1, z + 1);
-					const d = getVertex(x, z + 1);
+					const a = getVertex(worldX, worldZ);
+					const b = getVertex(worldX + 1, worldZ);
+					const c = getVertex(worldX + 1, worldZ + 1);
+					const d = getVertex(worldX, worldZ + 1);
 
 					sea.addTriangle(a, c, b);
 					sea.addTriangle(a, d, c);
@@ -273,7 +209,7 @@ export class Generator {
 		this.generatedChunks.add(key);
 	}
 
-	public generateChunksAround(chunkX: number, chunkZ: number, radius: number, circular: boolean = true, force: boolean = false): void {
+	public async generateChunksAround(chunkX: number, chunkZ: number, radius: number, circular: boolean = true, force: boolean = false): Promise<void> {
 		if (!force && !this.chunkGenerationEnabled)
 			return;
 
@@ -285,34 +221,27 @@ export class Generator {
 		if (!world)
 			throw new Error("World has not been initialized.");
 
-		if (circular) {
-			for (let z = chunkZ - radius; z <= chunkZ + radius; z++) {
-				for (let x = chunkX - radius; x <= chunkX + radius; x++) {
-					const dx = x - chunkX;
-					const dz = z - chunkZ;
+		const tasks: Promise<void>[] = [];
 
-					if (dx * dx + dz * dz > radius * radius)
-						continue;
+		for (let z = chunkZ - radius; z <= chunkZ + radius; z++) {
+			for (let x = chunkX - radius; x <= chunkX + radius; x++) {
+				const dx = x - chunkX;
+				const dz = z - chunkZ;
 
-					if (!world.getChunkAt(x, z, true))
-						continue;
+				if (circular && dx * dx + dz * dz > radius * radius)
+					continue;
 
-					this.generateChunk(x, z);
-				}
-			}
-		} else {
-			for (let z = chunkZ - radius; z <= chunkZ + radius; z++) {
-				for (let x = chunkX - radius; x <= chunkX + radius; x++) {
-					if (!world.getChunkAt(x, z, true))
-						continue;
+				if (!world.getChunkAt(x, z, true))
+					continue;
 
-					this.generateChunk(x, z);
-				}
+				tasks.push(this.generateChunk(x, z));
 			}
 		}
+
+		await Promise.all(tasks);
 	}
 
-	public generateChunksAroundView(radius: number, circular: boolean = true, force: boolean = false): void {
+	public async generateChunksAroundView(radius: number, circular: boolean = true, force: boolean = false): Promise<void> {
 		const world = this.currentWorld;
 
 		if (!world)
@@ -323,6 +252,6 @@ export class Generator {
 		const chunkX = Math.floor((target.x + world.width / 2) / world.chunkSize);
 		const chunkZ = Math.floor((target.z + world.depth / 2) / world.chunkSize);
 
-		this.generateChunksAround(chunkX, chunkZ, radius, circular, force);
+		await this.generateChunksAround(chunkX, chunkZ, radius, circular, force);
 	}
 }

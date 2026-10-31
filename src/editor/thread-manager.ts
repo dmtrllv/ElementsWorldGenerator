@@ -9,22 +9,32 @@ export class ThreadManager {
 	private settingsVersion = 0;
 
 	public constructor(editor: Editor) {
-		this.threads = [new Thread()];
+		const workerCount = Math.max(1, (navigator.hardwareConcurrency || 2) - 1);
+
+		this.threads = Array.from({ length: workerCount }, () => new Thread());
 	}
 
 	public async sync(worldSettings: WorldSettings, biomes: BiomeRegistry): Promise<void> {
 		const settingsVersion = ++this.settingsVersion;
 
 		await Promise.all(this.threads.map(thread => thread.sync(worldSettings, biomes, settingsVersion)));
+		console.log(`Synchronized ${this.threads.length} workers.`);
 	}
 
 	public generateChunk(chunkX: number, chunkZ: number): Promise<ChunkGenerationResult> {
-		return this.threads[0].generate(this.settingsVersion, chunkX, chunkZ);
+		const thread = this.threads.reduce((leastBusy, current) => current.pendingRequests < leastBusy.pendingRequests ? current : leastBusy);
+
+		return thread.generate(this.settingsVersion, chunkX, chunkZ);
 	}
 }
 
 export class Thread {
 	private nextRequestId = 0;
+	private _pendingRequests = 0;
+
+	public get pendingRequests(): number {
+		return this._pendingRequests;
+	}
 
 	public readonly worker: Worker;
 
@@ -94,16 +104,25 @@ export class Thread {
 	public generate(settingsVersion: number, chunkX: number, chunkZ: number): Promise<ChunkGenerationResult> {
 		const requestId = ++this.nextRequestId;
 
-		return new Promise<ChunkGenerationResult>(res => {
+		this._pendingRequests++;
+
+		return new Promise<ChunkGenerationResult>((res, rej) => {
 			const unsubscribe = this.on("generated", data => {
 				if (data.requestId !== requestId)
 					return;
 
 				unsubscribe();
+				this._pendingRequests--;
 				res(data.result);
 			});
 
-			this.emit("generate", { requestId, settingsVersion, chunkX, chunkZ });
+			try {
+				this.emit("generate", { requestId, settingsVersion, chunkX, chunkZ });
+			} catch (error) {
+				unsubscribe();
+				this._pendingRequests--;
+				rej(error);
+			}
 		});
 	}
 }
