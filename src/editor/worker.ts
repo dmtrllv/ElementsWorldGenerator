@@ -2,6 +2,7 @@ import { Biome } from "./generator/biomes";
 import { WorldSettings } from "./generator/world-settings";
 import { Serializer } from "./serializer";
 import type { MainEvents, WorkerEvents } from "./thread-manager";
+import { WorkerGenerator, type ChunkGenerationRequest, type ChunkGenerationResult } from "./generator/worker-generator";
 
 console.log("Hello!");
 
@@ -34,13 +35,27 @@ class WorkerRuntime {
 	private settingsVersion = 0;
 	private worldSettings?: WorldSettings;
 	private biomes: Biome[] = [];
+	private readonly generator = new WorkerGenerator();
+
+	public get currentSettingsVersion(): number {
+		return this.settingsVersion;
+	}
+
+	public generateChunk(request: ChunkGenerationRequest): ChunkGenerationResult {
+		return this.generator.generateChunk(request);
+	}
 
 	public sync(data: MainEvents["sync"]): number {
 		if (data.settingsVersion < this.settingsVersion)
 			return this.settingsVersion;
 
-		this.worldSettings = Serializer.deserialize(WorldSettings, data.world);
-		this.biomes = data.biomes.map(b => Serializer.deserialize(Biome, b));
+		const worldSettings = Serializer.deserialize(WorldSettings, data.world);
+		const biomes = data.biomes.map(b => Serializer.deserialize(Biome, b));
+
+		this.generator.sync(worldSettings, biomes);
+
+		this.worldSettings = worldSettings;
+		this.biomes = biomes;
 		this.settingsVersion = data.settingsVersion;
 
 		return this.settingsVersion;
@@ -54,4 +69,17 @@ let settingsVersion = 0;
 on("sync", (data) => {
 	const settingsVersion = runtime.sync(data);
 	emit("synced", { settingsVersion });
+});
+
+on("generate", data => {
+	if (data.settingsVersion !== runtime.currentSettingsVersion)
+		return;
+
+	const result = runtime.generateChunk({ chunkX: data.chunkX, chunkZ: data.chunkZ });
+
+	emit("generated", {
+		requestId: data.requestId,
+		settingsVersion: data.settingsVersion,
+		result,
+	});
 });

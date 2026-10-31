@@ -101,6 +101,8 @@ export class Generator {
 		this.generateChunksAroundView(this.chunkGenerationRadius, true, true);
 
 		this.editor.get(Renderer).render(world);
+
+		console.log(await this.threadManager.generateChunk(0, 0))
 	}
 
 	public generateChunk(chunkX: number, chunkZ: number): void {

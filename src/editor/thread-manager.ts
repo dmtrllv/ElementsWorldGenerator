@@ -2,6 +2,7 @@ import type { Editor } from "./editor";
 import type { BiomeRegistry } from "./generator/biomes";
 import type { WorldSettings } from "./generator/world-settings";
 import { Serializer } from "./serializer";
+import type { ChunkGenerationResult } from "./generator/worker-generator";
 
 export class ThreadManager {
 	private readonly threads: Thread[];
@@ -16,9 +17,15 @@ export class ThreadManager {
 
 		await Promise.all(this.threads.map(thread => thread.sync(worldSettings, biomes, settingsVersion)));
 	}
+
+	public generateChunk(chunkX: number, chunkZ: number): Promise<ChunkGenerationResult> {
+		return this.threads[0].generate(this.settingsVersion, chunkX, chunkZ);
+	}
 }
 
 export class Thread {
+	private nextRequestId = 0;
+
 	public readonly worker: Worker;
 
 	private readonly handlers: Record<string, Function[]> = {};
@@ -82,19 +89,40 @@ export class Thread {
 
 	public emit = <K extends keyof MainEvents>(event: K, data: MainEvents[K]) => {
 		this.worker.postMessage([event, data])
-	};
-}
+	}
 
-export type WorkerEvents = {
-	synced: {
-		settingsVersion: number;
+	public generate(settingsVersion: number, chunkX: number, chunkZ: number): Promise<ChunkGenerationResult> {
+		const requestId = ++this.nextRequestId;
+
+		return new Promise<ChunkGenerationResult>(res => {
+			const unsubscribe = this.on("generated", data => {
+				if (data.requestId !== requestId)
+					return;
+
+				unsubscribe();
+				res(data.result);
+			});
+
+			this.emit("generate", { requestId, settingsVersion, chunkX, chunkZ });
+		});
 	}
 }
 
-export type MainEvents = {
-	sync: {
+export type WorkerEvents = {
+	synced: { settingsVersion: number };
+	generated: {
+		requestId: number;
 		settingsVersion: number;
-		world: string;
-		biomes: string[];
+		result: ChunkGenerationResult;
 	};
-}
+};
+
+export type MainEvents = {
+	sync: { settingsVersion: number; world: string; biomes: string[] };
+	generate: {
+		requestId: number;
+		settingsVersion: number;
+		chunkX: number;
+		chunkZ: number;
+	};
+};
