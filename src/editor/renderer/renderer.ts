@@ -1,6 +1,7 @@
 
 import { Color, DirectionalLight, GridHelper, HemisphereLight, Mesh, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import type { World } from "../generator/world";
 import { TerrainMesh } from "./mesh/terrain-mesh";
 import { state, store } from "../../state";
@@ -24,10 +25,55 @@ export class Renderer {
 	@state
 	private _renderMode: TerrainRenderMode = "materials";
 
-	@state
-	public cameraMode: "orbital" | "third-person" = "orbital";
-
 	public get renderMode() { return this._renderMode; }
+
+	@state
+	private _cameraMode: "orbital" | "first-person" = "orbital";
+
+	public get cameraMode() { return this._cameraMode; }
+
+	private pointerControls: PointerLockControls | null = null;
+	private readonly movementKeys = new Set<string>();
+	private readonly forward = new Vector3();
+	private readonly right = new Vector3();
+	private readonly movement = new Vector3();
+	private readonly up = new Vector3(0, 1, 0);
+	private previousFrameTime = 0;
+	private readonly movementSpeed = 12;
+
+	private onCanvasClick = () => {
+		if (this._cameraMode === "first-person")
+			this.pointerControls?.lock();
+	};
+
+	private onKeyDown = (event: KeyboardEvent) => {
+		if (!this.pointerControls?.isLocked)
+			return;
+
+		if (!["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ShiftLeft", "ShiftRight"].includes(event.code))
+			return;
+
+		this.movementKeys.add(event.code);
+
+		if (event.code === "Space")
+			event.preventDefault();
+	};
+
+	private onKeyUp = (event: KeyboardEvent) => {
+		this.movementKeys.delete(event.code);
+	};
+
+	private onWindowBlur = () => {
+		this.movementKeys.clear();
+	};
+
+	private onPointerUnlock = () => {
+		this.movementKeys.clear();
+	};
+
+	private onPointerChange = () => {
+		this.onViewTargetChanged?.();
+	};
 
 	public constructor() { }
 
@@ -61,6 +107,15 @@ export class Renderer {
 			});
 			controls.update();
 
+			const pointerControls = new PointerLockControls(camera, renderer.domElement);
+			pointerControls.addEventListener("change", this.onPointerChange);
+			pointerControls.addEventListener("unlock", this.onPointerUnlock);
+
+			renderer.domElement.addEventListener("click", this.onCanvasClick);
+			document.addEventListener("keydown", this.onKeyDown);
+			document.addEventListener("keyup", this.onKeyUp);
+			window.addEventListener("blur", this.onWindowBlur);
+
 			const grid = new GridHelper(20, 20, 0x778899, 0x414751);
 			scene.add(grid);
 
@@ -74,6 +129,7 @@ export class Renderer {
 			this.camera = camera;
 			this.renderer = renderer;
 			this.controls = controls;
+			this.pointerControls = pointerControls;
 
 			this.resizeObserver = new ResizeObserver(() => {
 				this.resize();
@@ -82,14 +138,87 @@ export class Renderer {
 			this.resizeObserver.observe(container);
 			this.resize();
 
-			renderer.setAnimationLoop(() => {
-				controls.update();
+			renderer.setAnimationLoop(time => {
+				const delta = this.previousFrameTime === 0 ? 0 : Math.min((time - this.previousFrameTime) / 1000, 0.05);
+				this.previousFrameTime = time;
+
+				if (this._cameraMode === "orbital") {
+					controls.update();
+				} else {
+					this.updateFirstPerson(delta);
+				}
+
 				renderer.render(scene, camera);
 			});
 		} catch (error) {
 			this.terminate();
 			throw error;
 		}
+	}
+
+	private updateFirstPerson(delta: number) {
+		if (!this.camera || !this.pointerControls?.isLocked)
+			return;
+
+		this.pointerControls.getDirection(this.forward);
+		this.forward.y = 0;
+
+		if (this.forward.lengthSq() < 0.0001)
+			this.forward.set(-Math.sin(this.camera.rotation.y), 0, -Math.cos(this.camera.rotation.y));
+
+		this.forward.normalize();
+		this.right.crossVectors(this.forward, this.up).normalize();
+		this.movement.set(0, 0, 0);
+
+		if (this.movementKeys.has("KeyW"))
+			this.movement.add(this.forward);
+
+		if (this.movementKeys.has("KeyS"))
+			this.movement.sub(this.forward);
+
+		if (this.movementKeys.has("KeyD"))
+			this.movement.add(this.right);
+
+		if (this.movementKeys.has("KeyA"))
+			this.movement.sub(this.right);
+
+		if (this.movementKeys.has("Space"))
+			this.movement.y += 1;
+
+		if (this.movementKeys.has("ShiftLeft") || this.movementKeys.has("ShiftRight"))
+			this.movement.y -= 1;
+
+		if (this.movement.lengthSq() === 0)
+			return;
+
+		this.movement.normalize();
+		this.camera.position.addScaledVector(this.movement, this.movementSpeed * delta);
+		this.onViewTargetChanged?.();
+	}
+
+	public setCameraMode(mode: "orbital" | "first-person") {
+		if (this._cameraMode === mode)
+			return;
+
+		this._cameraMode = mode;
+		this.movementKeys.clear();
+
+		if (!this.camera || !this.controls)
+			return;
+
+		if (mode === "first-person") {
+			this.controls.enabled = false;
+			return;
+		}
+
+		this.pointerControls?.unlock();
+
+		const direction = new Vector3();
+		this.camera.getWorldDirection(direction);
+
+		this.controls.target.copy(this.camera.position).addScaledVector(direction, 10);
+		this.controls.enabled = true;
+		this.controls.update();
 	}
 
 	private resize() {
@@ -111,7 +240,7 @@ export class Renderer {
 		if (!this.controls)
 			throw new Error("Renderer is not initialized!");
 
-		return this.controls.target.clone();
+		return this._cameraMode === "first-person" ? this.camera!.position.clone() : this.controls.target.clone();
 	}
 
 	public terminate() {
@@ -119,6 +248,19 @@ export class Renderer {
 
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
+
+		this.container?.removeEventListener("click", this.onCanvasClick);
+		document.removeEventListener("keydown", this.onKeyDown);
+		document.removeEventListener("keyup", this.onKeyUp);
+		window.removeEventListener("blur", this.onWindowBlur);
+
+		this.pointerControls?.removeEventListener("change", this.onPointerChange);
+		this.pointerControls?.removeEventListener("unlock", this.onPointerUnlock);
+		this.pointerControls?.dispose();
+		this.pointerControls = null;
+
+		this.movementKeys.clear();
+		this.previousFrameTime = 0;
 
 		this.controls?.dispose();
 		this.controls = null;
@@ -169,6 +311,9 @@ export class Renderer {
 	public getViewPosition(): Vector3 {
 		if (!this.camera)
 			throw new Error("Renderer is not initialized!");
+
+		if (this._cameraMode === "first-person")
+			return this.camera.position.clone();
 
 		const direction = new Vector3();
 		this.camera.getWorldDirection(direction);

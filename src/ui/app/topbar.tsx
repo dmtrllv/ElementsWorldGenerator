@@ -31,11 +31,11 @@ export const Topbar = () => {
 			<Menubar />
 			<div className="right">
 				<div className="camera-mode">
-					<div className={`btn ${renderer.cameraMode === "orbital" ? "active" : ""}`} onClick={() => renderer.cameraMode = "orbital"}>
+					<div className={`btn ${renderer.cameraMode === "orbital" ? "active" : ""}`} onClick={() => renderer.setCameraMode("orbital")}>
 						<i className="fa-solid fa-arrows-spin">
 						</i>
 					</div>
-					<div className={`btn ${renderer.cameraMode === "third-person" ? "active" : ""}`} onClick={() => renderer.cameraMode = "third-person"}>
+					<div className={`btn ${renderer.cameraMode === "first-person" ? "active" : ""}`} onClick={() => renderer.setCameraMode("first-person")}>
 						<i className="fa-solid fa-street-view">
 						</i>
 					</div>
