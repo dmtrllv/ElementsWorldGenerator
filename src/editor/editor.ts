@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useRef, type PropsWithChildren } from "react";
 import { observe } from "../state";
-import type { Store, StoreType } from "./store";
+import type { Module, ModuleType } from "./store";
 
 export class Editor {
 	public static readonly useContext = () => {
@@ -10,14 +10,14 @@ export class Editor {
 		return editor;
 	}
 
-	public static readonly useStore = <T extends Store>(type: StoreType<T>): T => {
+	public static readonly useModule = <T extends Module>(type: ModuleType<T>): T => {
 		const editor = Editor.useContext();
 		return observe(editor.get(type));
 	}
 
-	private readonly stores: Map<StoreType<any>, Store> = new Map();
+	private readonly stores: Map<ModuleType<any>, Module> = new Map();
 
-	public get<T extends Store>(type: StoreType<T>): T {
+	public get<T extends Module>(type: ModuleType<T>): T {
 		if (!this.stores.has(type))
 			this.stores.set(type, new type(this));
 		return this.stores.get(type) as T;

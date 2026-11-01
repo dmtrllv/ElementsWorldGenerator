@@ -1,8 +1,8 @@
 import { Notifications } from "./notification";
 import { Sidebar } from "./sidebar";
-import { Viewport } from "./viewport";
 import { Topbar } from "./topbar";
 import { Modals } from "./modals";
+import { Workspaces } from "./workspaces";
 
 import "./styles/app.scss";
 
@@ -10,11 +10,9 @@ export const App = () => {
 	return (
 		<>
 			<Topbar />
-			<div id="workarea">
+			<div id="editor-workarea">
 				<Sidebar />
-				<div id="viewport">
-					<Viewport />
-				</div>
+				<Workspaces />
 				<Modals />
 				<Notifications />
 			</div>

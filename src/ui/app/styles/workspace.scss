@@ -1,0 +1,60 @@
+#workspace {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	z-index: 1;
+	.tabs {
+		height: 24px;
+		flex-basis: 24px;
+		overflow: hidden;
+		align-items: stretch;
+		font-size: 10px;
+		background-color: var(--bg-3);
+		border-bottom: 1px solid var(--border-1);
+		.tab {
+			padding: 5px 12px;
+			border: 1px solid var(--border-1);
+			border-radius: 0;
+			background-color: var(--bg-2);
+			color: var(--fg-1);
+			user-select: none;
+			opacity: 0.45;
+			transition: 150ms;
+			display: inline-block;
+
+			&:first-child {
+				border-top-right-radius: 4px;
+			}
+
+			//&:last-child {
+				//border-bottom-right-radius: 4px;
+			//}
+
+			&:hover {
+				opacity: 0.85;
+			}
+
+			&.active {
+				color: white;
+				opacity: 1;
+			}
+		}
+	}
+	.workarea {
+		flex: 1;
+		position: relative;
+
+		.workspace-view {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			left: 0;
+			top: 0;
+			display: none;
+			&.active {
+				display: block;
+			}
+			//overflow: auto;
+		}
+	}
+}

@@ -1,9 +1,9 @@
 import type React from "react";
 import { state, store } from "../state";
-import { Store } from "./store";
+import { Module } from "./store";
 
 @store
-export class ModalManager extends Store {
+export class ModalManager extends Module {
 	@state
 	public readonly modals: Modal[] = [];
 

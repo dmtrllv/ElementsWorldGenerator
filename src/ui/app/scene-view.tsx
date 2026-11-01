@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
+import type { SceneView } from "../../editor/workspace";
 //import { Editor } from "../../editor";
 
-export const Viewport = () => {
-	//const renderer = Editor.useStore(Renderer);
+export const SceneViewWorkspace = ({ workspace } : { workspace: SceneView }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {

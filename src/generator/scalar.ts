@@ -71,22 +71,6 @@ export class Scalar {
 		}
 	}
 
-	public readonly dispose: () => void;
-
-	public constructor(id: string, world: WorldParams) {
-		this.id = id;
-		this._worldSeed = world.seed;
-		this._noise2D = this.createNoiseFn();
-
-		this.normalize = x => (x * 2) - 1;
-		this.get = this.getProcedural;
-
-		this.dispose = world.onSeedChange(seed => {
-			this._worldSeed = seed;
-			this._noise2D = this.createNoiseFn();
-		});
-	}
-
 	@state
 	public value: number = 1;
 
@@ -116,6 +100,26 @@ export class Scalar {
 
 	@state
 	public octaves: number = 4;
+
+	
+	public readonly dispose: () => void;
+
+	public constructor(id: string, world: WorldParams, texture: string | null = null, value: number = 0) {
+		this.id = id;
+		this._worldSeed = world.seed;
+		this._noise2D = this.createNoiseFn();
+		this._texturePath = texture;
+		this.value = value;
+
+		this.normalize = x => (x * 2) - 1;
+		this.get = this.getProcedural;
+
+		this.dispose = world.onSeedChange(seed => {
+			this._worldSeed = seed;
+			this._noise2D = this.createNoiseFn();
+		});
+	}
+
 
 	private readonly getStatic = (_x: number, _y: number): number => {
 		return this.value;
@@ -176,6 +180,10 @@ export class Scalar {
 	public get: (x: number, y: number) => number = this.getProcedural;
 
 	private normalize: (x: number) => number;
+
+	public clone(world: WorldParams) {
+		return new Scalar(this.id, world, this.textureWrap, this.value);
+	}
 }
 
 export type ScalarType = "static" | "procedural" | "texture";

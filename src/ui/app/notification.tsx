@@ -4,7 +4,7 @@ import { Editor, NotificationManager, type Notification } from "../../editor";
 import "./styles/notifications.scss";
 
 export const Notifications = () => {
-	const { notifications } = Editor.useStore(NotificationManager);
+	const { notifications } = Editor.useModule(NotificationManager);
 	return (
 		<div id="notifications">
 			{notifications.map(notification => (
@@ -15,7 +15,7 @@ export const Notifications = () => {
 };
 
 const NotificationView = ({ message, title, type, id }: NotificationProps) => {
-	const { close } = Editor.useStore(NotificationManager);
+	const { close } = Editor.useModule(NotificationManager);
 
 	useEffect(() => {
 		const timeout = setTimeout(() => {

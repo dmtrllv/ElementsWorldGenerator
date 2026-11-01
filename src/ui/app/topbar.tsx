@@ -5,7 +5,7 @@ import "./styles/topbar.scss";
 
 export const Topbar = () => {
 	//const generator = Editor.useStore(Generator);
-	const notifications = Editor.useStore(NotificationManager);
+	const notifications = Editor.useModule(NotificationManager);
 	//const renderer = Editor.useStore(Renderer);
 
 	const generate = async () => {
@@ -46,7 +46,7 @@ export const Topbar = () => {
 						<option value="biomes">Biomes</option>
 					</select>*/}
 				</div>
-				<button className="btn-generate" onClick={generate}>Generate</button>
+				{/*<button className="btn-generate" onClick={generate}>Generate</button>*/}
 			</div>
 		</div>
 	);

@@ -19,14 +19,16 @@
 		font-size: 18px;
 	}
 
-	&.open > .header > .icon {
-		top: calc(50% + 5px);
-		transform: translateY(-50%) rotate(180deg);
+	&.open {
+		border-bottom: 1px solid rgb(112, 112, 112);
+		& > .header > .icon {
+			top: calc(50% + 5px);
+			transform: translateY(-50%) rotate(180deg);
+		}
 	}
 
 	.body {
 		display: none;
-		border-bottom: 1px solid rgb(112, 112, 112);
 	}
 
 	&.open > .body {

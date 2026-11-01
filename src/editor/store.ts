@@ -1,6 +1,6 @@
 import type { Editor } from "./editor";
 
-export abstract class Store {
+export abstract class Module {
 	protected readonly editor: Editor;
 
 	public constructor(editor: Editor) {
@@ -8,4 +8,4 @@ export abstract class Store {
 	}
 }
 
-export type StoreType<T extends Store> = new (editor: Editor) => T;
+export type ModuleType<T extends Module> = new (editor: Editor) => T;

@@ -52,6 +52,11 @@ export const store = (Class: any): any => {
 					return value;
 				}
 
+				if (OBSERVABLES.has(value)) {
+					proxies[key] = value;
+					return value;
+				}
+
 				if (!dispatchers[key])
 					dispatchers[key] = [];
 
@@ -159,8 +164,10 @@ export const state = <T extends object>(target: T, key: string | symbol | number
 export const observe = <T>(state: T): T => {
 	const dispatchers = getDispatchers(state);
 
-	if (!dispatchers)
+	if (!dispatchers) {
+		console.log(state);
 		throw new Error("value is not an observable state!");
+	}
 
 	const [value, setValue] = useState<{ state: T }>({ state });
 

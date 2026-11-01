@@ -1,10 +1,10 @@
-import { Editor, Menu, MenuSep, type MenuItem } from "../../editor";
+import { Editor, Menu, MenuSep, type MenuChild, type MenuItem } from "../../editor";
 import { observe } from "../../state";
 
 import "./styles/menubar.scss";
 
 export const Menubar = () => {
-	const menubar = Editor.useStore(Menu);
+	const menubar = Editor.useModule(Menu);
 
 	return (
 		<div id="menubar">
@@ -13,17 +13,23 @@ export const Menubar = () => {
 	);
 }
 
+const getChildren = (item: MenuItem): MenuChild[] => {
+	return typeof item.children === "function" ? item.children() : item.children;
+}
+
 const MenuItemView = ({ item }: { item: MenuItem }) => {
 	item = observe(item);
+
+	const children = getChildren(item);
 
 	return (
 		<div className="menu-item">
 			<div className="item" onClick={() => { item.action && item.action(); }}>
 				{item.text}
 			</div>
-			{item.children.length > 0 && (
+			{children.length > 0 && (
 				<div className="children">
-					{item.children.map((child) => {
+					{children.map((child) => {
 						if (child instanceof MenuSep)
 							return <div key={child.id} className="sep" />;
 						return <MenuItemView key={child.id} item={child} />

@@ -1,17 +1,33 @@
+import { World } from "../generator/world";
 import { state, store } from "../state";
+import { randomSeed } from "../utils";
 import type { Editor } from "./editor";
-import { Store } from "./store";
+import { SettingsManager } from "./settings";
+import { Module } from "./store";
 
 @store
-export class SaveManager extends Store {
-	@state
-	private readonly saves: string[] = JSON.parse(localStorage.getItem("editor.saves") || "[]");
+export class ProjectManager extends Module {
+	private static readonly loadProjects = (): ProjectInfo[] => {
+		const projects = JSON.parse(localStorage.getItem("editor.saves") || "[]");
+		return projects.map((p: any) => new ProjectInfo(p.name));
+	}
 
 	@state
-	public currentSave: string | null = null;
+	private readonly _projects: ProjectInfo[] = ProjectManager.loadProjects();
 
-	public getSaves(): readonly string[] {
-		return this.saves;
+	@state
+	private _activeProject: Project;
+
+	public get activeProject() { return this._activeProject; }
+
+	public getProjects(): readonly Readonly<ProjectInfo>[] {
+		return this._projects;
+	}
+
+	public constructor(editor: Editor) {
+		super(editor);
+		const settings = editor.get(SettingsManager).defaultParamsSettings.clone(randomSeed());
+		this._activeProject = new Project({ name: "Default" }, new World(settings));
 	}
 
 	public async saveAs(name: string, force: boolean = false) {
@@ -64,5 +80,24 @@ export class SaveManager extends Store {
 		//this.editor.get(Generator).biomes.load(biomes);
 		//Object.assign(this.editor.get(Generator).worldSettings, world);
 		//this.currentSave = name;
+	}
+}
+
+@store
+export class ProjectInfo {
+	readonly name: string;
+
+	public constructor(name: string) {
+		this.name = name;
+	}
+}
+
+export class Project {
+	public readonly info: ProjectInfo;
+	public readonly world: World;
+
+	public constructor(info: ProjectInfo, world: World) {
+		this.info = info;
+		this.world = world;
 	}
 }

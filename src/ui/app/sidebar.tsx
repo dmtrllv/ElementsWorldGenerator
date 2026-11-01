@@ -1,13 +1,56 @@
 import { useState } from "react";
 import { useSlider } from "../hooks/slider";
+import { Editor, ProjectManager } from "../../editor";
+import { observe } from "../../state";
+import { NumberInput, ScalarInput, Vector3Input } from "../components";
+import { DropdownPanel } from "../components/dropdown";
+import type { LatitudeAxis } from "../../generator/world";
 
 import "./styles/sidebar.scss";
 
 const World = () => {
-	//const generator = Editor.useStore(Generator);
+	const manager = Editor.useModule(ProjectManager);
+	const world = observe(manager.activeProject.world.params);
+	const latitude = observe(world.latitude);
+	const elevation = observe(world.elevation);
+	const ocean = observe(world.ocean);
 	return (
-		null
-		//<SettingsView type={WorldSettings} settings={generator.worldSettings} />
+		<div className="world">
+			<DropdownPanel title="World">
+				<NumberInput name="seed" value={world.seed} onChange={v => world.seed = v} />
+				<Vector3Input name="size" value={world.size} onChange={v => world.size = v} />
+				<NumberInput name="chunkSize" value={world.chunkSize} onChange={v => world.chunkSize = v} />
+			</DropdownPanel>
+			<DropdownPanel title="Latitude" open={false}>
+				<div className="input-field">
+					<div className="label">
+						Axis:
+					</div>
+					<select name="latitude-axis" value={latitude.axis} onChange={e => latitude.axis = e.target.value as LatitudeAxis}>
+						<option value="x">x</option>
+						<option value="y">y</option>
+					</select>
+				</div>
+				<NumberInput name="offset" value={latitude.offset} onChange={v => latitude.offset = v} />
+				<NumberInput name="stepDistance" value={latitude.stepDistance} onChange={v => latitude.stepDistance = v} />
+				<ScalarInput name="distortion" value={latitude.distortion} />
+			</DropdownPanel>
+			<DropdownPanel title="Elevation" open={false}>
+				<ScalarInput name="continental" value={elevation.continental} />
+				<ScalarInput name="mountains" value={elevation.mountains} />
+				<ScalarInput name="hills" value={elevation.hills} />
+				<ScalarInput name="valleys" value={elevation.valleys} />
+				<ScalarInput name="plateaus" value={elevation.plateaus} />
+			</DropdownPanel>
+			<DropdownPanel title="Ocean" open={false}>
+				<NumberInput name="seaLevel" value={ocean.seaLevel} onChange={v => ocean.seaLevel = v} />
+				<NumberInput name="seaLevelVariation" value={ocean.seaLevelVariation} onChange={v => ocean.seaLevelVariation = v} />
+				<NumberInput name="scale" value={ocean.scale} onChange={v => ocean.scale = v} />
+				<NumberInput name="depth" value={ocean.depth} onChange={v => ocean.depth = v} />
+				<NumberInput name="coastFalloff" value={ocean.coastFalloff} onChange={v => ocean.coastFalloff = v} />
+				<NumberInput name="coverage" value={ocean.coverage} onChange={v => ocean.coverage = v} />
+			</DropdownPanel>
+		</div>
 	);
 };
 

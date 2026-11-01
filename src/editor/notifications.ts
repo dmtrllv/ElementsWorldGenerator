@@ -1,9 +1,9 @@
 import { state, store } from "../state";
 import type { Editor } from "./editor";
-import { Store } from "./store";
+import { Module } from "./store";
 
 @store
-export class NotificationManager extends Store {
+export class NotificationManager extends Module {
 	#idCounter = 0;
 
 	@state

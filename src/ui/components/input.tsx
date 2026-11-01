@@ -1,16 +1,15 @@
-import { Fragment, useEffect, type JSX } from "react";
+import { useEffect } from "react";
 import { Vector2, Vector3 } from "three";
-import { observe } from "../../state";
-import { DropdownPanel } from "./dropdown";
 import { useSlider } from "../hooks/slider";
+import type { Scalar, ScalarType } from "../../generator/scalar";
+import { observe } from "../../state";
 
 import "./styles/input.scss";
 
 type InputComponentProps<T> = {
 	readonly name: string;
-	//readonly label?: string;
 	readonly value: T,
-	readonly onChange: (value: T) => void
+	readonly onChange?: (value: T) => void
 };
 
 type InputComponent<T, P extends {} = {}> = React.FC<InputComponentProps<T> & Partial<P>>;
@@ -27,7 +26,7 @@ export const TextInput: InputComponent<string, StringProps> = ({ onChange, value
 	return (
 		<div className="input-field">
 			<div className="label">{nameToLabel(props.name)}:</div>
-			<input value={value} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => onChange(e.target.value)} />
+			<input value={value} {...props} placeholder={props.name} type="text" onChange={e => onChange?.(e.target.value)} />
 		</div>
 	);
 };
@@ -54,7 +53,7 @@ export const ColorInput: InputComponent<[number, number, number]> = ({ onChange,
 	return (
 		<div className="input-field">
 			<div className="label">{nameToLabel(props.name)}:</div>
-			<input value={rgbToHex(value)} {...props} id={props.name} placeholder={props.name} type="color" onChange={e => onChange(hexToRgb(e.target.value))} />
+			<input value={rgbToHex(value)} {...props} placeholder={props.name} type="color" onChange={e => onChange?.(hexToRgb(e.target.value))} />
 		</div>
 	);
 };
@@ -64,14 +63,14 @@ export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, val
 	const update = (value: string) => {
 		const val = +value;
 		if (Number.isFinite(val) && !Number.isNaN(val)) {
-			onChange(val);
+			onChange?.(val);
 		}
 	};
 
 	return (
 		<div className="input-field">
 			<div className="label">{nameToLabel(props.name)}:</div>
-			<input value={value} {...props} id={props.name} placeholder={props.name} type="text" onChange={e => update(e.target.value)} />
+			<input value={value} {...props} placeholder={props.name} type="text" onChange={e => update(e.target.value)} />
 		</div>
 	);
 };
@@ -90,7 +89,7 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, .
 	const update = (value: Vector2) => {
 		sx.set(value.x);
 		sy.set(value.y);
-		onChange(value);
+		onChange?.(value);
 	};
 
 	return (
@@ -120,7 +119,7 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, .
 		sx.set(value.x);
 		sy.set(value.y);
 		sz.set(value.z);
-		onChange(value);
+		onChange?.(value);
 	};
 
 	useEffect(() => {
@@ -155,51 +154,51 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, .
 	);
 };
 
-//export const ScalarInput: InputComponent<Scalar, {}> = ({ name, value }) => {
-//	const scalar = observe(value);
-//	return (
-//		<div className="scalar-input">
-//			<div className="scalar-label">
-//				{nameToLabel(name)}:
-//			</div>
-//			<div className="type-input">
-//				<div className="label">
-//					Type:
-//				</div>
-//				<select name="render-mode" id="pet-select" value={scalar.type} onChange={e => scalar.type = e.target.value as ScalarType}>
-//					<option value="static">Static</option>
-//					<option value="procedural">Procedural</option>
-//					<option value="texture">Texture</option>
-//				</select>
-//			</div>
-//			{scalar.type === "static" && <NumberInput name="value" value={scalar.value} onChange={v => scalar.value = v} />}
-//			{scalar.type === "texture" && (
-//				<>
-//					<TextInput name="texture" value={scalar.texturePath || "???"} onChange={v => { }} />
-//					{!scalar.texturePath && (
-//						<div style={{ display: "flex" }}>
-//							<div className="label" style={{ flex: 1 }}>
+export const ScalarInput: InputComponent<Scalar, {}> = ({ name, value }) => {
+	const scalar = observe(value);
+	return (
+		<div className="scalar-input">
+			<div className="scalar-label">
+				{nameToLabel(name)}:
+			</div>
+			<div className="type-input">
+				<div className="label">
+					Type:
+				</div>
+				<select name="render-mode" value={scalar.type} onChange={e => scalar.type = e.target.value as ScalarType}>
+					<option value="static">Static</option>
+					<option value="procedural">Procedural</option>
+					<option value="texture">Texture</option>
+				</select>
+			</div>
+			{scalar.type === "static" && <NumberInput name="value" value={scalar.value} onChange={v => scalar.value = v} />}
+			{scalar.type === "texture" && (
+				<>
+					<TextInput name="texture" value={scalar.texturePath || "???"} onChange={v => { }} />
+					{!scalar.texturePath && (
+						<div style={{ display: "flex" }}>
+							<div className="label" style={{ flex: 1 }}>
 
-//							</div>
-//							<div className="error" style={{ flex: 1, color: "rgb(233, 77, 77)" }}>
-//								Missing texture!
-//							</div>
-//						</div>
-//					)}
-//					<NumberInput name="scale" value={scalar.scale} onChange={v => scalar.scale = v} />
-//					<NumberInput name="strength" value={scalar.strength} onChange={v => scalar.strength = v} />
-//				</>
-//			)}
-//			{scalar.type === "procedural" && (
-//				<>
-//					<NumberInput name="frequency" value={scalar.frequency} onChange={v => scalar.frequency = v} />
-//					<NumberInput name="scale" value={scalar.scale} onChange={v => scalar.scale = v} />
-//					<NumberInput name="strength" value={scalar.strength} onChange={v => scalar.strength = v} />
-//				</>
-//			)}
-//		</div>
-//	);
-//}
+							</div>
+							<div className="error" style={{ flex: 1, color: "rgb(233, 77, 77)" }}>
+								Missing texture!
+							</div>
+						</div>
+					)}
+					<NumberInput name="scale" value={scalar.scale} onChange={v => scalar.scale = v} />
+					<NumberInput name="strength" value={scalar.strength} onChange={v => scalar.strength = v} />
+				</>
+			)}
+			{scalar.type === "procedural" && (
+				<>
+					<NumberInput name="frequency" value={scalar.frequency} onChange={v => scalar.frequency = v} />
+					<NumberInput name="scale" value={scalar.scale} onChange={v => scalar.scale = v} />
+					<NumberInput name="strength" value={scalar.strength} onChange={v => scalar.strength = v} />
+				</>
+			)}
+		</div>
+	);
+}
 
 //const registry = new Map<string, InputComponent<any, any>>();
 
