@@ -17,7 +17,8 @@ export const MapInspector = ({ workspace }: { workspace: MapInspectorWorkspace }
 	const dependencies = [
 		params.size.x,
 		params.size.z,
-		map.data
+		map.data,
+		map.generationId
 	];
 
 	useEffect(() => {
@@ -52,6 +53,8 @@ export const MapInspector = ({ workspace }: { workspace: MapInspectorWorkspace }
 
 		return () => clearTimeout(timeout);
 	}, dependencies);
+
+
 
 	const [state, setState] = useState({
 		isSliding: false,
@@ -113,12 +116,7 @@ export const MapInspector = ({ workspace }: { workspace: MapInspectorWorkspace }
 	};
 
 	return (
-		<div
-			className="map-inspector"
-			onMouseDown={onMouseDown}
-			style={{ transform: `scale(${state.scale}) translate(${state.offset[0]}px,${state.offset[1]}px)` }}
-			onWheel={onWheel}
-		>
+		<div className="map-inspector" onMouseDown={onMouseDown} style={{ transform: `scale(${state.scale}) translate(${state.offset[0]}px,${state.offset[1]}px)` }} onWheel={onWheel}>
 			<canvas ref={canvas} />
 		</div>
 	);

@@ -7,7 +7,7 @@ import { observe } from "../../../state";
 import "./styles/scalar-view.scss";
 
 export const ScalarView = ({ workspace }: { workspace: ScalarWorkspace }) => {
-	const world = Editor.useModule(ProjectManager).activeProject.worldParams;
+	const world = Editor.useModule(ProjectManager).activeProject.world.params;
 	const params = observe(world);
 	const scalar = observe(workspace.scalar);
 

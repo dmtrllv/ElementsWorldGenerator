@@ -8,9 +8,9 @@ import { VectorFieldInput } from "../components/vector-field-input";
 import type { LatitudeAxis } from "../../generator/params";
 import { MapInspectorWorkspace, WorkspaceManager } from "../../editor/workspace";
 import { LatitudeMap } from "../../generator/maps/latitude-map";
+import type { MapGenerator, MapGeneratorType } from "../../generator/maps/map";
 
 import "./styles/sidebar.scss";
-import type { MapGenerator, MapGeneratorType } from "../../generator/maps/map";
 
 const World = () => {
 	const manager = Editor.useModule(ProjectManager);
@@ -22,6 +22,18 @@ const World = () => {
 	const temperature = observe(world.temperature);
 	const moisture = observe(world.moisture);
 	const geological = observe(world.geological);
+
+	const project = Editor.useModule(ProjectManager).activeProject;
+	const workspaces = Editor.useModule(WorkspaceManager);
+
+	const generateAndOpen = (e: React.MouseEvent, name: string, type: MapGeneratorType<MapGenerator>) => {
+		e.stopPropagation();
+		e.preventDefault();
+		const map = project.world.generator.worldMap.get(type);
+		map.generate(true);
+		workspaces.open(MapInspectorWorkspace, name, map);
+	};
+
 	return (
 		<div className="world">
 			<DropdownPanel title="World">
@@ -29,7 +41,7 @@ const World = () => {
 				<Vector3Input name="size" value={world.size} onChange={v => world.size = v} />
 				<NumberInput name="chunkSize" value={world.chunkSize} onChange={v => world.chunkSize = v} />
 			</DropdownPanel>
-			<DropdownPanel title="Latitude" open={false}>
+			<DropdownPanel title={<h4>Latitude<i onClick={(e) => generateAndOpen(e, "Latitude Map", LatitudeMap)} className="fa-solid fa-play"></i></h4>} open={true}>
 				<div className="input-field">
 					<div className="label">
 						Equator Axis:
@@ -92,28 +104,28 @@ const Biomes = () => {
 	return null;
 };
 
-const Generator = () => {
-	const project = Editor.useModule(ProjectManager).activeProject;
-	const workspaces = Editor.useModule(WorkspaceManager);
-	const world = observe(project.world);
+//const Generator = () => {
+//	const project = Editor.useModule(ProjectManager).activeProject;
+//	const workspaces = Editor.useModule(WorkspaceManager);
+//	const world = observe(project.world);
 
-	const generateAndOpen = (name: string, type: MapGeneratorType<MapGenerator>) => {
-		const map = world.generator.worldMap.get(type);
-		map.generate(true);
-		workspaces.open(MapInspectorWorkspace, name, map);
-	}
+//	const generateAndOpen = (name: string, type: MapGeneratorType<MapGenerator>) => {
+//		const map = world.generator.worldMap.get(type);
+//		map.generate(true);
+//		workspaces.open(MapInspectorWorkspace, name, map);
+//	}
 
-	return (
-		<div className="generator">
-			<button onClick={() => generateAndOpen("Latitude Map", LatitudeMap)}>Generate Latitude Map</button>
-		</div>
-	)
-};
+//	return (
+//		<div className="generator">
+//			<button onClick={() => generateAndOpen("Latitude Map", LatitudeMap)}>Generate Latitude Map</button>
+//		</div>
+//	)
+//};
 
 const tabs = {
 	World,
 	Biomes,
-	Generator,
+	//Generator,
 };
 
 export const Sidebar = () => {

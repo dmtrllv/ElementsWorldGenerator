@@ -123,6 +123,19 @@
 			top: 0;
 			z-index: 2;
 			background-color: var(--bg-1);
+
+			i {
+				font-size: 12px;
+				position: absolute;
+				right: 65px;
+				top: 50%;
+				transform: translateY(-50%);
+				opacity: 0.55;
+				transition: 150ms;
+				&:hover {
+					opacity: 1;
+				}
+			}
 		}
 
 		&.open > .header {

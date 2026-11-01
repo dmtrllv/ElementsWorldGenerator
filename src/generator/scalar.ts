@@ -29,7 +29,7 @@ export class Scalar {
 	}
 
 	@state
-	private _type: ScalarType = "procedural";
+	private _type: ScalarType;
 
 	public get type() {
 		return this._type;
@@ -118,6 +118,8 @@ export class Scalar {
 			this._worldSeed = seed;
 			this._noise2D = this.createNoiseFn();
 		});
+		this._type = type;
+		this.type = type;
 	}
 
 
