@@ -5,5 +5,5 @@ import { Module } from "./store";
 @store
 export class SettingsManager extends Module {
 	@state
-	public readonly defaultParamsSettings: WorldParams = new WorldParams();
+	public readonly defaultParamsSettings: WorldParams = WorldParams.new();
 }

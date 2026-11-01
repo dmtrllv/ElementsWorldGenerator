@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { state, store } from "../state";
+import { state, Store, store } from "../state";
 import { param } from "./parameters";
 import { Scalar } from "./scalar";
 import { randomSeed } from "../utils";
@@ -14,12 +14,40 @@ export class World {
 	}
 }
 
-interface Params<T> {
-	clone(world: WorldParams): T;
+abstract class Params<T extends new (...args: any[]) => Params<any>> extends Store<T> {
+	abstract clone(world: WorldParams): InstanceType<T>;
 }
 
 @store
 export class WorldParams {
+	public static readonly new = (
+		seed?: number,
+		latitude?: (world: WorldParams) => LatitudeParams,
+		elevation?: (world: WorldParams) => ElevationParams,
+		ocean?: (world: WorldParams) => OceanParams,
+		wind?: (world: WorldParams) => WindParams,
+		temperature?: (world: WorldParams) => TemperatureParams,
+		moisture?: (world: WorldParams) => MoistureParams
+	) => {
+		const params = new WorldParams(seed);
+		params.latitude = latitude && latitude(params) || new LatitudeParams(new Scalar("world.latitude", params));
+
+		params.elevation = elevation && elevation(params) || new ElevationParams(
+			new Scalar("world.elevation.continental", params),
+			new Scalar("world.elevation.mountains", params),
+			new Scalar("world.elevation.hills", params),
+			new Scalar("world.elevation.valleys", params),
+			new Scalar("world.elevation.plateaus", params),
+		);
+
+		params.ocean = ocean && ocean(params) || new OceanParams(20, 0, 1, 15, 1, 0.5);
+		params.wind = wind && wind(params) || new WindParams(new Scalar("world.wind.direction", params), 0);
+		params.temperature = temperature && temperature(params) || new TemperatureParams(20, 0, 1, 15);
+		params.moisture = moisture && moisture(params) || new MoistureParams(0, 0, 0);
+		
+		return params;
+	}
+
 	@param()
 	private _seed: number;
 
@@ -39,42 +67,19 @@ export class WorldParams {
 	@param()
 	public chunkSize: number = 16;
 
-	public latitude: LatitudeParams;
-	public elevation: ElevationParams;
-	public ocean: OceanParams;
-	public wind: WindParams;
-	public temperature: TemperatureParams;
-	public moisture: MoistureParams;
+	public latitude!: LatitudeParams;
+	public elevation!: ElevationParams;
+	public ocean!: OceanParams;
+	public wind!: WindParams;
+	public temperature!: TemperatureParams;
+	public moisture!: MoistureParams;
 
-	public constructor(
-		seed: number = randomSeed(), 
-		latitude?: (world: WorldParams) => LatitudeParams, 
-		elevation?: (world: WorldParams) => ElevationParams, 
-		ocean?: (world: WorldParams) => OceanParams,
-		wind?: (world: WorldParams) => WindParams,
-		temperature?: (world: WorldParams) => TemperatureParams,
-		moisture?: (world: WorldParams) => MoistureParams,
-	) {
+	private constructor(seed: number = randomSeed()) {
 		this._seed = seed;
-		
-		this.latitude = latitude && latitude(this) || new LatitudeParams(new Scalar("world.latitude", this));
-
-		this.elevation = elevation && elevation(this) || new ElevationParams(
-			new Scalar("world.elevation.continental", this),
-			new Scalar("world.elevation.mountains", this),
-			new Scalar("world.elevation.hills", this),
-			new Scalar("world.elevation.valleys", this),
-			new Scalar("world.elevation.plateaus", this),
-		);
-
-		this.ocean = ocean && ocean(this) || new OceanParams(20, 0, 1, 15, 1, 0.5);
-		this.wind = wind && wind(this) || new WindParams(new Scalar("world.wind.direction", this), 0);
-		this.temperature = temperature && temperature(this) || new TemperatureParams(20, 0, 1, 15);
-		this.moisture = moisture && moisture(this) || new MoistureParams(0, 0, 0);
 	}
 
 	public clone(seed?: number): WorldParams {
-		return new WorldParams(
+		return WorldParams.new(
 			seed !== undefined ? seed : this.seed,
 			world => this.latitude.clone(world),
 			world => this.elevation.clone(world),
@@ -98,7 +103,7 @@ export class WorldParams {
 export type SeedChangeListener = (newSeed: number) => void;
 
 @store
-export class LatitudeParams implements Params<LatitudeParams> {
+export class LatitudeParams extends Params<typeof LatitudeParams> {
 	@param()
 	public axis: LatitudeAxis = "x";
 
@@ -112,6 +117,7 @@ export class LatitudeParams implements Params<LatitudeParams> {
 	public readonly distortion: Scalar;
 
 	public constructor(distortion: Scalar, axis: LatitudeAxis = "x", stepDistance: number = 0, offset: number = 0) {
+		super();
 		this.distortion = distortion;
 		this.axis = axis;
 		this.stepDistance = stepDistance;
@@ -119,11 +125,11 @@ export class LatitudeParams implements Params<LatitudeParams> {
 	}
 
 	public clone(world: WorldParams): LatitudeParams {
-		return new LatitudeParams(
+		return this.new(
 			this.distortion.clone(world),
 			this.axis,
 			this.stepDistance,
-			this.offset
+			this.offset,
 		);
 	}
 }
@@ -131,7 +137,7 @@ export class LatitudeParams implements Params<LatitudeParams> {
 export type LatitudeAxis = "x" | "y";
 
 @store
-export class ElevationParams implements Params<ElevationParams> {
+export class ElevationParams extends Params<typeof ElevationParams> {
 	@param()
 	public readonly continental: Scalar;
 
@@ -148,6 +154,7 @@ export class ElevationParams implements Params<ElevationParams> {
 	public readonly plateaus: Scalar;
 
 	public constructor(continental: Scalar, mountains: Scalar, hills: Scalar, valleys: Scalar, plateaus: Scalar) {
+		super();
 		this.continental = continental;
 		this.mountains = mountains;
 		this.hills = hills;
@@ -156,7 +163,7 @@ export class ElevationParams implements Params<ElevationParams> {
 	}
 
 	public clone(world: WorldParams): ElevationParams {
-		return new ElevationParams(
+		return this.new(
 			this.continental.clone(world),
 			this.mountains.clone(world),
 			this.hills.clone(world),
@@ -167,7 +174,7 @@ export class ElevationParams implements Params<ElevationParams> {
 }
 
 @store
-export class OceanParams implements Params<OceanParams> {
+export class OceanParams extends Params<typeof OceanParams> {
 	@param()
 	public seaLevel: number;
 
@@ -187,6 +194,7 @@ export class OceanParams implements Params<OceanParams> {
 	public coverage: number;
 
 	public constructor(seaLevel: number, seaLevelVariation: number, scale: number, depth: number, coastFalloff: number, coverage: number) {
+		super();
 		this.seaLevel = seaLevel;
 		this.seaLevelVariation = seaLevelVariation;
 		this.scale = scale;
@@ -196,7 +204,7 @@ export class OceanParams implements Params<OceanParams> {
 	}
 
 	public clone(_: WorldParams): OceanParams {
-		return new OceanParams(
+		return this.new(
 			this.seaLevel,
 			this.seaLevelVariation,
 			this.scale,
@@ -208,7 +216,7 @@ export class OceanParams implements Params<OceanParams> {
 }
 
 @store
-export class WindParams implements Params<WindParams> {
+export class WindParams extends Params<typeof WindParams> {
 	@param()
 	public direction: Scalar;
 
@@ -216,12 +224,13 @@ export class WindParams implements Params<WindParams> {
 	public variation: number;
 
 	public constructor(direction: Scalar, variation: number) {
+		super();
 		this.direction = direction;
 		this.variation = variation;
 	}
 
 	public clone(world: WorldParams): WindParams {
-		return new WindParams(
+		return this.new(
 			this.direction.clone(world),
 			this.variation
 		);
@@ -229,7 +238,7 @@ export class WindParams implements Params<WindParams> {
 }
 
 @store
-export class TemperatureParams implements Params<TemperatureParams> {
+export class TemperatureParams extends Params<typeof TemperatureParams> {
 	@param()
 	public equatorTemperature: number;
 
@@ -243,6 +252,7 @@ export class TemperatureParams implements Params<TemperatureParams> {
 	public elevationCooling: number;
 
 	public constructor(equatorTemperature: number, poleTemperature: number, falloff: number, elevationCooling: number) {
+		super();
 		this.equatorTemperature = equatorTemperature;
 		this.poleTemperature = poleTemperature;
 		this.falloff = falloff;
@@ -250,7 +260,7 @@ export class TemperatureParams implements Params<TemperatureParams> {
 	}
 
 	public clone(_: WorldParams): TemperatureParams {
-		return new TemperatureParams(
+		return this.new(
 			this.equatorTemperature,
 			this.poleTemperature,
 			this.falloff,
@@ -260,7 +270,7 @@ export class TemperatureParams implements Params<TemperatureParams> {
 }
 
 @store
-export class MoistureParams implements Params<MoistureParams> {
+export class MoistureParams extends Params<typeof MoistureParams> {
 	@param()
 	public humidity: number;
 
@@ -271,13 +281,14 @@ export class MoistureParams implements Params<MoistureParams> {
 	public precipitationEfficiency: number;
 
 	public constructor(humidity: number, evaporationStrength: number, precipitationEfficiency: number) {
+		super();
 		this.humidity = humidity;
 		this.evaporationStrength = evaporationStrength;
 		this.precipitationEfficiency = precipitationEfficiency;
 	}
 
 	public clone(_: WorldParams): MoistureParams {
-		return new MoistureParams(
+		return this.new(
 			this.humidity,
 			this.evaporationStrength,
 			this.precipitationEfficiency,

@@ -154,6 +154,12 @@ export const store = (Class: any): any => {
 	};
 };
 
+export abstract class Store<T extends new (...args: any[]) => Store<T>> {
+	public new(...args: ConstructorParameters<T>): InstanceType<T> {
+		return new (this.constructor as T)(...args) as InstanceType<T>;
+	}
+}
+
 export const state = <T extends object>(target: T, key: string | symbol | number) => {
 	const meta = getMeta(target.constructor);
 
@@ -165,7 +171,6 @@ export const observe = <T>(state: T): T => {
 	const dispatchers = getDispatchers(state);
 
 	if (!dispatchers) {
-		console.log(state);
 		throw new Error("value is not an observable state!");
 	}
 
