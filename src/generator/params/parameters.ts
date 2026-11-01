@@ -1,5 +1,5 @@
-import { state, Store } from "../state"
-import type { WorldParams } from "./world";
+import { state, Store } from "../../state"
+import type { WorldParams } from "./world-params";
 
 export const param = <T extends object, K extends keyof T | string | number | symbol>() => (target: T, key: K & (string | symbol)) => {
 	state(target, key);

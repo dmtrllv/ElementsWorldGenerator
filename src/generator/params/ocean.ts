@@ -1,6 +1,6 @@
-import { store } from "../state";
-import { Params, param } from "./parameters";
-import type { WorldParams } from "./world";
+import { store } from "../../state";
+import { param, Params } from "./parameters";
+import type { WorldParams } from "./world-params";
 
 @store
 export class OceanParams extends Params<typeof OceanParams> {

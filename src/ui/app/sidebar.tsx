@@ -5,7 +5,7 @@ import { observe } from "../../state";
 import { NumberInput, ScalarInput, Vector3Input } from "../components";
 import { DropdownPanel } from "../components/dropdown";
 import { VectorFieldInput } from "../components/vector-field-input";
-import type { LatitudeAxis } from "../../generator/latitude";
+import type { LatitudeAxis } from "../../generator/params";
 
 import "./styles/sidebar.scss";
 
@@ -18,6 +18,7 @@ const World = () => {
 	const wind = observe(world.wind);
 	const temperature = observe(world.temperature);
 	const moisture = observe(world.moisture);
+	const geological = observe(world.geological);
 	return (
 		<div className="world">
 			<DropdownPanel title="World">
@@ -68,7 +69,17 @@ const World = () => {
 				<NumberInput name="humidityBase" value={moisture.humidityBase} onChange={v => moisture.humidityBase = v} />
 				<NumberInput name="humidityStregnth" value={moisture.humidityStrength} onChange={v => moisture.humidityStrength = v} />
 				<NumberInput name="evaporationStrength" value={moisture.evaporationStrength} onChange={v => moisture.evaporationStrength = v} />
+				<NumberInput name="infiltration" value={moisture.infiltration} onChange={v => moisture.infiltration = v} />
 				<NumberInput name="precipitationEfficiency" value={moisture.precipitationEfficiency} onChange={v => moisture.precipitationEfficiency = v} />
+				<NumberInput name="groundWater" value={moisture.groundWater} onChange={v => moisture.groundWater = v} />
+				<NumberInput name="runoff" value={moisture.runoff} onChange={v => moisture.runoff = v} />
+				<NumberInput name="waterRetention" value={moisture.waterRetention} onChange={v => moisture.waterRetention = v} />
+			</DropdownPanel>
+			<DropdownPanel title="Geological" open={false}>
+				<NumberInput name="tectonicActivity" value={geological.tectonicActivity} onChange={v => geological.tectonicActivity = v} />
+				<NumberInput name="volcanicActivity" value={geological.volcanicActivity} onChange={v => geological.volcanicActivity = v} />
+				<NumberInput name="erosionStrength" value={geological.erosionStrength} onChange={v => geological.erosionStrength = v} />
+				<NumberInput name="bedrockHardness" value={geological.bedrockHardness} onChange={v => geological.bedrockHardness = v} />
 			</DropdownPanel>
 		</div>
 	);
@@ -79,8 +90,8 @@ const Biomes = () => {
 };
 
 const Generator = () => {
-	//const world = Editor.useModule(ProjectManager).activeProject;
-	//const generator = observe(world);
+	const world = Editor.useModule(ProjectManager).activeProject;
+	const generator = observe(world);
 
 	return (
 		<div className="generator">

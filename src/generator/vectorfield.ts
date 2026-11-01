@@ -1,7 +1,7 @@
 import alea from "alea";
 import { Vector2 } from "three";
 import { state, store } from "../state";
-import type { WorldParams } from "./world";
+import type { WorldParams } from "./params";
 import { fnv1a } from "fast-fnv1a";
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
 import type { TextureWrapType } from "./scalar";

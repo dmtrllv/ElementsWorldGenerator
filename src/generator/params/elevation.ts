@@ -1,7 +1,7 @@
-import { store } from "../state";
-import { Params, param } from "./parameters";
-import type { Scalar } from "./scalar";
-import type { WorldParams } from "./world";
+import type { Scalar } from "..";
+import { store } from "../../state";
+import { param, Params } from "./parameters";
+import type { WorldParams } from "./world-params";
 
 @store
 export class ElevationParams extends Params<typeof ElevationParams> {

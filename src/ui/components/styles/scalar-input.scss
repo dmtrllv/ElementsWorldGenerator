@@ -17,6 +17,7 @@
 		background-color: var(--bg-4);
 		position: relative;
 		z-index: 1;
+		user-select: none;
 
 		&:hover {
 			z-index: 10;

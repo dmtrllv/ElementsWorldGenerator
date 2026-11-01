@@ -17,6 +17,7 @@
 		background-color: var(--bg-4);
 		position: relative;
 		z-index: 1;
+		user-select: none;
 
 		&:hover {
 			z-index: 10;
@@ -34,7 +35,7 @@
 		right: 0;
 		top: calc(50% - 3px);
 		transform: translateY(calc(-50% - 3px));
-		right: 35px;
+		right: 29px;
 		font-size: 18px;
 	}
 

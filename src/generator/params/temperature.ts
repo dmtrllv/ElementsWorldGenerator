@@ -1,6 +1,6 @@
-import type { WorldParams } from ".";
-import { store } from "../state";
+import { store } from "../../state";
 import { param, Params } from "./parameters";
+import type { WorldParams } from "./world-params";
 
 @store
 export class TemperatureParams extends Params<typeof TemperatureParams> {

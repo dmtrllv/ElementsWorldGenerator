@@ -1,4 +1,4 @@
-import { WorldParams } from "../generator/world";
+import { WorldParams } from "../generator/params";
 import { state, store } from "../state";
 import { Module } from "./store";
 

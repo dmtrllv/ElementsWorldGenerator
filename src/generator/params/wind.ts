@@ -1,7 +1,7 @@
-import type { WorldParams } from ".";
-import { store } from "../state";
+import type { WorldParams } from "./world-params";
+import { store } from "../../state";
 import { Params, param } from "./parameters";
-import type { VectorField } from "./vectorfield";
+import type { VectorField } from "../vectorfield";
 
 @store
 export class WindParams extends Params<typeof WindParams> {

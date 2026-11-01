@@ -1,4 +1,5 @@
-import { World, type WorldParams } from "../generator/world";
+import type { WorldParams } from "../generator/params";
+import { World } from "../generator/world";
 import { state, store } from "../state";
 
 @store
