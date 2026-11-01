@@ -1,5 +1,6 @@
 import { state, store } from "../../state";
 import type { WorldParams } from "../params";
+import type { WorldMap } from "./world-map";
 
 @store
 export abstract class MapGenerator {
@@ -16,10 +17,10 @@ export abstract class MapGenerator {
 
 	protected readonly world: WorldParams
 
-	public constructor(world: WorldParams) {
-		this.world = world;
-		this.width = Math.ceil(world.size.x);
-		this.height = Math.ceil(world.size.z);
+	public constructor(worldMap: WorldMap) {
+		this.world = worldMap.params;
+		this.width = Math.ceil(this.world.size.x);
+		this.height = Math.ceil(this.world.size.z);
 
 		this.data = new Float32Array(this.width * this.height);
 	}
@@ -63,4 +64,4 @@ export abstract class MapGenerator {
 	public dispose() { }
 }
 
-export type MapGeneratorType<T extends MapGenerator = MapGenerator> = new (worldParams: WorldParams) => T;
+export type MapGeneratorType<T extends MapGenerator = MapGenerator> = new (worldMap: WorldMap) => T;

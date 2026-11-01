@@ -12,7 +12,7 @@ export class WorldMap {
 
 	public get<T extends MapGenerator>(type: MapGeneratorType<T>): T {
 		if (!this.maps.has(type))
-			this.maps.set(type, new type(this.params));
+			this.maps.set(type, new type(this));
 		return this.maps.get(type) as T;
 	}
 
