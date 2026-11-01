@@ -23,6 +23,10 @@ export class World {
 		this.params = params;
 		this.generator = new Generator(this);
 	}
+
+	public dispose() {
+		
+	}
 }
 
 @store

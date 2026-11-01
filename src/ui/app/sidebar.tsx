@@ -11,7 +11,7 @@ import "./styles/sidebar.scss";
 
 const World = () => {
 	const manager = Editor.useModule(ProjectManager);
-	const world = observe(manager.activeProject.world.params);
+	const world = observe(manager.activeProject.worldParams);
 	const latitude = observe(world.latitude);
 	const elevation = observe(world.elevation);
 	const ocean = observe(world.ocean);

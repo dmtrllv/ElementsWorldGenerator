@@ -1,9 +1,9 @@
 import type { World } from "./world";
 
 export class Generator {
-	public readonly world: World;
+	public readonly worldParams: World;
 
-	public constructor(world: World) {
-		this.world = world;
+	public constructor(worldParams: World) {
+		this.worldParams = worldParams;
 	}
 }

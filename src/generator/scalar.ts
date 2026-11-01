@@ -182,7 +182,7 @@ export class Scalar {
 	private normalize: (x: number) => number;
 
 	public clone(world: WorldParams) {
-		return new Scalar(this.id, world, this.textureWrap, this.value);
+		return new Scalar(this.id, world, this.texturePath, this.value);
 	}
 }
 

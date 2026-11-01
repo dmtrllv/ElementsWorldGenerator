@@ -1,4 +1,3 @@
-import { World } from "../generator/world";
 import { state, store } from "../state";
 import { randomSeed } from "../utils";
 import type { Editor } from "./editor";
@@ -27,8 +26,8 @@ export class ProjectManager extends Module {
 
 	public constructor(editor: Editor) {
 		super(editor);
-		const settings = editor.get(SettingsManager).defaultParamsSettings.clone(randomSeed());
-		this._activeProject = new Project({ name: "Default" }, new World(settings));
+		const params = editor.get(SettingsManager).defaultParamsSettings.clone(randomSeed());
+		this._activeProject = new Project({ name: "Default" }, params);
 	}
 
 	public async saveAs(_name: string, _force: boolean = false) {

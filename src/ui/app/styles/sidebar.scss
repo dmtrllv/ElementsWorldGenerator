@@ -46,7 +46,7 @@
 		flex-direction: column;
 		align-items: stretch;
 		font-size: 10px;
-		    box-shadow: 4px 0 4px 0px #00000021;
+		box-shadow: 4px 0 4px 0px #00000021;
 
 		.tab {
 			writing-mode: vertical-rl;
@@ -116,6 +116,21 @@
 		border-top: none;
 		&:not(.open) {
 			border-bottom: none;
+		}
+
+		& > .header {
+			position: sticky;
+			top: 0;
+			z-index: 2;
+			background-color: var(--bg-1);
+		}
+
+		&.open > .header {
+			box-shadow: 0px 8px 4px 0px rgb(0 0 0 / 10%);
+		}
+
+		& > .body {
+			z-index: 1;
 		}
 	}
 }

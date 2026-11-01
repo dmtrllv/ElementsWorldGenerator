@@ -8,8 +8,8 @@ import type { Vector2 } from "three";
 import "./styles/scalar-view.scss";
 
 export const VectorFieldView = ({ workspace }: { workspace: VectorFieldWorkspace }) => {
-	const world = Editor.useModule(ProjectManager).activeProject.world;
-	const params = observe(world.params);
+	const world = Editor.useModule(ProjectManager).activeProject.worldParams;
+	const params = observe(world);
 	const vectorField = observe(workspace.vectorField);
 
 	const canvas = useRef<HTMLCanvasElement>(null);

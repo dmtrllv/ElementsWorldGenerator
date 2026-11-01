@@ -1,5 +1,5 @@
-import type { World } from "../generator/world";
-import { store } from "../state";
+import { World, type WorldParams } from "../generator/world";
+import { state, store } from "../state";
 
 @store
 export class ProjectInfo {
@@ -10,12 +10,23 @@ export class ProjectInfo {
 	}
 }
 
+@store
 export class Project {
 	public readonly info: ProjectInfo;
-	public readonly world: World;
+	public readonly worldParams: WorldParams;
+	
+	@state
+	private world: World | null = null;
 
-	public constructor(info: ProjectInfo, world: World) {
+	public constructor(info: ProjectInfo, worldParams: WorldParams) {
 		this.info = info;
-		this.world = world;
+		this.worldParams = worldParams;
+	}
+
+	public generate() {
+		if (this.world)
+			this.world.dispose();
+		this.world = new World(this.worldParams.clone());
+
 	}
 }
