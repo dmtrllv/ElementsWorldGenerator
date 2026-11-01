@@ -40,7 +40,7 @@ const World = () => {
 				<Vector3Input name="size" value={world.size} onChange={v => world.size = v} />
 				<NumberInput name="chunkSize" value={world.chunkSize} onChange={v => world.chunkSize = v} />
 			</DropdownPanel>
-			<DropdownPanel title={<h4>Latitude<i onClick={(e) => generateAndOpen(e, "Latitude Map", LatitudeMap)} className="fa-solid fa-play"></i></h4>} open={true}>
+			<DropdownPanel title={<h4>Latitude<i onClick={(e) => generateAndOpen(e, "Latitude Map", LatitudeMap)} className="fa-solid fa-play"></i></h4>} open={false}>
 				<div className="input-field">
 					<div className="label">
 						Equator Axis:
@@ -103,28 +103,9 @@ const Biomes = () => {
 	return null;
 };
 
-//const Generator = () => {
-//	const project = Editor.useModule(ProjectManager).activeProject;
-//	const workspaces = Editor.useModule(WorkspaceManager);
-//	const world = observe(project.world);
-
-//	const generateAndOpen = (name: string, type: MapGeneratorType<MapGenerator>) => {
-//		const map = world.generator.worldMap.get(type);
-//		map.generate(true);
-//		workspaces.open(MapInspectorWorkspace, name, map);
-//	}
-
-//	return (
-//		<div className="generator">
-//			<button onClick={() => generateAndOpen("Latitude Map", LatitudeMap)}>Generate Latitude Map</button>
-//		</div>
-//	)
-//};
-
 const tabs = {
 	World,
 	Biomes,
-	//Generator,
 };
 
 export const Sidebar = () => {

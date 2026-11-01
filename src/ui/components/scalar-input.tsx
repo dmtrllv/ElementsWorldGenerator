@@ -6,6 +6,7 @@ import { observe } from "../../state";
 import { nameToLabel, NumberInput, TextInput, type InputComponent } from "./input";
 
 import "./styles/scalar-input.scss";
+import { CurveEditor } from "./curve-editor";
 
 export const ScalarInput: InputComponent<Scalar, { open?: boolean, workspaceName?: string }> = ({ workspaceName, name, value, open = true }) => {
 	const workspaces = Editor.useModule(WorkspaceManager);
@@ -86,6 +87,13 @@ export const ScalarInput: InputComponent<Scalar, { open?: boolean, workspaceName
 						<NumberInput name="roughness" value={scalar.roughness} onChange={v => scalar.roughness = v} />
 						<NumberInput name="octaves" value={scalar.octaves} onChange={v => scalar.octaves = v} />
 					</>
+				)}
+				<div className="input-field">
+					<div className="label">Use curve:</div>
+					<input checked={scalar.useCurve} type="checkbox" onChange={e => scalar.useCurve = e.target.checked} />
+				</div>
+				{scalar.useCurve && (
+					<CurveEditor curve={scalar.curve} />
 				)}
 			</div>
 		</div>

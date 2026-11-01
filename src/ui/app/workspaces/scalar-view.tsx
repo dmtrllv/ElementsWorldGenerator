@@ -10,6 +10,7 @@ export const ScalarView = ({ workspace }: { workspace: ScalarWorkspace }) => {
 	const world = Editor.useModule(ProjectManager).activeProject.world.params;
 	const params = observe(world);
 	const scalar = observe(workspace.scalar);
+	const curve = observe(scalar.curve);
 
 	const canvas = useRef<HTMLCanvasElement>(null);
 
@@ -25,7 +26,10 @@ export const ScalarView = ({ workspace }: { workspace: ScalarWorkspace }) => {
 		scalar.roughness,
 		scalar.octaves,
 		scalar.normalization,
-		scalar.textureWrap
+		scalar.textureWrap,
+		curve.points,
+		curve.interpolation,
+		scalar.useCurve,
 	];
 
 	useEffect(() => {

@@ -17,7 +17,7 @@ export class LatitudeParams extends Params<typeof LatitudeParams> {
 	@param()
 	public readonly distortion: Scalar;
 
-	public constructor(distortion: Scalar, axis: LatitudeAxis = "x", frequency: number = 0, offset: number = 0) {
+	public constructor(distortion: Scalar, axis: LatitudeAxis, frequency: number, offset: number) {
 		super();
 		this.distortion = distortion;
 		this.axis = axis;

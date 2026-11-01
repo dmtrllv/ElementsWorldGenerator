@@ -11,6 +11,7 @@ import { OceanParams } from "./ocean";
 import { param } from "./parameters";
 import { TemperatureParams } from "./temperature";
 import { WindParams } from "./wind";
+import { Curve } from "../curve";
 
 @store
 export class WorldParams {
@@ -25,13 +26,15 @@ export class WorldParams {
 		geological?: (world: WorldParams) => GeologicalParams,
 	) => {
 		const params = new WorldParams(seed);
-		params.latitude = latitude && latitude(params) || new LatitudeParams(new Scalar("world.latitude.distortion", params, null, 0, "static"));
+		params.latitude = latitude && latitude(params) || new LatitudeParams(
+			new Scalar("world.latitude.distortion", params, null, 0, "static", new Curve("world.latitude.distortion")), "x", 2, 0
+		);
 		params.elevation = elevation && elevation(params) || new ElevationParams(
-			new Scalar("world.elevation.continental", params),
-			new Scalar("world.elevation.mountains", params),
-			new Scalar("world.elevation.hills", params),
-			new Scalar("world.elevation.valleys", params),
-			new Scalar("world.elevation.plateaus", params),
+			new Scalar("world.elevation.continental", params, null, 0, "procedural", new Curve("world.elevation.continental")),
+			new Scalar("world.elevation.mountains", params, null, 0, "procedural", new Curve("world.elevation.mountains")),
+			new Scalar("world.elevation.hills", params, null, 0, "procedural", new Curve("world.elevation.hills")),
+			new Scalar("world.elevation.valleys", params, null, 0, "procedural", new Curve("world.elevation.valleys")),
+			new Scalar("world.elevation.plateaus", params, null, 0, "procedural", new Curve("world.elevation.plateaus")),
 		);
 
 		params.ocean = ocean && ocean(params) || new OceanParams(20, 0, 1, 15, 1, 0.5);
@@ -45,7 +48,7 @@ export class WorldParams {
 
 	@param()
 	private _seed: number;
-	
+
 
 	public get seed() {
 		return this._seed;

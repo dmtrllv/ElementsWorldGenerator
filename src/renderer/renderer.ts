@@ -17,7 +17,6 @@ export class Renderer extends Module {
 	private resizeObserver: ResizeObserver | null = null;
 	private previousFrameTime: number = 0;
 
-
 	public constructor(editor: Editor) {
 		super(editor);
 		this.camera.position.set(50, 35, 50);

@@ -3,6 +3,7 @@ import { state, store } from "../state";
 import type { WorldParams } from "./params";
 import { fnv1a } from "fast-fnv1a";
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
+import { Curve } from "./curve";
 
 @store
 export class Scalar {
@@ -101,15 +102,21 @@ export class Scalar {
 	@state
 	public octaves: number = 4;
 
+	@state
+	public readonly curve: Curve;
+
+	@state
+	public useCurve: boolean = false;
 
 	public readonly dispose: () => void;
 
-	public constructor(id: string, world: WorldParams, texture: string | null = null, value: number = 0, type: ScalarType = "procedural") {
+	public constructor(id: string, world: WorldParams, texture: string | null, value: number, type: ScalarType, curve: Curve) {
 		this.id = id;
 		this._worldSeed = world.seed;
 		this._noise2D = this.createNoiseFn();
 		this._texturePath = texture;
 		this.value = value;
+		this.curve = curve;
 
 		this.normalize = x => (x * 2) - 1;
 		this.get = this.getProcedural;
@@ -122,9 +129,8 @@ export class Scalar {
 		this.type = type;
 	}
 
-
 	private readonly getStatic = (_x: number, _y: number): number => {
-		return this.value;
+		return this.applyCurve(this.value);
 	};
 
 	private readonly getTexture = (x: number, y: number): number => {
@@ -156,7 +162,7 @@ export class Scalar {
 		const index = (y * width + x) * 4;
 		const value = data[index]!;
 
-		return this.normalize(value / 255);
+		return this.applyCurve(this.normalize(value / 255));
 	}
 
 	private readonly getProcedural = (x: number, y: number): number => {
@@ -176,15 +182,30 @@ export class Scalar {
 			frequency *= 2;
 		}
 
-		return this.normalize(((total / maxAmplitude) * this.strength + 1) / 2);
+		return this.applyCurve(this.normalize(((total / maxAmplitude) * this.strength + 1) / 2));
 	};
+
+	private applyCurve(value: number): number {
+		if (!this.useCurve)
+			return value;
+
+		const input = this.normalization === "-1/1"
+			? (value + 1) / 2
+			: value;
+
+		const output = this.curve.evaluate(input);
+
+		return this.normalization === "-1/1"
+			? (output * 2) - 1
+			: output;
+	}
 
 	public get: (x: number, y: number) => number = this.getProcedural;
 
 	private normalize: (x: number) => number;
 
 	public clone(world: WorldParams) {
-		return new Scalar(this.id, world, this.texturePath, this.value, this.type);
+		return new Scalar(this.id, world, this.texturePath, this.value, this.type, this.curve.clone());
 	}
 }
 
