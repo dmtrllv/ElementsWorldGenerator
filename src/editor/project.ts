@@ -14,20 +14,16 @@ export class ProjectInfo {
 @store
 export class Project {
 	public readonly info: ProjectInfo;
-	public readonly worldParams: WorldParams;
 	
 	@state
-	private world: World | null = null;
+	private _world: World;
+
+	public get world(): World {
+		return this._world;
+	}
 
 	public constructor(info: ProjectInfo, worldParams: WorldParams) {
 		this.info = info;
-		this.worldParams = worldParams;
-	}
-
-	public generate() {
-		if (this.world)
-			this.world.dispose();
-		this.world = new World(this.worldParams.clone());
-
+		this._world = new World(worldParams);
 	}
 }

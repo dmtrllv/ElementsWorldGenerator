@@ -1,9 +1,12 @@
-import type { World } from "./world";
+import { WorldMap } from "./maps/world-map";
+import type { WorldParams } from "./params";
 
 export class Generator {
-	public readonly worldParams: World;
+	public readonly worldParams: WorldParams;
+	public readonly worldMap: WorldMap;
 
-	public constructor(worldParams: World) {
+	public constructor(worldParams: WorldParams) {
 		this.worldParams = worldParams;
+		this.worldMap = new WorldMap(worldParams);
 	}
 }

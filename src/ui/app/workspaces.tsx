@@ -1,8 +1,9 @@
 import { Editor } from "../../editor";
-import { ScalarWorkspace, SceneWorkspace, VectorFieldWorkspace, Workspace, WorkspaceManager, type WorkspaceType } from "../../editor/workspace";
+import { MapInspectorWorkspace, ScalarWorkspace, SceneWorkspace, VectorFieldWorkspace, Workspace, WorkspaceManager, type WorkspaceType } from "../../editor/workspace";
 import { ScalarView, SceneViewWorkspace, VectorFieldView } from "./workspaces/index";
 
 import "./styles/workspace.scss";
+import { MapInspector } from "./workspaces/map-inspector";
 
 export const Workspaces = () => {
 	const workspace = Editor.useModule(WorkspaceManager);
@@ -46,3 +47,4 @@ const register = <T extends Workspace>(type: WorkspaceType<T>, component: React.
 register(SceneWorkspace, SceneViewWorkspace);
 register(ScalarWorkspace, ScalarView);
 register(VectorFieldWorkspace, VectorFieldView);
+register(MapInspectorWorkspace, MapInspector);

@@ -104,7 +104,7 @@ export class Scalar {
 
 	public readonly dispose: () => void;
 
-	public constructor(id: string, world: WorldParams, texture: string | null = null, value: number = 0) {
+	public constructor(id: string, world: WorldParams, texture: string | null = null, value: number = 0, type: ScalarType = "procedural") {
 		this.id = id;
 		this._worldSeed = world.seed;
 		this._noise2D = this.createNoiseFn();
@@ -182,7 +182,7 @@ export class Scalar {
 	private normalize: (x: number) => number;
 
 	public clone(world: WorldParams) {
-		return new Scalar(this.id, world, this.texturePath, this.value);
+		return new Scalar(this.id, world, this.texturePath, this.value, this.type);
 	}
 }
 

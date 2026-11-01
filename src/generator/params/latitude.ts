@@ -9,7 +9,7 @@ export class LatitudeParams extends Params<typeof LatitudeParams> {
 	public axis: LatitudeAxis = "x";
 
 	@param()
-	public stepDistance: number = 0;
+	public frequency: number = 0;
 
 	@param()
 	public offset: number = 0;
@@ -17,11 +17,11 @@ export class LatitudeParams extends Params<typeof LatitudeParams> {
 	@param()
 	public readonly distortion: Scalar;
 
-	public constructor(distortion: Scalar, axis: LatitudeAxis = "x", stepDistance: number = 0, offset: number = 0) {
+	public constructor(distortion: Scalar, axis: LatitudeAxis = "x", frequency: number = 0, offset: number = 0) {
 		super();
 		this.distortion = distortion;
 		this.axis = axis;
-		this.stepDistance = stepDistance;
+		this.frequency = frequency;
 		this.offset = offset;
 	}
 
@@ -29,7 +29,7 @@ export class LatitudeParams extends Params<typeof LatitudeParams> {
 		return this.new(
 			this.distortion.clone(world),
 			this.axis,
-			this.stepDistance,
+			this.frequency,
 			this.offset,
 		);
 	}

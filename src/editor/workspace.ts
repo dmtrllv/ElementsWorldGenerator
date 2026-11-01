@@ -1,3 +1,4 @@
+import type { MapGenerator } from "../generator/maps/map";
 import type { Scalar } from "../generator/scalar";
 import type { VectorField } from "../generator/vectorfield";
 import { state, store } from "../state";
@@ -92,5 +93,14 @@ export class VectorFieldWorkspace extends Workspace {
 	public constructor(workspace: WorkspaceManager, id: number, name: string, vectorField: VectorField) {
 		super(workspace, id, name);
 		this.vectorField = vectorField;
+	}
+}
+
+export class MapInspectorWorkspace extends Workspace {
+	public readonly map: MapGenerator;
+
+	public constructor(workspace: WorkspaceManager, id: number, name: string, map: MapGenerator) {
+		super(workspace, id, name);
+		this.map = map;
 	}
 }

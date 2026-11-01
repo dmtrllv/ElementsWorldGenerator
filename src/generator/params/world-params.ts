@@ -25,8 +25,7 @@ export class WorldParams {
 		geological?: (world: WorldParams) => GeologicalParams,
 	) => {
 		const params = new WorldParams(seed);
-		params.latitude = latitude && latitude(params) || new LatitudeParams(new Scalar("world.latitude", params));
-
+		params.latitude = latitude && latitude(params) || new LatitudeParams(new Scalar("world.latitude.distortion", params, null, 0, "static"));
 		params.elevation = elevation && elevation(params) || new ElevationParams(
 			new Scalar("world.elevation.continental", params),
 			new Scalar("world.elevation.mountains", params),

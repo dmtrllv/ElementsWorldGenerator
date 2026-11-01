@@ -6,12 +6,15 @@ import { NumberInput, ScalarInput, Vector3Input } from "../components";
 import { DropdownPanel } from "../components/dropdown";
 import { VectorFieldInput } from "../components/vector-field-input";
 import type { LatitudeAxis } from "../../generator/params";
+import { MapInspectorWorkspace, WorkspaceManager } from "../../editor/workspace";
+import { LatitudeMap } from "../../generator/maps/latitude-map";
 
 import "./styles/sidebar.scss";
+import type { MapGenerator, MapGeneratorType } from "../../generator/maps/map";
 
 const World = () => {
 	const manager = Editor.useModule(ProjectManager);
-	const world = observe(manager.activeProject.worldParams);
+	const world = observe(manager.activeProject.world.params);
 	const latitude = observe(world.latitude);
 	const elevation = observe(world.elevation);
 	const ocean = observe(world.ocean);
@@ -29,15 +32,15 @@ const World = () => {
 			<DropdownPanel title="Latitude" open={false}>
 				<div className="input-field">
 					<div className="label">
-						Axis:
+						Equator Axis:
 					</div>
-					<select name="latitude-axis" value={latitude.axis} onChange={e => latitude.axis = e.target.value as LatitudeAxis}>
+					<select name="equator-axis" value={latitude.axis} onChange={e => latitude.axis = e.target.value as LatitudeAxis}>
 						<option value="x">x</option>
 						<option value="y">y</option>
 					</select>
 				</div>
 				<NumberInput name="offset" value={latitude.offset} onChange={v => latitude.offset = v} />
-				<NumberInput name="stepDistance" value={latitude.stepDistance} onChange={v => latitude.stepDistance = v} />
+				<NumberInput name="frequency" value={latitude.frequency} onChange={v => latitude.frequency = v} />
 				<ScalarInput name="distortion" workspaceName="Latitude Distortion" value={latitude.distortion} />
 			</DropdownPanel>
 			<DropdownPanel title="Elevation" open={false}>
@@ -90,12 +93,19 @@ const Biomes = () => {
 };
 
 const Generator = () => {
-	const world = Editor.useModule(ProjectManager).activeProject;
-	const generator = observe(world);
+	const project = Editor.useModule(ProjectManager).activeProject;
+	const workspaces = Editor.useModule(WorkspaceManager);
+	const world = observe(project.world);
+
+	const generateAndOpen = (name: string, type: MapGeneratorType<MapGenerator>) => {
+		const map = world.generator.worldMap.get(type);
+		map.generate(true);
+		workspaces.open(MapInspectorWorkspace, name, map);
+	}
 
 	return (
 		<div className="generator">
-
+			<button onClick={() => generateAndOpen("Latitude Map", LatitudeMap)}>Generate Latitude Map</button>
 		</div>
 	)
 };

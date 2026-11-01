@@ -11,7 +11,7 @@ export class World {
 
 	public constructor(params: WorldParams) {
 		this.params = params;
-		this.generator = new Generator(this);
+		this.generator = new Generator(params);
 	}
 
 	public dispose() {
