@@ -30,20 +30,50 @@ export class WorldParams {
 			new Scalar("world.latitude.distortion", params, null, 0, "static", new Curve("world.latitude.distortion")), "x", 2, 0
 		);
 		params.elevation = elevation && elevation(params) || new ElevationParams(
-			new Scalar("world.elevation.continental", params, null, 0, "procedural", new Curve("world.elevation.continental")),
+			new Scalar("world.elevation.continental", params, null, 0, "procedural", new Curve("world.elevation.continental"), {
+				scale: 2000,
+				frequency: 1,
+				octaves: 3,
+				roughness: 0.45,
+				strength: 1
+			}),
 			new Curve("world.elevation.base"),
-			new Scalar("world.elevation.mountains", params, null, 0, "procedural", new Curve("world.elevation.mountains")),
+			new Scalar("world.elevation.mountains", params, null, 0, "procedural", new Curve("world.elevation.mountains"), {
+				scale: 250,
+				frequency: 1,
+				octaves: 5,
+				roughness: 0.5,
+				strength: 1
+			}),
 			new Curve("world.elevation.mountain-profile"),
-			0.5,
-			new Scalar("world.elevation.hills", params, null, 0, "procedural", new Curve("world.elevation.hills")),
+			0.20,
+			new Scalar("world.elevation.hills", params, null, 0, "procedural", new Curve("world.elevation.hills"), {
+				scale: 90,
+				frequency: 1,
+				octaves: 4,
+				roughness: 0.5,
+				strength: 1
+			}),
 			new Curve("world.elevation.hill-profile"),
-			0.15,
-			new Scalar("world.elevation.valleys", params, null, 0, "procedural", new Curve("world.elevation.valleys")),
+			0.045,
+			new Scalar("world.elevation.valleys", params, null, 0, "procedural", new Curve("world.elevation.valleys"), {
+				scale: 300,
+				frequency: 1,
+				octaves: 4,
+				roughness: 0.5,
+				strength: 1
+			}),
 			new Curve("world.elevation.valley-profile"),
-			0.15,
-			new Scalar("world.elevation.plateaus", params, null, 0, "procedural", new Curve("world.elevation.plateaus")),
+			0.12,
+			new Scalar("world.elevation.plateaus", params, null, 0, "procedural", new Curve("world.elevation.plateaus"), {
+				scale: 400,
+				frequency: 1,
+				octaves: 3,
+				roughness: 0.45,
+				strength: 1
+			}),
 			new Curve("world.elevation.plateau-profile"),
-			0.15,
+			0.08,
 		);
 
 		params.ocean = ocean && ocean(params) || new OceanParams(20, 0, 1, 15, 1, 0.5);

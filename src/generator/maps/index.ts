@@ -7,3 +7,4 @@ export * from "./mountain-mask-map";
 export * from "./hill-mask-map";
 export * from "./valley-mask-map";
 export * from "./plateau-mask-map";
+export * from "./elevation-map";

@@ -4,6 +4,8 @@ import type { WorldMap } from "./world-map";
 
 @store
 export abstract class MapGenerator {
+	protected readonly worldMap: WorldMap;
+	
 	public width: number;
 	public height: number;
 	public data: Float32Array;
@@ -18,6 +20,7 @@ export abstract class MapGenerator {
 	protected readonly world: WorldParams
 
 	public constructor(worldMap: WorldMap) {
+		this.worldMap = worldMap;
 		this.world = worldMap.params;
 		this.width = Math.ceil(this.world.size.x);
 		this.height = Math.ceil(this.world.size.z);

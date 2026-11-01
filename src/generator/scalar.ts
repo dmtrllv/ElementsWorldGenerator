@@ -110,7 +110,7 @@ export class Scalar {
 
 	public readonly dispose: () => void;
 
-	public constructor(id: string, world: WorldParams, texture: string | null, value: number, type: ScalarType, curve: Curve) {
+	public constructor(id: string, world: WorldParams, texture: string | null, value: number, type: ScalarType, curve: Curve, props: ScalarProps = {}) {
 		this.id = id;
 		this._worldSeed = world.seed;
 		this._noise2D = this.createNoiseFn();
@@ -127,6 +127,8 @@ export class Scalar {
 		});
 		this._type = type;
 		this.type = type;
+
+		Object.assign(this, props);
 	}
 
 	private readonly getStatic = (_x: number, _y: number): number => {
@@ -205,10 +207,26 @@ export class Scalar {
 	private normalize: (x: number) => number;
 
 	public clone(world: WorldParams) {
-		return new Scalar(this.id, world, this.texturePath, this.value, this.type, this.curve.clone());
+		return new Scalar(this.id, world, this.texturePath, this.value, this.type, this.curve.clone(), {
+			scale: this.scale,
+			strength: this.strength,
+			frequency: this.frequency,
+			roughness: this.roughness,
+			octaves: this.octaves,
+			useCurve: this.useCurve,
+		});
 	}
 }
 
 export type ScalarType = "static" | "procedural" | "texture";
 export type NormalizationType = "-1/1" | "0/1";
 export type TextureWrapType = "wrap" | "clamp" | "none";
+
+export type ScalarProps = {
+	scale?: number;
+	strength?: number;
+	frequency?: number;
+	roughness?: number;
+	octaves?: number;
+	useCurve?: boolean;
+}

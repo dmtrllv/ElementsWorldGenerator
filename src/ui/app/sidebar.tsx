@@ -12,6 +12,7 @@ import type { MapGenerator, MapGeneratorType } from "../../generator/maps/map";
 import { CurveEditor } from "../components/curve-editor";
 
 import "./styles/sidebar.scss";
+import { ElevationMap } from "../../generator";
 
 const World = () => {
 	const manager = Editor.useModule(ProjectManager);
@@ -34,6 +35,15 @@ const World = () => {
 		workspaces.open(MapInspectorWorkspace, name, map);
 	};
 
+	const mapTitle = (title: string, type: MapGeneratorType<MapGenerator>) => {
+		return (
+			<h4>
+				{title}
+				<i onClick={(e) => generateAndOpen(e, title + " Map", type)} className="fa-solid fa-play" />
+			</h4>
+		);
+	};
+
 	return (
 		<div className="world">
 			<DropdownPanel title="World">
@@ -41,7 +51,7 @@ const World = () => {
 				<Vector3Input name="size" value={world.size} onChange={v => world.size = v} />
 				<NumberInput name="chunkSize" value={world.chunkSize} onChange={v => world.chunkSize = v} />
 			</DropdownPanel>
-			<DropdownPanel title={<h4>Latitude<i onClick={(e) => generateAndOpen(e, "Latitude Map", LatitudeMap)} className="fa-solid fa-play"></i></h4>} open={false}>
+			<DropdownPanel title={mapTitle("Latitude", LatitudeMap)} open={false}>
 				<div className="input-field">
 					<div className="label">
 						Equator Axis:
@@ -55,7 +65,7 @@ const World = () => {
 				<NumberInput name="frequency" value={latitude.frequency} onChange={v => latitude.frequency = v} />
 				<ScalarInput name="distortion" workspaceName="Latitude Distortion" value={latitude.distortion} />
 			</DropdownPanel>
-			<DropdownPanel title="Elevation" open={false}>
+			<DropdownPanel title={mapTitle("Elevation", ElevationMap)} open={false}>
 				<CurveEditor name="Base Profile" curve={elevation.base} />
 				<ScalarInput name="Continentalness" workspaceName="Continentalness" value={elevation.continental} />
 				<DropdownPanel title="Mountains" open={false}>
