@@ -4,7 +4,8 @@ import { Editor, ProjectManager } from "../../editor";
 import { observe } from "../../state";
 import { NumberInput, ScalarInput, Vector3Input } from "../components";
 import { DropdownPanel } from "../components/dropdown";
-import type { LatitudeAxis } from "../../generator/world";
+import { VectorFieldInput } from "../components/vector-field-input";
+import type { LatitudeAxis } from "../../generator/latitude";
 
 import "./styles/sidebar.scss";
 
@@ -36,14 +37,14 @@ const World = () => {
 				</div>
 				<NumberInput name="offset" value={latitude.offset} onChange={v => latitude.offset = v} />
 				<NumberInput name="stepDistance" value={latitude.stepDistance} onChange={v => latitude.stepDistance = v} />
-				<ScalarInput name="distortion" value={latitude.distortion} />
+				<ScalarInput name="distortion" workspaceName="Latitude Distortion" value={latitude.distortion} />
 			</DropdownPanel>
 			<DropdownPanel title="Elevation" open={false}>
-				<ScalarInput name="continental" value={elevation.continental} />
-				<ScalarInput name="mountains" value={elevation.mountains} />
-				<ScalarInput name="hills" value={elevation.hills} />
-				<ScalarInput name="valleys" value={elevation.valleys} />
-				<ScalarInput name="plateaus" value={elevation.plateaus} />
+				<ScalarInput name="continental" workspaceName="Continental elevation " value={elevation.continental} />
+				<ScalarInput name="mountains" workspaceName="Mountains elevation " value={elevation.mountains} />
+				<ScalarInput name="hills" workspaceName="Hills elevation " value={elevation.hills} />
+				<ScalarInput name="valleys" workspaceName="Valleys elevation " value={elevation.valleys} />
+				<ScalarInput name="plateaus" workspaceName="Plateaus elevation " value={elevation.plateaus} />
 			</DropdownPanel>
 			<DropdownPanel title="Ocean" open={false}>
 				<NumberInput name="seaLevel" value={ocean.seaLevel} onChange={v => ocean.seaLevel = v} />
@@ -54,7 +55,7 @@ const World = () => {
 				<NumberInput name="coverage" value={ocean.coverage} onChange={v => ocean.coverage = v} />
 			</DropdownPanel>
 			<DropdownPanel title="Wind" open={false}>
-				<ScalarInput name="direction" value={wind.direction}/>
+				<VectorFieldInput name="direction" workspaceName="Wind direction" value={wind.direction} />
 				<NumberInput name="windVariation" value={wind.variation} onChange={v => ocean.seaLevelVariation = v} />
 			</DropdownPanel>
 			<DropdownPanel title="Temperature" open={false}>
@@ -64,7 +65,8 @@ const World = () => {
 				<NumberInput name="elevationCooling" value={temperature.elevationCooling} onChange={v => temperature.elevationCooling = v} />
 			</DropdownPanel>
 			<DropdownPanel title="Moisture" open={false}>
-				<NumberInput name="humidity" value={moisture.humidity} onChange={v => moisture.humidity = v} />
+				<NumberInput name="humidityBase" value={moisture.humidityBase} onChange={v => moisture.humidityBase = v} />
+				<NumberInput name="humidityStregnth" value={moisture.humidityStrength} onChange={v => moisture.humidityStrength = v} />
 				<NumberInput name="evaporationStrength" value={moisture.evaporationStrength} onChange={v => moisture.evaporationStrength = v} />
 				<NumberInput name="precipitationEfficiency" value={moisture.precipitationEfficiency} onChange={v => moisture.precipitationEfficiency = v} />
 			</DropdownPanel>
@@ -82,7 +84,7 @@ const Generator = () => {
 
 	return (
 		<div className="generator">
-			
+
 		</div>
 	)
 };

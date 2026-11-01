@@ -8,7 +8,10 @@ export const useSlider = (init: number, min: number, max: number, dir: "x" | "y"
 	const startSize = useRef(size);
 
 	useEffect(() => {
-		const onMouseUp = () => setIsSliding(false);
+		const onMouseUp = () => {
+			setIsSliding(false);
+			document.body.style = "";
+		};
 		const onMouseMove = (e: MouseEvent) => {
 			if (!isSliding)
 				return;
@@ -33,9 +36,11 @@ export const useSlider = (init: number, min: number, max: number, dir: "x" | "y"
 			downPos.current = dir === "x" ? e.clientX : e.clientY;
 			startSize.current = size;
 			setIsSliding(true);
+			console.log("user-select: none; cursor:" + (dir === "x" ? "ew-resize" : "ns-resize"));
+			document.body.style = "user-select: none; cursor:" + (dir === "x" ? "ew-resize" : "ns-resize");
 		},
 		set: (s: number) => {
-			if(size !== s)
+			if (size !== s)
 				setSize(s);
 		}
 	};

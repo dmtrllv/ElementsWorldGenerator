@@ -8,7 +8,6 @@
 	border-right: 1px solid var(--border-1);
 	box-shadow: 0px 0px 8px 0px #000000a3;
 
-
 	.slider {
 		position: absolute;
 		height: 100%;
@@ -40,13 +39,14 @@
 
 	.tabs {
 		position: absolute;
-		top: 46px;
+		top: 60px;
 		right: -25px;
 		z-index: 1;
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
 		font-size: 10px;
+		    box-shadow: 4px 0 4px 0px #00000021;
 
 		.tab {
 			writing-mode: vertical-rl;
@@ -84,6 +84,7 @@
 		height: 100%;
 		overflow-y: auto;
 		position: absolute;
+		z-index: 10;
 		.tab-body {
 			display: none;
 

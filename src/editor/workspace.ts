@@ -1,4 +1,5 @@
 import type { Scalar } from "../generator/scalar";
+import type { VectorField } from "../generator/vectorfield";
 import { state, store } from "../state";
 import { Module } from "./store";
 
@@ -82,5 +83,14 @@ export class ScalarWorkspace extends Workspace {
 	public constructor(workspace: WorkspaceManager, id: number, name: string, scalar: Scalar) {
 		super(workspace, id, name);
 		this.scalar = scalar;
+	}
+}
+
+export class VectorFieldWorkspace extends Workspace {
+	public readonly vectorField: VectorField;
+
+	public constructor(workspace: WorkspaceManager, id: number, name: string, vectorField: VectorField) {
+		super(workspace, id, name);
+		this.vectorField = vectorField;
 	}
 }

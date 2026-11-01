@@ -1,6 +1,6 @@
 import { Editor } from "../../editor";
-import { ScalarWorkspace, SceneWorkspace, Workspace, WorkspaceManager, type WorkspaceType } from "../../editor/workspace";
-import { ScalarView, SceneViewWorkspace } from "./workspaces/index";
+import { ScalarWorkspace, SceneWorkspace, VectorFieldWorkspace, Workspace, WorkspaceManager, type WorkspaceType } from "../../editor/workspace";
+import { ScalarView, SceneViewWorkspace, VectorFieldView } from "./workspaces/index";
 
 import "./styles/workspace.scss";
 
@@ -45,3 +45,4 @@ const register = <T extends Workspace>(type: WorkspaceType<T>, component: React.
 
 register(SceneWorkspace, SceneViewWorkspace);
 register(ScalarWorkspace, ScalarView);
+register(VectorFieldWorkspace, VectorFieldView);

@@ -1,20 +1,27 @@
 import { useEffect, useRef } from "react";
 import type { SceneWorkspace } from "../../../editor/workspace";
 import { Editor } from "../../../editor";
-import { Renderer } from "../../../renderer";
 
-export const SceneViewWorkspace = (_ : { workspace: SceneWorkspace }) => {
-	const renderer = Editor.useModule(Renderer);                        
+export const SceneViewWorkspace = (_: { workspace: SceneWorkspace }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const editor = Editor.useContext();
 
 	useEffect(() => {
-		const element = containerRef.current;
-		if (!element)
-			return;
+		let closed = false;
+		let renderer: any;
+		import("../../../renderer").then(({ Renderer }) => {
+			const element = containerRef.current;
+			if (!element || closed)
+				return;
 
-		renderer.initialize(element);
+			renderer = editor.get(Renderer)
+			renderer.initialize(element);
 
-		return () => renderer.dispose();
+		});
+		return () => {
+			closed = true;
+			renderer?.dispose()
+		};
 	}, []);
 
 	return (

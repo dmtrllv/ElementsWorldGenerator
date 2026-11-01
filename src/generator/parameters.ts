@@ -1,6 +1,7 @@
-import { state } from "../state"
+import { state, Store } from "../state"
+import type { WorldParams } from "./world";
 
-export const param = <T extends object, K extends keyof T | string | number | symbol>(...args: ParamArgs<T, K>) => (target: T, key: K & (string | symbol)) => {
+export const param = <T extends object, K extends keyof T | string | number | symbol>() => (target: T, key: K & (string | symbol)) => {
 	state(target, key);
 }
 
@@ -19,3 +20,7 @@ export type NumberParam = {
 export type StringParam = {
 	oneOf: string[];
 };
+
+export abstract class Params<T extends new (...args: any[]) => Params<any>> extends Store<T> {
+	abstract clone(world: WorldParams): InstanceType<T>;
+}

@@ -7,7 +7,7 @@ import { nameToLabel, NumberInput, TextInput, type InputComponent } from "./inpu
 
 import "./styles/scalar-input.scss";
 
-export const ScalarInput: InputComponent<Scalar, { open?: boolean }> = ({ name, value, open = true }) => {
+export const ScalarInput: InputComponent<Scalar, { open?: boolean, workspaceName?: string }> = ({ workspaceName, name, value, open = true }) => {
 	const workspaces = Editor.useModule(WorkspaceManager);
 	const scalar = observe(value);
 
@@ -24,7 +24,7 @@ export const ScalarInput: InputComponent<Scalar, { open?: boolean }> = ({ name, 
 					<div className="options-btn" onClick={(e) => { e.stopPropagation(); }}>
 						<i className="fa-solid fa-ellipsis-vertical" />
 						<div className="options">
-							<div className="option" onClick={() => { workspaces.open(ScalarWorkspace, name, scalar) }}>
+							<div className="option" onClick={() => { workspaces.open(ScalarWorkspace, workspaceName || nameToLabel(name), scalar) }}>
 								Render to texture
 							</div>
 						</div>

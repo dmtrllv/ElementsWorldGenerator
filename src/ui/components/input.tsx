@@ -15,6 +15,8 @@ export type InputComponent<T, P extends {} = {}> = React.FC<InputComponentProps<
 export const nameToLabel = (name: string) => name.split("").map((s, i) => {
 	if (i === 0)
 		return s.toUpperCase();
+	if(s === ".")
+		return " ";
 	if (s.toUpperCase() === s)
 		return ` ${s.toLowerCase()}`;
 	return s;

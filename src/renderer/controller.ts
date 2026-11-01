@@ -1,11 +1,13 @@
 import { OrbitControls, PointerLockControls } from "three/examples/jsm/Addons.js";
+import { ViewHelper } from "three/addons/helpers/ViewHelper.js";
 import type { Renderer } from "./renderer";
 import { Vector3, type Camera } from "three";
 import { state, store } from "../state";
 
 @store
 export class Controller {
-	public readonly orbitControls: OrbitControls<Camera>;
+	private readonly viewHelper: ViewHelper;
+	private readonly orbitControls: OrbitControls<Camera>;
 	private readonly pointerControls: PointerLockControls;
 	private readonly renderer: Renderer;
 
@@ -21,9 +23,19 @@ export class Controller {
 	@state
 	private _cameraMode: CamerMode = "orbital";
 
+
+	public get cameraMode() { return this._cameraMode; }
+
 	public constructor(renderer: Renderer, element: HTMLElement) {
 		this.renderer = renderer;
-		this.orbitControls = new OrbitControls(renderer.camera);
+		this.viewHelper = new ViewHelper(renderer.camera, element);
+		this.viewHelper.location = {
+			top: 0,
+			right: 0,
+			left: null,
+			bottom: 0,
+		}
+		this.orbitControls = new OrbitControls(renderer.camera, element);
 		this.orbitControls.target.set(0, 0, 0);
 		this.orbitControls.enableDamping = true;
 		this.orbitControls.dampingFactor = 0.08;
@@ -34,8 +46,9 @@ export class Controller {
 			//this.onViewTargetChanged?.();
 		});
 		this.orbitControls.update();
+		this.viewHelper.center.copy(this.orbitControls.target);
 
-		this.pointerControls = new PointerLockControls(renderer.camera);
+		this.pointerControls = new PointerLockControls(renderer.camera, element);
 		this.pointerControls.addEventListener("change", this.onPointerChange);
 		this.pointerControls.addEventListener("unlock", this.onPointerUnlock);
 
@@ -43,6 +56,14 @@ export class Controller {
 		document.addEventListener("keydown", this.onKeyDown);
 		document.addEventListener("keyup", this.onKeyUp);
 		window.addEventListener("blur", this.onWindowBlur);
+		element.addEventListener("mousedown", this.onViewHelperClick);
+	}
+
+	private onViewHelperClick = (event: MouseEvent) => {
+		this.viewHelper.center.copy(this.orbitControls.target);
+
+		if (this.viewHelper.handleClick(event))
+			event.stopPropagation();
 	}
 
 	private onCanvasClick = () => {
@@ -79,8 +100,34 @@ export class Controller {
 		//this.onViewTargetChanged?.();
 	};
 
+	public render() {
+		if (this.cameraMode !== "orbital")
+			return;
+
+		const renderer = this.renderer.glRenderer;
+		const autoClear = renderer.autoClear;
+
+		renderer.autoClear = false;
+
+		try {
+			this.viewHelper.render(renderer);
+		} finally {
+			renderer.autoClear = autoClear;
+		}
+	}
+
 	public update(delta: number) {
-		if (!this.renderer.camera || !this.pointerControls?.isLocked)
+		if (this.viewHelper.animating)
+			this.viewHelper.update(delta);
+
+		if (this.cameraMode === "orbital") {
+			if (!this.viewHelper.animating)
+				this.orbitControls.update(delta);
+
+			return;
+		}
+
+		if (!this.pointerControls?.isLocked)
 			return;
 
 		this.pointerControls.getDirection(this.forward);
@@ -163,6 +210,7 @@ export class Controller {
 		document.removeEventListener("keydown", this.onKeyDown);
 		document.removeEventListener("keyup", this.onKeyUp);
 		window.removeEventListener("blur", this.onWindowBlur);
+		element.removeEventListener("pointerup", this.onViewHelperClick);
 	}
 }
 

@@ -1,9 +1,16 @@
 import { Vector3 } from "three";
-import { state, Store, store } from "../state";
+import { state, store } from "../state";
 import { param } from "./parameters";
 import { Scalar } from "./scalar";
 import { randomSeed } from "../utils";
 import { Generator } from "./generator";
+import { VectorField } from "./vectorfield";
+import { MoistureParams } from "./moisture";
+import { ElevationParams } from "./elevation";
+import { LatitudeParams } from "./latitude";
+import { OceanParams } from "./ocean";
+import { TemperatureParams } from "./temperature";
+import { WindParams } from "./wind";
 
 @store
 export class World {
@@ -16,10 +23,6 @@ export class World {
 		this.params = params;
 		this.generator = new Generator(this);
 	}
-}
-
-abstract class Params<T extends new (...args: any[]) => Params<any>> extends Store<T> {
-	abstract clone(world: WorldParams): InstanceType<T>;
 }
 
 @store
@@ -45,9 +48,9 @@ export class WorldParams {
 		);
 
 		params.ocean = ocean && ocean(params) || new OceanParams(20, 0, 1, 15, 1, 0.5);
-		params.wind = wind && wind(params) || new WindParams(new Scalar("world.wind.direction", params), 0);
+		params.wind = wind && wind(params) || new WindParams(new VectorField("world.wind.direction", params), 0);
 		params.temperature = temperature && temperature(params) || new TemperatureParams(20, 0, 1, 15);
-		params.moisture = moisture && moisture(params) || new MoistureParams(0, 0, 0);
+		params.moisture = moisture && moisture(params) || new MoistureParams(0, 0, 0, 0);
 		
 		return params;
 	}
@@ -105,197 +108,3 @@ export class WorldParams {
 }
 
 export type SeedChangeListener = (newSeed: number) => void;
-
-@store
-export class LatitudeParams extends Params<typeof LatitudeParams> {
-	@param()
-	public axis: LatitudeAxis = "x";
-
-	@param()
-	public stepDistance: number = 0;
-
-	@param()
-	public offset: number = 0;
-
-	@param()
-	public readonly distortion: Scalar;
-
-	public constructor(distortion: Scalar, axis: LatitudeAxis = "x", stepDistance: number = 0, offset: number = 0) {
-		super();
-		this.distortion = distortion;
-		this.axis = axis;
-		this.stepDistance = stepDistance;
-		this.offset = offset;
-	}
-
-	public clone(world: WorldParams): LatitudeParams {
-		return this.new(
-			this.distortion.clone(world),
-			this.axis,
-			this.stepDistance,
-			this.offset,
-		);
-	}
-}
-
-export type LatitudeAxis = "x" | "y";
-
-@store
-export class ElevationParams extends Params<typeof ElevationParams> {
-	@param()
-	public readonly continental: Scalar;
-
-	@param()
-	public readonly mountains: Scalar;
-
-	@param()
-	public readonly hills: Scalar;
-
-	@param()
-	public readonly valleys: Scalar;
-
-	@param()
-	public readonly plateaus: Scalar;
-
-	public constructor(continental: Scalar, mountains: Scalar, hills: Scalar, valleys: Scalar, plateaus: Scalar) {
-		super();
-		this.continental = continental;
-		this.mountains = mountains;
-		this.hills = hills;
-		this.valleys = valleys;
-		this.plateaus = plateaus;
-	}
-
-	public clone(world: WorldParams): ElevationParams {
-		return this.new(
-			this.continental.clone(world),
-			this.mountains.clone(world),
-			this.hills.clone(world),
-			this.valleys.clone(world),
-			this.plateaus.clone(world),
-		);
-	}
-}
-
-@store
-export class OceanParams extends Params<typeof OceanParams> {
-	@param()
-	public seaLevel: number;
-
-	@param()
-	public seaLevelVariation: number;
-
-	@param()
-	public scale: number;
-
-	@param()
-	public depth: number;
-
-	@param()
-	public coastFalloff: number;
-
-	@param()
-	public coverage: number;
-
-	public constructor(seaLevel: number, seaLevelVariation: number, scale: number, depth: number, coastFalloff: number, coverage: number) {
-		super();
-		this.seaLevel = seaLevel;
-		this.seaLevelVariation = seaLevelVariation;
-		this.scale = scale;
-		this.depth = depth;
-		this.coastFalloff = coastFalloff;
-		this.coverage = coverage;
-	}
-
-	public clone(_: WorldParams): OceanParams {
-		return this.new(
-			this.seaLevel,
-			this.seaLevelVariation,
-			this.scale,
-			this.depth,
-			this.coastFalloff,
-			this.coverage
-		);
-	}
-}
-
-@store
-export class WindParams extends Params<typeof WindParams> {
-	@param()
-	public direction: Scalar;
-
-	@param()
-	public variation: number;
-
-	public constructor(direction: Scalar, variation: number) {
-		super();
-		this.direction = direction;
-		this.variation = variation;
-	}
-
-	public clone(world: WorldParams): WindParams {
-		return this.new(
-			this.direction.clone(world),
-			this.variation
-		);
-	}
-}
-
-@store
-export class TemperatureParams extends Params<typeof TemperatureParams> {
-	@param()
-	public equatorTemperature: number;
-
-	@param()
-	public poleTemperature: number;
-
-	@param()
-	public falloff: number;
-
-	@param()
-	public elevationCooling: number;
-
-	public constructor(equatorTemperature: number, poleTemperature: number, falloff: number, elevationCooling: number) {
-		super();
-		this.equatorTemperature = equatorTemperature;
-		this.poleTemperature = poleTemperature;
-		this.falloff = falloff;
-		this.elevationCooling = elevationCooling;
-	}
-
-	public clone(_: WorldParams): TemperatureParams {
-		return this.new(
-			this.equatorTemperature,
-			this.poleTemperature,
-			this.falloff,
-			this.elevationCooling
-		);
-	}
-}
-
-@store
-export class MoistureParams extends Params<typeof MoistureParams> {
-	@param()
-	public humidity: number;
-
-	@param()
-	public evaporationStrength: number;
-
-	@param()
-	public precipitationEfficiency: number;
-
-	public constructor(humidity: number, evaporationStrength: number, precipitationEfficiency: number) {
-		super();
-		this.humidity = humidity;
-		this.evaporationStrength = evaporationStrength;
-		this.precipitationEfficiency = precipitationEfficiency;
-	}
-
-	public clone(_: WorldParams): MoistureParams {
-		return this.new(
-			this.humidity,
-			this.evaporationStrength,
-			this.precipitationEfficiency,
-		);
-	}
-}

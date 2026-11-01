@@ -1,13 +1,15 @@
 .scalar-input {
 	&:not(:first-of-type) {
 		border-top: 1px solid var(--border-1);
-		//margin-top: 5px;
+	}
+
+	&:not(:last-child) {
+		border-bottom: 1px solid var(--border-1);
 	}
 
 	.scalar-inputs {
 		display: none;
 	}
-	//margin-bottom: 5px;
 
 	.scalar-label {
 		padding: 8px 16px;
