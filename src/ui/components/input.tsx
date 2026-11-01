@@ -1,26 +1,24 @@
 import { useEffect } from "react";
 import { Vector2, Vector3 } from "three";
 import { useSlider } from "../hooks/slider";
-import type { Scalar, ScalarType } from "../../generator/scalar";
-import { observe } from "../../state";
 
 import "./styles/input.scss";
 
-type InputComponentProps<T> = {
+export type InputComponentProps<T> = {
 	readonly name: string;
 	readonly value: T,
 	readonly onChange?: (value: T) => void
 };
 
-type InputComponent<T, P extends {} = {}> = React.FC<InputComponentProps<T> & Partial<P>>;
+export type InputComponent<T, P extends {} = {}> = React.FC<InputComponentProps<T> & Partial<P>>;
 
-const nameToLabel = (name: string) => name.split("").map((s, i) => {
+export const nameToLabel = (name: string) => name.split("").map((s, i) => {
 	if (i === 0)
 		return s.toUpperCase();
 	if (s.toUpperCase() === s)
 		return ` ${s.toLowerCase()}`;
 	return s;
-});
+}).join("");
 
 export const TextInput: InputComponent<string, StringProps> = ({ onChange, value, ...props }) => {
 	return (
@@ -153,131 +151,3 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name, .
 		</div>
 	);
 };
-
-export const ScalarInput: InputComponent<Scalar, {}> = ({ name, value }) => {
-	const scalar = observe(value);
-	return (
-		<div className="scalar-input">
-			<div className="scalar-label">
-				{nameToLabel(name)}:
-			</div>
-			<div className="type-input">
-				<div className="label">
-					Type:
-				</div>
-				<select name="render-mode" value={scalar.type} onChange={e => scalar.type = e.target.value as ScalarType}>
-					<option value="static">Static</option>
-					<option value="procedural">Procedural</option>
-					<option value="texture">Texture</option>
-				</select>
-			</div>
-			{scalar.type === "static" && <NumberInput name="value" value={scalar.value} onChange={v => scalar.value = v} />}
-			{scalar.type === "texture" && (
-				<>
-					<TextInput name="texture" value={scalar.texturePath || "???"} onChange={v => { }} />
-					{!scalar.texturePath && (
-						<div style={{ display: "flex" }}>
-							<div className="label" style={{ flex: 1 }}>
-
-							</div>
-							<div className="error" style={{ flex: 1, color: "rgb(233, 77, 77)" }}>
-								Missing texture!
-							</div>
-						</div>
-					)}
-					<NumberInput name="scale" value={scalar.scale} onChange={v => scalar.scale = v} />
-					<NumberInput name="strength" value={scalar.strength} onChange={v => scalar.strength = v} />
-				</>
-			)}
-			{scalar.type === "procedural" && (
-				<>
-					<NumberInput name="frequency" value={scalar.frequency} onChange={v => scalar.frequency = v} />
-					<NumberInput name="scale" value={scalar.scale} onChange={v => scalar.scale = v} />
-					<NumberInput name="strength" value={scalar.strength} onChange={v => scalar.strength = v} />
-				</>
-			)}
-		</div>
-	);
-}
-
-//const registry = new Map<string, InputComponent<any, any>>();
-
-//export const registerInputComponent = (name: string, component: InputComponent<any, any>) => {
-//	registry.set(name, component);
-//	return component;
-//};
-
-//registerInputComponent("number", NumberInput);
-//registerInputComponent("text", TextInput);
-//registerInputComponent("color", ColorInput);
-//registerInputComponent("vec2", Vector2Input);
-//registerInputComponent("vec3", Vector3Input);
-//registerInputComponent("scalar", ScalarInput);
-
-//export const SettingsView = <T extends Settings>({ settings, type, onChange }: { settings: T, type: new (...args: any[]) => T, onChange?: SettingsChangeHandler<T> }) => {
-//	const state = observe(settings) as any;
-//	const inputs = Settings.getInputs(type);
-
-//	const elements = [];
-//	let sectionElements: JSX.Element[] = [];
-
-//	let currentSection: string | null = null;
-
-//	Object.keys(inputs).forEach((key) => {
-//		const { type, section, header, props } = inputs[key]!;
-//		if (!type)
-//			return;
-
-//		const Component = registry.get(type);
-//		if (!Component) {
-//			console.warn(`Could not get setting input component for ${type}!`);
-//		}
-
-//		if (section) {
-//			if (currentSection) {
-//				elements.push(
-//					<DropdownPanel title={currentSection} key={currentSection}>
-//						{sectionElements}
-//					</DropdownPanel>
-//				);
-//			}
-//			currentSection = section;
-//			sectionElements = [
-//				<Fragment key={key}>
-//					{header && <div className="header">{header}</div>}
-//					{Component && <Component {...props} name={key} value={state[key]} onChange={val => { state[key] = val; onChange?.(key as any, val) }} />}
-//				</Fragment>
-//			]
-//		} else if (!currentSection) {
-//			elements.push(
-//				<Fragment key={key}>
-//					{header && <div className="header">{header}</div>}
-//					{Component && <Component {...props} name={key} value={state[key]} onChange={val => { state[key] = val; onChange?.(key as any, val) }} />}
-//				</Fragment>
-//			);
-//		} else {
-//			sectionElements.push(
-//				<Fragment key={key}>
-//					{header && <div className="header">{header}</div>}
-//					{Component && <Component {...props} name={key} value={state[key]} onChange={val => { state[key] = val; onChange?.(key as any, val) }} />}
-//				</Fragment>
-//			);
-//		}
-//	});
-
-//	if (currentSection) {
-//		elements.push(
-//			<DropdownPanel title={currentSection} key={currentSection}>
-//				{sectionElements}
-//			</DropdownPanel>
-//		);
-//	}
-
-//	return (
-//		<form>
-//			{elements}
-//		</form>
-//	);
-//}
-
-//type SettingsChangeHandler<T extends Settings> = <K extends keyof T>(key: K, value: T) => any;

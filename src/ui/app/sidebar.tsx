@@ -72,34 +72,25 @@ const World = () => {
 	);
 };
 
-//const BiomeTitle = ({ biome }: { biome: Biome }) => {
-//	const { color } = observe(biome);
-//	const c = `rgb(${color[0]},${color[1]},${color[2]})`;
-
-//	return (
-//		<h4><div style={{ backgroundColor: c }} className="biome-color" />{biome.name}</h4>
-//	)
-//}
-
 const Biomes = () => {
-	//const generator = Editor.useStore(Generator);
-	//const biomes = observe(generator.biomes.biomes);
+	return null;
+};
+
+const Generator = () => {
+	//const world = Editor.useModule(ProjectManager).activeProject;
+	//const generator = observe(world);
+
 	return (
-		<>
-			{/*{biomes.map(biome => {
-				return (
-					<DropdownPanel key={biome.name} title={<BiomeTitle biome={biome} />} open={false} >
-						<SettingsView type={Biome} settings={biome} />
-					</DropdownPanel>
-				)
-			})}*/}
-		</>
-	);
+		<div className="generator">
+			
+		</div>
+	)
 };
 
 const tabs = {
 	World,
-	Biomes
+	Biomes,
+	Generator,
 };
 
 export const Sidebar = () => {

@@ -11,27 +11,27 @@ export class WorkspaceManager extends Module {
 	}
 
 	@state
-	public readonly workspaces: Workspace[] = [new SceneView(this, this.nextId())];
+	public readonly workspaces: Workspace[] = [new SceneWorkspace(this, this.nextId())];
 
 	@state
-	private _activeWorkspace: Workspace = this.workspaces[0];
+	private _activeWorkspace: Workspace = this.workspaces[0]!;
 
 	public get activeWorkspace() { return this._activeWorkspace; }
 
-	public open<T extends typeof Workspace>(workspaceType: T, ...args: WorkspaceArgs<T>) {
+	public open<T extends WorkspaceType<any>>(workspaceType: T, name: string, ...args: WorkspaceArgs<T>) {
 		for (const w of this.workspaces)
-			if ((w.constructor === workspaceType) && w.isUnique)
+			if ((w.constructor === workspaceType) && w.isUnique || w.name === name)
 				return this.focus(w);
-		const workspace = new (workspaceType as any)(this, this.nextId(), ...args);
+		const workspace = new (workspaceType as any)(this, this.nextId(), name, ...args);
 		this.workspaces.push(workspace);
-		this.focus(workspace);
+		return this.focus(workspace);
 	}
 
 	public close(workspace: Workspace) {
 		const index = this.workspaces.indexOf(workspace);
 		if (index > -1)
 			this.workspaces.splice(index, 1);
-		this._activeWorkspace = this.workspaces[index === 0 ? 0 : index - 1];
+		this._activeWorkspace = this.workspaces[index === 0 ? 0 : index - 1]!;
 	}
 
 	public focus(workspace: Workspace) {
@@ -42,7 +42,7 @@ export class WorkspaceManager extends Module {
 	}
 }
 
-type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extends [WorkspaceManager, number, ...infer Args] ? Args : never;
+type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extends [WorkspaceManager, number, string, ...infer Args] ? Args : never;
 export type WorkspaceType<T extends Workspace> = new (manager: WorkspaceManager, id: number, ...args: any[]) => T;
 
 @store
@@ -70,14 +70,13 @@ export abstract class Workspace {
 	}
 }
 
-export class SceneView extends Workspace {
-
+export class SceneWorkspace extends Workspace {
 	public constructor(workspace: WorkspaceManager, id: number) {
 		super(workspace, id, "Scene", false, true);
 	}
 }
 
-export class ScalarView extends Workspace {
+export class ScalarWorkspace extends Workspace {
 	public readonly scalar: Scalar;
 
 	public constructor(workspace: WorkspaceManager, id: number, name: string, scalar: Scalar) {

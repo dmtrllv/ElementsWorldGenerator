@@ -1,5 +1,4 @@
 import { state, store } from "../state";
-import type { Editor } from "./editor";
 import { Module } from "./store";
 
 @store

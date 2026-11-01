@@ -1,8 +1,8 @@
 {
 	"compilerOptions": {
 		"tsBuildInfoFile": "./node_modules/.tmp/.tsbuildinfo",
-		"target": "es2022",
-		"module": "es2022",
+		"target": "esnext",
+		"module": "esnext",
 		"lib": [ "ESNext", "DOM" ],
 		"types": [ "vite/client" ],
 		"allowArbitraryExtensions": true,
@@ -14,7 +14,10 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 		"erasableSyntaxOnly": true,
-		"experimentalDecorators": true
+		"strict": true,
+		"experimentalDecorators": true,
+		"noCheck": false
 	},
-	"include": [ "src" ]
+	"include": [ "src" ],
+	"extends": "@tsconfig/strictest"
 }

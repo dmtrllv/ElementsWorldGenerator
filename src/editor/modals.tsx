@@ -34,8 +34,10 @@ export class ModalManager extends Module {
 
 	public focus(id: number) {
 		const foundIndex = this.modals.findIndex(m => m.id === id);
-		const [item] = this.modals.splice(foundIndex, 1);
-		this.modals.push(item);
+		if(foundIndex) {
+			const [item] = this.modals.splice(foundIndex, 1);
+			this.modals.push(item!);
+		}
 	}
 
 	public close(id: number) {

@@ -101,7 +101,7 @@ export class Scalar {
 	@state
 	public octaves: number = 4;
 
-	
+
 	public readonly dispose: () => void;
 
 	public constructor(id: string, world: WorldParams, texture: string | null = null, value: number = 0) {
@@ -152,7 +152,7 @@ export class Scalar {
 		}
 
 		const index = (y * width + x) * 4;
-		const value = data[index];
+		const value = data[index]!;
 
 		return this.normalize(value / 255);
 	}
@@ -174,7 +174,7 @@ export class Scalar {
 			frequency *= 2;
 		}
 
-		return (total / maxAmplitude) * this.strength;
+		return this.normalize(((total / maxAmplitude) * this.strength + 1) / 2);
 	};
 
 	public get: (x: number, y: number) => number = this.getProcedural;

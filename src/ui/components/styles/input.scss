@@ -15,7 +15,6 @@
 	}
 	.body {
 		border: none;
-		padding: 5px 0px;
 	}
 
 	.header {
@@ -119,37 +118,6 @@
 				}
 			}
 		}
-	}
-}
-
-.scalar-input {
-	&:not(:first-of-type) {
-		border-top: 1px solid var(--border-1);
-		margin-top: 5px;
-	}
-	margin-bottom: 5px;
-
-	.scalar-label {
-		padding: 8px 16px;
-		border-bottom: 1px solid var(--border-1);
-		background-color: var(--bg-4);
-	}
-
-	.label {
-		flex: 1;
-		padding: 0 5px;
-		color: var(--fg-1);
-		user-select: none;
-	}
-
-	.type-input {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		align-items: center;
-		padding: 2px 2px 2px 0px;
-		margin-bottom: 2px;
-		padding: 0px 16px;
-		margin-top: 5px;
 	}
 }
 

@@ -1,14 +1,14 @@
-import { Editor, NotificationManager } from "../../editor";
+//import { Editor, NotificationManager } from "../../editor";
 import { Menubar } from "./menubar";
 
 import "./styles/topbar.scss";
 
 export const Topbar = () => {
 	//const generator = Editor.useStore(Generator);
-	const notifications = Editor.useModule(NotificationManager);
+	//const notifications = Editor.useModule(NotificationManager);
 	//const renderer = Editor.useStore(Renderer);
 
-	const generate = async () => {
+	//const generate = async () => {
 		//try {
 		//	await generator.generate();
 		//} catch (e) {
@@ -23,7 +23,7 @@ export const Topbar = () => {
 		//		throw e;
 		//	}
 		//}
-	};
+	//};
 
 	return (
 		<div id="topbar">

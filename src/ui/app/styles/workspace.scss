@@ -12,22 +12,29 @@
 		background-color: var(--bg-3);
 		border-bottom: 1px solid var(--border-1);
 		.tab {
+			vertical-align: top;
 			padding: 5px 12px;
 			border: 1px solid var(--border-1);
 			border-radius: 0;
 			background-color: var(--bg-2);
 			color: var(--fg-1);
 			user-select: none;
-			opacity: 0.45;
+			opacity: 0.5;
 			transition: 150ms;
 			display: inline-block;
+
+			.btn-close {
+				display: inline-block;
+				margin-left: 10px;
+				margin-right: -5px;
+			}
 
 			&:first-child {
 				border-top-right-radius: 4px;
 			}
 
 			//&:last-child {
-				//border-bottom-right-radius: 4px;
+			//border-bottom-right-radius: 4px;
 			//}
 
 			&:hover {
@@ -43,6 +50,7 @@
 	.workarea {
 		flex: 1;
 		position: relative;
+		overflow: hidden;
 
 		.workspace-view {
 			position: absolute;
@@ -54,7 +62,6 @@
 			&.active {
 				display: block;
 			}
-			//overflow: auto;
 		}
 	}
 }

@@ -3,14 +3,18 @@ import { state, Store, store } from "../state";
 import { param } from "./parameters";
 import { Scalar } from "./scalar";
 import { randomSeed } from "../utils";
+import { Generator } from "./generator";
 
 @store
 export class World {
 	@state
 	public readonly params: WorldParams;
 
+	public readonly generator: Generator;
+
 	public constructor(params: WorldParams) {
 		this.params = params;
+		this.generator = new Generator(this);
 	}
 }
 

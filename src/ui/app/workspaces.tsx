@@ -1,6 +1,6 @@
 import { Editor } from "../../editor";
-import { SceneView, Workspace, WorkspaceManager, type WorkspaceType } from "../../editor/workspace";
-import { SceneViewWorkspace } from "./scene-view";
+import { ScalarWorkspace, SceneWorkspace, Workspace, WorkspaceManager, type WorkspaceType } from "../../editor/workspace";
+import { ScalarView, SceneViewWorkspace } from "./workspaces/index";
 
 import "./styles/workspace.scss";
 
@@ -10,7 +10,12 @@ export const Workspaces = () => {
 	return (
 		<div id="workspace">
 			<div className="tabs">
-				{workspace.workspaces.map(w => <div key={w.id} className={`tab ${workspace.activeWorkspace.id === w.id ? "active" : ""}`}>{w.name}</div>)}
+				{workspace.workspaces.map(w => (
+					<div key={w.id} className={`tab ${workspace.activeWorkspace.id === w.id ? "active" : ""}`} onClick={() => workspace.focus(w)}>
+						{w.name}
+						{w.isClosable && <div className="btn-close" onClick={() => workspace.close(w)}><i className="fa-solid fa-xmark"></i></div>}
+					</div>
+				))}
 			</div>
 			<div className="workarea">
 				{workspace.workspaces.map(w => {
@@ -38,4 +43,5 @@ const register = <T extends Workspace>(type: WorkspaceType<T>, component: React.
 	WorkspaceComponents[type.name] = component;
 };
 
-register(SceneView, SceneViewWorkspace);
+register(SceneWorkspace, SceneViewWorkspace);
+register(ScalarWorkspace, ScalarView);
