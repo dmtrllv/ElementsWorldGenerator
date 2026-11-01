@@ -9,6 +9,7 @@ import type { LatitudeAxis } from "../../generator/params";
 import { MapInspectorWorkspace, WorkspaceManager } from "../../editor/workspace";
 import { LatitudeMap } from "../../generator/maps/latitude-map";
 import type { MapGenerator, MapGeneratorType } from "../../generator/maps/map";
+import { CurveEditor } from "../components/curve-editor";
 
 import "./styles/sidebar.scss";
 
@@ -55,11 +56,28 @@ const World = () => {
 				<ScalarInput name="distortion" workspaceName="Latitude Distortion" value={latitude.distortion} />
 			</DropdownPanel>
 			<DropdownPanel title="Elevation" open={false}>
-				<ScalarInput name="continental" workspaceName="Continental elevation " value={elevation.continental} />
-				<ScalarInput name="mountains" workspaceName="Mountains elevation " value={elevation.mountains} />
-				<ScalarInput name="hills" workspaceName="Hills elevation " value={elevation.hills} />
-				<ScalarInput name="valleys" workspaceName="Valleys elevation " value={elevation.valleys} />
-				<ScalarInput name="plateaus" workspaceName="Plateaus elevation " value={elevation.plateaus} />
+				<CurveEditor name="Base Profile" curve={elevation.base} />
+				<ScalarInput name="Continentalness" workspaceName="Continentalness" value={elevation.continental} />
+				<DropdownPanel title="Mountains" open={false}>
+					<ScalarInput name="Mask" workspaceName="Mountain Mask" value={elevation.mountains} />
+					<CurveEditor name="Profile" curve={elevation.mountainProfile} />
+					<NumberInput name="Height" value={elevation.mountainHeight} onChange={v => elevation.mountainHeight = v} />
+				</DropdownPanel>
+				<DropdownPanel title="Hills" open={false}>
+					<ScalarInput name="Mask" workspaceName="Hill Mask" value={elevation.hills} />
+					<CurveEditor name="Profile" curve={elevation.hillProfile} />
+					<NumberInput name="Height" value={elevation.hillHeight} onChange={v => elevation.hillHeight = v} />
+				</DropdownPanel>
+				<DropdownPanel title="Valleys" open={false}>
+					<ScalarInput name="Mask" workspaceName="Valley Mask" value={elevation.valleys} />
+					<CurveEditor name="Profile" curve={elevation.valleyProfile} />
+					<NumberInput name="Depth" value={elevation.valleyDepth} onChange={v => elevation.valleyDepth = v} />
+				</DropdownPanel>
+				<DropdownPanel title="Plateaus" open={false}>
+					<ScalarInput name="Mask" workspaceName="Plateau Mask" value={elevation.plateaus} />
+					<CurveEditor name="Profile" curve={elevation.plateauProfile} />
+					<NumberInput name="Height" value={elevation.plateauHeight} onChange={v => elevation.plateauHeight = v} />
+				</DropdownPanel>
 			</DropdownPanel>
 			<DropdownPanel title="Ocean" open={false}>
 				<NumberInput name="seaLevel" value={ocean.seaLevel} onChange={v => ocean.seaLevel = v} />

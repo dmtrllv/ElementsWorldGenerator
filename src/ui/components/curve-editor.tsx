@@ -7,9 +7,10 @@ import "./styles/curve-editor.scss";
 
 type CurveEditorProps = {
 	readonly curve: Curve;
+	readonly name?: string;
 }
 
-export const CurveEditor = ({ curve }: CurveEditorProps) => {
+export const CurveEditor = ({ curve, name }: CurveEditorProps) => {
 	curve = observe(curve);
 
 	const renderer = useRef(new CurveRenderer(curve));
@@ -28,6 +29,11 @@ export const CurveEditor = ({ curve }: CurveEditorProps) => {
 
 	return (
 		<div className="curve-editor">
+			{name && (
+				<div className="input-field" style={{ textTransform: "capitalize", padding: "5px 0px 5px 16px" }}>
+					{name}:
+				</div>
+			)}
 			<div className="type-input">
 				<div className="label">
 					Type:

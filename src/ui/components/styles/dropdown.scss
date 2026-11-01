@@ -29,6 +29,13 @@
 
 	.body {
 		display: none;
+
+		.dropdown-panel {
+			.header h4 {
+				font-size: 14px;
+				background-color: var(--bg-4);
+			}
+		}
 	}
 
 	&.open > .body {

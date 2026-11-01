@@ -53,7 +53,7 @@ export class Scalar {
 	}
 
 	@state
-	private _normalization: NormalizationType = "-1/1";
+	private _normalization: NormalizationType = "0/1";
 
 	public get normalization() {
 		return this._normalization;

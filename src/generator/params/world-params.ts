@@ -31,10 +31,19 @@ export class WorldParams {
 		);
 		params.elevation = elevation && elevation(params) || new ElevationParams(
 			new Scalar("world.elevation.continental", params, null, 0, "procedural", new Curve("world.elevation.continental")),
+			new Curve("world.elevation.base"),
 			new Scalar("world.elevation.mountains", params, null, 0, "procedural", new Curve("world.elevation.mountains")),
+			new Curve("world.elevation.mountain-profile"),
+			0.5,
 			new Scalar("world.elevation.hills", params, null, 0, "procedural", new Curve("world.elevation.hills")),
+			new Curve("world.elevation.hill-profile"),
+			0.15,
 			new Scalar("world.elevation.valleys", params, null, 0, "procedural", new Curve("world.elevation.valleys")),
+			new Curve("world.elevation.valley-profile"),
+			0.15,
 			new Scalar("world.elevation.plateaus", params, null, 0, "procedural", new Curve("world.elevation.plateaus")),
+			new Curve("world.elevation.plateau-profile"),
+			0.15,
 		);
 
 		params.ocean = ocean && ocean(params) || new OceanParams(20, 0, 1, 15, 1, 0.5);
