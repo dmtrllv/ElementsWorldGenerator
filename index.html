@@ -11,7 +11,8 @@
 				box-sizing: border-box;
 				--bg-1: rgb(32, 32, 32);
 				--bg-2: rgb(54, 54, 54);
-				--bg-3: rgb(20 20 20);
+				--bg-3: rgb(20, 20, 20);
+				--bg-4: rgb(38, 38, 38);
 				--fg-1: rgb(184, 184, 184);
 				--border-1: rgb(73, 73, 73);
 			}
@@ -39,6 +40,7 @@
 			::-webkit-scrollbar-track {
 				background-color: rgba(255, 255, 255, 0.01);
 				border-radius: 4px;
+
 				&:hover {
 					background-color: rgba(255, 255, 255, 0.2) !important;
 				}
@@ -47,11 +49,12 @@
 			::-webkit-scrollbar-thumb {
 				background-color: rgba(255, 255, 255, 0.05);
 				border-radius: 4px;
+
 				&:hover {
 					background-color: rgba(255, 255, 255, 0.5) !important;
 				}
 			}
-			
+
 			*:hover {
 				>::-webkit-scrollbar-track {
 					background-color: rgba(255, 255, 255, 0.05);

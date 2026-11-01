@@ -14,6 +14,9 @@ const World = () => {
 	const latitude = observe(world.latitude);
 	const elevation = observe(world.elevation);
 	const ocean = observe(world.ocean);
+	const wind = observe(world.wind);
+	const temperature = observe(world.temperature);
+	const moisture = observe(world.moisture);
 	return (
 		<div className="world">
 			<DropdownPanel title="World">
@@ -50,6 +53,21 @@ const World = () => {
 				<NumberInput name="coastFalloff" value={ocean.coastFalloff} onChange={v => ocean.coastFalloff = v} />
 				<NumberInput name="coverage" value={ocean.coverage} onChange={v => ocean.coverage = v} />
 			</DropdownPanel>
+			<DropdownPanel title="Wind" open={false}>
+				<ScalarInput name="direction" value={wind.direction}/>
+				<NumberInput name="windVariation" value={wind.variation} onChange={v => ocean.seaLevelVariation = v} />
+			</DropdownPanel>
+			<DropdownPanel title="Temperature" open={false}>
+				<NumberInput name="equatorTemperature" value={temperature.equatorTemperature} onChange={v => temperature.equatorTemperature = v} />
+				<NumberInput name="poleTemperature" value={temperature.poleTemperature} onChange={v => temperature.poleTemperature = v} />
+				<NumberInput name="falloff" value={temperature.falloff} onChange={v => temperature.falloff = v} />
+				<NumberInput name="elevationCooling" value={temperature.elevationCooling} onChange={v => temperature.elevationCooling = v} />
+			</DropdownPanel>
+			<DropdownPanel title="Moisture" open={false}>
+				<NumberInput name="humidity" value={moisture.humidity} onChange={v => moisture.humidity = v} />
+				<NumberInput name="evaporationStrength" value={moisture.evaporationStrength} onChange={v => moisture.evaporationStrength = v} />
+				<NumberInput name="precipitationEfficiency" value={moisture.precipitationEfficiency} onChange={v => moisture.precipitationEfficiency = v} />
+			</DropdownPanel>
 		</div>
 	);
 };
@@ -85,7 +103,7 @@ const tabs = {
 };
 
 export const Sidebar = () => {
-	const { size: width, onMouseDown } = useSlider(360, 320, 640, "x");
+	const { size: width, onMouseDown } = useSlider(420, 320, 860, "x");
 
 	const [activeTab, setActiveTab] = useState("World");
 
