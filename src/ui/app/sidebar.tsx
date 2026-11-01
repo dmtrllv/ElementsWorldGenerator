@@ -29,8 +29,7 @@ const World = () => {
 	const generateAndOpen = (e: React.MouseEvent, name: string, type: MapGeneratorType<MapGenerator>) => {
 		e.stopPropagation();
 		e.preventDefault();
-		const map = project.world.generator.worldMap.get(type);
-		map.generate(true);
+		const map = project.world.generator.generateMap(type, true);
 		workspaces.open(MapInspectorWorkspace, name, map);
 	};
 

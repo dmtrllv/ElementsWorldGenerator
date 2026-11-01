@@ -6,9 +6,6 @@ export class LatitudeMap extends MapGenerator {
 		const { axis, frequency, offset, distortion } = params;
 
 		const size = axis === "x" ? this.height : this.width;
-
-		this.clear();
-
 		const staticLatitude = Math.sin(-Math.PI / 2 + (offset / (size - 1)) * Math.PI);
 
 		for (let z = 0; z < this.height; z++) {

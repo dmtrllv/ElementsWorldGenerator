@@ -1,52 +1,31 @@
-| Concept    | Responsibility |
-| -------- | ------- |
-|BlockDefinition | Describes how a block is generated|
-|BlockRule | Modifies voxel data|
-|Block | Represents generated voxel data|
-|Biome | Determines which blocks and environmental parameters are used|
+# World Generator
 
-```
-Biome
-  │
-  ├── Selects block types
-  ├── Provides environmental parameters
-  │
-  ▼
-Block definition
-  │
-  ├── Base voxel material
-  ├── Dimensions
-  ├── Generation rules
-  │
-  ▼
-Base voxel generation
-  │
-  ▼
-Refinement passes
-  │
-  ├── Remove voxels
-  ├── Add voxels
-  ├── Change voxel materials
-  ├── Apply biome-dependent rules
-  └── Apply randomized variation
-  │
-  ▼
-Final voxel data
-  │
-  ▼
-Mesh generation
-```
+## Architecture
 
-Example:
-1. Fill the entire block with dirt.
-2. Replace the top layer with grass material.
-3. Randomly remove some top-layer voxels.
-4. Add additional voxels above the surface to create grass blades.
-5. Randomly vary the grass material between several green variations.
-6. Apply biome-specific rules, such as different grass colors or density.
+- `World` owns `WorldParams` and a `Generator`.
+- `Generator` owns a `WorldMap`.
+- `WorldMap` lazily creates and caches maps by their `MapGenerator` class.
+- `MapGenerator` provides shared map storage (`Float32Array`), dimensions, generation tracking and regeneration.
+- Maps are generated independently and on demand.
+- `World` and `Generator` handle lifecycle and disposal.
 
-### TODO
-- configurable noise layers (now there are only 3 biome parameters and 2 * 3 for the heightmap. this can be configurable)
-- editor settings -> default values/biomes for each new project
-- project manager
-- performance improvements
+## World Parameters
+
+- `WorldParams` contains the configuration for world generation.
+- Parameters are organized into dedicated parameter classes.
+- `Scalar` provides configurable values using static, procedural or texture-based sources.
+- Parameters support cloning for creating independent world configurations.
+
+## Maps
+
+- Each map is a separate `MapGenerator` implementation.
+- Maps can be inspected independently using `MapInspector`.
+- `LatitudeMap` is implemented, supporting axis, frequency, offset and distortion.
+
+## Planned Terrain Generation
+
+- `ContinentalnessMap` defines ocean, shelf, coast, lowland and inland regions.
+- Independent feature masks define mountain, hill, valley and plateau distribution.
+- `ElevationMap` combines continentalness-based elevation with feature profiles.
+- Masks control where features occur; profiles define their height and shape.
+- Biome selection will use environmental conditions rather than directly controlling terrain elevation.

@@ -3,9 +3,9 @@ import type { WorldParams } from "../params";
 
 @store
 export abstract class MapGenerator {
-	public readonly width: number;
-	public readonly height: number;
-	public readonly data: Float32Array;
+	public width: number;
+	public height: number;
+	public data: Float32Array;
 
 	@state
 	private _generationId: number = 0;
@@ -25,8 +25,19 @@ export abstract class MapGenerator {
 	}
 
 	public generate(regenerate: boolean = false): void {
+		const width = Math.ceil(this.world.size.x);
+		const height = Math.ceil(this.world.size.z);
+
+		if (width !== this.width || height !== this.height) {
+			this.width = width;
+			this.height = height;
+			this.data = new Float32Array(width * height);
+			regenerate = true;
+		}
+
 		if (!regenerate && this.generationId)
 			return;
+
 		this.clear();
 		this.onGenerate();
 		this._generationId++;

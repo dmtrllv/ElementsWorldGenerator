@@ -15,6 +15,6 @@ export class World {
 	}
 
 	public dispose() {
-
+		this.generator.dispose();
 	}
 }
