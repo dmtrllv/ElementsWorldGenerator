@@ -24,10 +24,6 @@ export class Scene extends Three.Scene {
 		this.directionalLight.shadow.camera.far = 500;
 		this.directionalLight.shadow.bias = -0.0001;
 
-		this.add(
-			//this.grid,
-			this.hemisphereLight,
-			this.directionalLight
-		);
+		this.add(this.grid,this.hemisphereLight,this.directionalLight);
 	}
 }

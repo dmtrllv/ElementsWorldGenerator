@@ -1,6 +1,4 @@
-import type { WorldParams } from "../generator/params";
-import { World } from "../generator/world";
-import { state, store } from "../state";
+import { store } from "../state";
 
 @store
 export class ProjectInfo {
@@ -15,15 +13,7 @@ export class ProjectInfo {
 export class Project {
 	public readonly info: ProjectInfo;
 	
-	@state
-	private _world: World;
-
-	public get world(): World {
-		return this._world;
-	}
-
-	public constructor(info: ProjectInfo, worldParams: WorldParams) {
+	public constructor(info: ProjectInfo) {
 		this.info = info;
-		this._world = new World(worldParams);
 	}
 }

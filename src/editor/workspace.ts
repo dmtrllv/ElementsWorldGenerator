@@ -1,7 +1,3 @@
-import type { Curve } from "../generator/curve";
-import type { MapGenerator } from "../generator/maps/map";
-import type { Scalar } from "../generator/scalar";
-import type { VectorField } from "../generator/vectorfield";
 import { state, store } from "../state";
 import { Module } from "./store";
 
@@ -14,7 +10,7 @@ export class WorkspaceManager extends Module {
 	}
 
 	@state
-	public readonly workspaces: Workspace[] = [new SceneWorkspace(this, this.nextId())];
+	public readonly workspaces: Workspace[] = [new RendererWorkspace(this, this.nextId())];
 
 	@state
 	private _activeWorkspace: Workspace = this.workspaces[0]!;
@@ -73,44 +69,8 @@ export abstract class Workspace {
 	}
 }
 
-export class SceneWorkspace extends Workspace {
+export class RendererWorkspace extends Workspace {
 	public constructor(workspace: WorkspaceManager, id: number) {
-		super(workspace, id, "Scene", false, true);
-	}
-}
-
-export class ScalarWorkspace extends Workspace {
-	public readonly scalar: Scalar;
-
-	public constructor(workspace: WorkspaceManager, id: number, name: string, scalar: Scalar) {
-		super(workspace, id, name);
-		this.scalar = scalar;
-	}
-}
-
-export class VectorFieldWorkspace extends Workspace {
-	public readonly vectorField: VectorField;
-
-	public constructor(workspace: WorkspaceManager, id: number, name: string, vectorField: VectorField) {
-		super(workspace, id, name);
-		this.vectorField = vectorField;
-	}
-}
-
-export class MapInspectorWorkspace extends Workspace {
-	public readonly map: MapGenerator;
-
-	public constructor(workspace: WorkspaceManager, id: number, name: string, map: MapGenerator) {
-		super(workspace, id, name);
-		this.map = map;
-	}
-}
-
-export class CurveEditorWorkspace extends Workspace {
-	public readonly curve: Curve;
-
-	public constructor(workspace: WorkspaceManager, id: number, name: string, curve: Curve) {
-		super(workspace, id, name);
-		this.curve = curve;
+		super(workspace, id, "Renderer", false, true);
 	}
 }

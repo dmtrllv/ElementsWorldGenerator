@@ -4,8 +4,6 @@ import { Controller } from "./controller";
 import { store } from "../state";
 import { Module } from "../editor/store";
 import type { Editor } from "../editor";
-import { createHeightmapMesh } from "./heightmap-mesh";
-import type { MapGenerator } from "../generator";
 
 @store
 export class Renderer extends Module {
@@ -18,12 +16,6 @@ export class Renderer extends Module {
 	private controller: Controller | null = null;
 	private resizeObserver: ResizeObserver | null = null;
 	private previousFrameTime: number = 0;
-
-	private currentRenderObject: Three.Mesh<Three.BufferGeometry, Three.MeshStandardMaterial> | null = null;
-	private currentRenderId: string | null = null;
-	private currentRenderMap: MapGenerator | null = null;
-	private currentGenerationId: number = -1;
-	private currentHeightScale: number = 0;
 
 
 	public constructor(editor: Editor) {
@@ -72,7 +64,6 @@ export class Renderer extends Module {
 
 	public dispose() {
 		this.glRenderer.setAnimationLoop(null);
-		this.clearRenderObject();
 		if (this.element)
 			this.controller?.dispose(this.element);
 		this.controller = null;
@@ -101,35 +92,5 @@ export class Renderer extends Module {
 		this.glRenderer.render(this.scene, this.camera);
 
 		this.controller?.render();
-	}
-
-	public renderHeightmap(id: string, map: MapGenerator, heightScale: number): void {
-		if (this.currentRenderId === id && this.currentRenderMap === map && this.currentGenerationId === map.generationId && this.currentHeightScale === heightScale)
-			return;
-
-		this.clearRenderObject();
-
-		this.currentRenderObject = createHeightmapMesh(map, heightScale);
-		this.currentRenderId = id;
-		this.currentRenderMap = map;
-		this.currentGenerationId = map.generationId;
-		this.currentHeightScale = heightScale;
-
-		this.scene.add(this.currentRenderObject);
-	}
-
-	private clearRenderObject(): void {
-		if (!this.currentRenderObject)
-			return;
-
-		this.scene.remove(this.currentRenderObject);
-		this.currentRenderObject.geometry.dispose();
-		this.currentRenderObject.material.dispose();
-
-		this.currentRenderObject = null;
-		this.currentRenderId = null;
-		this.currentRenderMap = null;
-		this.currentGenerationId = -1;
-		this.currentHeightScale = 0;
 	}
 }
