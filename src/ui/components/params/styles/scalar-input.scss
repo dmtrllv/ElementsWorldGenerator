@@ -1,5 +1,13 @@
-.scalar-input {
-	.header span {
-		font-size: 12px;
+.dropdown-panel .scalar-input {
+	.header {
+		background-color: transparent;
+		h4 {
+			font-size: 14px;
+			font-weight: normal;
+			padding: 2px 10px 2px 6px;
+			span {
+				font-size: 16px;
+			}
+		}
 	}
 }

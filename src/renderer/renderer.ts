@@ -23,7 +23,7 @@ export class Renderer extends Module {
 		this.camera.position.set(50, 35, 50);
 		this.glRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		this.glRenderer.shadowMap.enabled = true;
-		this.glRenderer.shadowMap.type = Three.PCFSoftShadowMap;
+		this.glRenderer.shadowMap.type = Three.PCFShadowMap;
 	}
 
 	public readonly initialize = (element: HTMLDivElement) => {

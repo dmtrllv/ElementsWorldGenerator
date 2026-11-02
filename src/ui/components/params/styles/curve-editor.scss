@@ -1,6 +1,14 @@
 .curve-input {
-	.header span {
-		font-size: 12px;
+	.header {
+		background-color: transparent;
+		h4 {
+			font-size: 14px;
+			font-weight: normal;
+			padding: 2px 10px 2px 6px;
+			span {
+				font-size: 16px;
+			}
+		}
 	}
 
 	.type-input {

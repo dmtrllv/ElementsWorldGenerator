@@ -7,6 +7,7 @@
 	z-index: 2;
 	border-right: 1px solid var(--border-1);
 	box-shadow: 0px 0px 8px 0px #000000a3;
+			font-size: 14px;
 
 	.slider {
 		position: absolute;
@@ -91,9 +92,18 @@
 
 		.tab-body {
 			display: none;
-			
+
 			&.active {
 				display: block;
+			}
+		}
+
+		.dropdown-panel {
+			& > .body {
+				padding-left: 15px;
+			}
+			.header h4 {
+				font-size: 14px;
 			}
 		}
 	}

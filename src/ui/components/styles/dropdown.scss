@@ -7,7 +7,7 @@
 			padding: 10px;
 			margin: 0;
 			border-radius: 4px;
-				background-color: var(--bg-4);
+			background-color: var(--bg-4);
 			&:hover {
 				background-color: var(--bg-2);
 			}
@@ -32,15 +32,6 @@
 	.body {
 		display: none;
 		margin: 5px 0px;
-
-		.dropdown-panel {
-			& > .body {
-				padding-left: 15px;
-			}
-			.header h4 {
-				font-size: 14px;
-			}
-		}
 	}
 
 	&.open > .body {

@@ -2,7 +2,7 @@ import { observable, state } from "../../state";
 import type { Param, ParamInfo, ParamState, ParamType } from "../params/param";
 import type { WorldParams } from "../world-params";
 
-export abstract class ParamGroup<T extends ParamGroup<T> = ParamGroup<any>> {
+export abstract class ParamGroup<T extends ParamGroup<T>> {
 	public static getDefaultProps<T extends typeof ParamGroup<any>>(this: T): ParamGroupProps<InstanceType<T>> {
 		const props: any = {};
 
@@ -49,7 +49,7 @@ export abstract class ParamGroup<T extends ParamGroup<T> = ParamGroup<any>> {
 		return c;
 	}
 
-	public subGroups(this: T): Record<string, ParamGroup> {
+	public subGroups(this: T): Record<string, ParamGroup<any>> {
 		const groups = (this.constructor as any)[SUB_GROUPS];
 		const c: any = {};
 		for (const n in groups) {
@@ -140,5 +140,5 @@ export const subGroup = <T extends ParamGroup<T>, K extends GroupKeys<T>>(type: 
 };
 
 type GroupKeys<T extends ParamGroup<T>> = {
-	[K in keyof T]: T[K] extends ParamGroup ? K : never;
+	[K in keyof T]: T[K] extends ParamGroup<any> ? K : never;
 }[keyof T];
