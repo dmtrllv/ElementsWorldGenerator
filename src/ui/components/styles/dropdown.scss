@@ -1,13 +1,16 @@
 .dropdown-panel {
 	.header {
 		position: relative;
-		border-bottom: 1px solid rgb(112, 112, 112);
 		user-select: none;
 		h4 {
 			font-size: 18px;
 			padding: 10px;
 			margin: 0;
-			text-transform: capitalize;
+			border-radius: 4px;
+				background-color: var(--bg-4);
+			&:hover {
+				background-color: var(--bg-2);
+			}
 		}
 	}
 	.icon {
@@ -15,12 +18,11 @@
 		right: 0;
 		top: calc(50% - 3px);
 		transform: translateY(calc(-50% - 3px));
-		right: 28px;
+		right: 20px;
 		font-size: 18px;
 	}
 
 	&.open {
-		border-bottom: 1px solid rgb(112, 112, 112);
 		& > .header > .icon {
 			top: calc(50% + 5px);
 			transform: translateY(-50%) rotate(180deg);
@@ -29,11 +31,14 @@
 
 	.body {
 		display: none;
+		margin: 5px 0px;
 
 		.dropdown-panel {
+			& > .body {
+				padding-left: 15px;
+			}
 			.header h4 {
 				font-size: 14px;
-				background-color: var(--bg-4);
 			}
 		}
 	}

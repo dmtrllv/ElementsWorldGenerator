@@ -2,9 +2,9 @@ import { OrbitControls, PointerLockControls } from "three/examples/jsm/Addons.js
 import { ViewHelper } from "three/addons/helpers/ViewHelper.js";
 import type { Renderer } from "./renderer";
 import { Vector3, type Camera } from "three";
-import { state, store } from "../state";
+import { state, observable } from "../state";
 
-@store
+@observable
 export class Controller {
 	private readonly viewHelper: ViewHelper;
 	private readonly orbitControls: OrbitControls<Camera>;

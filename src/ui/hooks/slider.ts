@@ -40,7 +40,7 @@ export const useSlider = (init: number, min: number, max: number, dir: "x" | "y"
 		},
 		set: (s: number) => {
 			if (size !== s)
-				setSize(s);
+				setSize(clamp(s, min, max));
 		}
 	};
 };

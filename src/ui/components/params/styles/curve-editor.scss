@@ -1,4 +1,8 @@
-.curve-editor {
+.curve-input {
+	.header span {
+		font-size: 12px;
+	}
+
 	.type-input {
 		display: grid;
 		grid-template-columns: 1fr 1fr;

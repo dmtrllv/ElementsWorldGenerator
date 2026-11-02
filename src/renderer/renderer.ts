@@ -1,11 +1,11 @@
 import * as Three from "three";
 import { Scene } from "./scene";
 import { Controller } from "./controller";
-import { store } from "../state";
+import { observable } from "../state";
 import { Module } from "../editor/store";
 import type { Editor } from "../editor";
 
-@store
+@observable
 export class Renderer extends Module {
 	private element: HTMLDivElement | null = null;
 

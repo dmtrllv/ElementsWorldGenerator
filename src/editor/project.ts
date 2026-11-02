@@ -1,6 +1,8 @@
-import { store } from "../state";
+import { World } from "../generator/world";
+import type { WorldParamProps } from "../generator/world-params";
+import { observable } from "../state";
 
-@store
+@observable
 export class ProjectInfo {
 	readonly name: string;
 
@@ -9,11 +11,12 @@ export class ProjectInfo {
 	}
 }
 
-@store
 export class Project {
 	public readonly info: ProjectInfo;
+	public readonly world: World;
 	
-	public constructor(info: ProjectInfo) {
+	public constructor(info: ProjectInfo, seed: number, worldParams: WorldParamProps) {
 		this.info = info;
+		this.world = new World(seed, worldParams);
 	}
 }

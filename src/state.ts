@@ -1,18 +1,46 @@
+
 import { useEffect, useState } from "react";
 
 const STATE_META = Symbol("STATE_META");
+const STORE_CLASS = Symbol("STORE_CLASS");
 
 type Dispatcher<T = any> = (value: { state: T }) => void;
-
 type ObservableRegistry = WeakMap<object, Dispatcher[]>;
 
 const OBSERVABLES: ObservableRegistry = new WeakMap();
 
-const getMeta = (Class: any): string[] => {
+type StoreInstance = {
+	proxy: any;
+	values: Map<PropertyKey, any>;
+	proxies: Map<PropertyKey, any>;
+	dispatchers: Map<PropertyKey, Dispatcher[]>;
+	classDispatchers: Dispatcher[];
+	register: (meta: PropertyKey[]) => void;
+};
+
+const STORE_INSTANCES = new WeakMap<object, StoreInstance>();
+
+const getOwnMeta = (Class: any): PropertyKey[] => {
 	if (!Object.prototype.hasOwnProperty.call(Class, STATE_META))
 		Object.defineProperty(Class, STATE_META, { value: [], writable: false });
 
 	return Class[STATE_META];
+};
+
+const getOriginalClass = (Class: any): any => {
+	while (Object.prototype.hasOwnProperty.call(Class, STORE_CLASS))
+		Class = Class[STORE_CLASS];
+
+	return Class;
+};
+
+const getMeta = (Class: any): PropertyKey[] => {
+	Class = getOriginalClass(Class);
+
+	const parent = Object.getPrototypeOf(Class);
+	const inherited = parent && parent !== Function.prototype? getMeta(parent): [];
+
+	return [...new Set([...inherited, ...getOwnMeta(Class)])];
 };
 
 const getDispatchers = (obj: any): Dispatcher[] | null => {
@@ -22,157 +50,201 @@ const getDispatchers = (obj: any): Dispatcher[] | null => {
 	return OBSERVABLES.get(obj) || null;
 };
 
-export const store = (Class: any): any => {
-	const meta = [...getMeta(Class)];
+const createStore = (target: any): StoreInstance => {
+	const values = new Map<PropertyKey, any>();
+	const proxies = new Map<PropertyKey, any>();
+	const dispatchers = new Map<PropertyKey, Dispatcher[]>();
+	const classDispatchers: Dispatcher[] = [];
 
-	return class extends Class {
-		public constructor(...args: any[]) {
-			super(...args);
+	let proxiedSelf: any;
 
-			const self = this as any;
-			const values: Record<string | number | symbol, any> = {};
-			const proxies: Record<string | number | symbol, any> = {};
-			const dispatchers: Record<string | number | symbol, Dispatcher[]> = {};
-			const classDispatchers: Dispatcher[] = [];
+	const notify = (key: PropertyKey) => {
+		const value = { state: proxies.get(key) };
 
-			let proxiedSelf: any;
+		dispatchers.get(key)?.slice().forEach(dispatcher => dispatcher(value));
+		classDispatchers.slice().forEach(dispatcher => dispatcher({ state: proxiedSelf }));
+	};
 
-			const notify = (key: string | number | symbol) => {
-				const value = { state: proxies[key] };
+	const setProxy = (key: PropertyKey, value: any) => {
+		values.set(key, value);
 
-				dispatchers[key]?.slice().forEach(dispatcher => dispatcher(value));
-				classDispatchers.slice().forEach(dispatcher => dispatcher({ state: proxiedSelf }));
-			};
+		if (value === null || typeof value !== "object") {
+			proxies.delete(key);
+			return;
+		}
 
-			const setProxy = (key: string | number | symbol, value: any) => {
-				values[key] = value;
+		if (OBSERVABLES.has(value)) {
+			proxies.set(key, value);
+			return;
+		}
 
-				if (value === null || typeof value !== "object") {
-					delete proxies[key];
-					return value;
-				}
+		let propertyDispatchers = dispatchers.get(key);
 
-				if (OBSERVABLES.has(value)) {
-					proxies[key] = value;
-					return value;
-				}
+		if (!propertyDispatchers) {
+			propertyDispatchers = [];
+			dispatchers.set(key, propertyDispatchers);
+		}
 
-				if (!dispatchers[key])
-					dispatchers[key] = [];
+		const current = proxies.get(key);
 
-				if (!proxies[key] || proxies[key] !== value) {
-					proxies[key] = new Proxy(value, {
-						get(target, property) {
-							return Reflect.get(target, property, target);
-						},
-						set(target, property, newValue) {
-							const result = Reflect.set(target, property, newValue, target);
+		if (current && current !== value && values.get(key) === value)
+			proxies.delete(key);
 
-							if (result)
-								notify(key);
-
-							return result;
-						},
-						deleteProperty(target, property) {
-							const result = Reflect.deleteProperty(target, property);
-
-							if (result)
-								notify(key);
-
-							return result;
-						},
-						defineProperty(target, property, descriptor) {
-							const result = Reflect.defineProperty(target, property, descriptor);
-
-							if (result)
-								notify(key);
-
-							return result;
-						}
-					});
-
-					OBSERVABLES.set(proxies[key], dispatchers[key]);
-				}
-
-				return proxies[key];
-			};
-
-			for (const key of meta) {
-				dispatchers[key] = [];
-				setProxy(key, self[key]);
-			}
-
-			proxiedSelf = new Proxy(this, {
+		if (!proxies.has(key)) {
+			const proxy = new Proxy(value, {
 				get(target, property) {
-					if (property === "constructor")
-						return target.constructor;
-
-					if (Object.prototype.hasOwnProperty.call(values, property))
-						return values[property] !== null && typeof values[property] === "object" ? proxies[property] : values[property];
-
-					return Reflect.get(target, property, proxiedSelf);
+					return Reflect.get(target, property, target);
 				},
 				set(target, property, newValue) {
-					if (Object.prototype.hasOwnProperty.call(values, property)) {
-						setProxy(property, newValue);
-						Reflect.set(target, property, newValue, target);
-						notify(property);
-						return true;
-					}
+					const result = Reflect.set(target, property, newValue, target);
 
-					return Reflect.set(target, property, newValue, proxiedSelf);
+					if (result)
+						notify(key);
+
+					return result;
 				},
 				deleteProperty(target, property) {
-					if (Object.prototype.hasOwnProperty.call(values, property)) {
-						delete values[property];
-						delete proxies[property];
-						notify(property);
-						return true;
-					}
+					const result = Reflect.deleteProperty(target, property);
 
-					return Reflect.deleteProperty(target, property);
+					if (result)
+						notify(key);
+
+					return result;
+				},
+				defineProperty(target, property, descriptor) {
+					const result = Reflect.defineProperty(target, property, descriptor);
+
+					if (result)
+						notify(key);
+
+					return result;
 				}
 			});
 
-			OBSERVABLES.set(proxiedSelf, classDispatchers);
-
-			for (const key in this) {
-				const value = this[key];
-
-				if (typeof value !== "function")
-					continue;
-
-				if (!Object.prototype.hasOwnProperty.call(value, "prototype"))
-					continue;
-				//	throw new Error(`Arrow function "${Class.name}.${key}" cannot be used as a store method. Use a regular method instead.`);
-
-				this[key] = value.bind(proxiedSelf);
-			}
-
-			return proxiedSelf;
+			proxies.set(key, proxy);
+			OBSERVABLES.set(proxy, propertyDispatchers);
 		}
 	};
+
+	const register = (meta: PropertyKey[]) => {
+		for (const key of meta) {
+			if (values.has(key))
+				continue;
+
+			dispatchers.set(key, []);
+			setProxy(key, Reflect.get(proxiedSelf, key, proxiedSelf));
+		}
+	};
+
+	proxiedSelf = new Proxy(target, {
+		get(target, property) {
+			if (property === "constructor")
+				return target.constructor;
+
+			if (values.has(property))
+				return proxies.has(property) ? proxies.get(property) : values.get(property);
+
+			return Reflect.get(target, property, proxiedSelf);
+		},
+		set(target, property, newValue) {
+			if (values.has(property)) {
+				setProxy(property, newValue);
+				Reflect.set(target, property, newValue, target);
+				notify(property);
+				return true;
+			}
+
+			return Reflect.set(target, property, newValue, proxiedSelf);
+		},
+		deleteProperty(target, property) {
+			if (values.has(property)) {
+				values.delete(property);
+				proxies.delete(property);
+				Reflect.deleteProperty(target, property);
+				notify(property);
+				return true;
+			}
+
+			return Reflect.deleteProperty(target, property);
+		},
+		defineProperty(target, property, descriptor) {
+			const result = Reflect.defineProperty(target, property, descriptor);
+
+			if (result && values.has(property)) {
+				setProxy(property, Reflect.get(target, property, target));
+				notify(property);
+			}
+
+			return result;
+		}
+	});
+
+	const instance: StoreInstance = {
+		proxy: proxiedSelf,
+		values,
+		proxies,
+		dispatchers,
+		classDispatchers,
+		register
+	};
+
+	STORE_INSTANCES.set(proxiedSelf, instance);
+	OBSERVABLES.set(proxiedSelf, classDispatchers);
+
+	return instance;
 };
 
-export abstract class Store<T extends new (...args: any[]) => Store<T>> {
-	public new(...args: ConstructorParameters<T>): InstanceType<T> {
-		return new (this.constructor as T)(...args) as InstanceType<T>;
+const bindMethods = (instance: any, proxy: any) => {
+	for (const key in instance) {
+		const value = instance[key];
+
+		if (typeof value !== "function")
+			continue;
+
+		if (!Object.prototype.hasOwnProperty.call(value, "prototype"))
+			continue;
+
+		instance[key] = value.bind(proxy);
 	}
-}
+};
 
-export const state = <T extends object>(target: T, key: string | symbol | number) => {
-	const meta = getMeta(target.constructor);
+export const observable = (Class: any): any => {
+	const meta = getMeta(Class);
 
-	if (!meta.includes(key as string))
-		meta.push(key as string);
+	const Wrapped = class extends Class {
+		public constructor(...args: any[]) {
+			super(...args);
+
+			let instance = STORE_INSTANCES.get(this);
+
+			if (!instance) {
+				instance = createStore(this);
+				bindMethods(this, instance.proxy);
+			}
+
+			instance.register(meta);
+
+			return instance.proxy;
+		}
+	};
+
+	Object.defineProperty(Wrapped, STORE_CLASS, { value: Class });
+
+	return Wrapped;
+};
+
+export const state = <T extends object>(target: T, key: PropertyKey) => {
+	const meta = getOwnMeta(target.constructor);
+
+	if (!meta.includes(key))
+		meta.push(key);
 };
 
 export const observe = <T>(state: T): T => {
 	const dispatchers = getDispatchers(state);
 
-	if (!dispatchers) {
+	if (!dispatchers)
 		throw new Error("value is not an observable state!");
-	}
 
 	const [value, setValue] = useState<{ state: T }>({ state });
 

@@ -1,11 +1,11 @@
-import { state, store } from "../state";
+import { state, observable } from "../state";
 import { randomSeed } from "../utils";
 import type { Editor } from "./editor";
 import { Project, ProjectInfo } from "./project";
 import { SettingsManager } from "./settings";
 import { Module } from "./store";
 
-@store
+@observable
 export class ProjectManager extends Module {
 	private static readonly loadProjects = (): ProjectInfo[] => {
 		const projects = JSON.parse(localStorage.getItem("editor.saves") || "[]");
@@ -26,7 +26,8 @@ export class ProjectManager extends Module {
 
 	public constructor(editor: Editor) {
 		super(editor);
-		this._activeProject = new Project({ name: "Unsaved" });
+		const settings = editor.get(SettingsManager);
+		this._activeProject = new Project({ name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams });
 	}
 
 	public async saveAs(_name: string, _force: boolean = false) {

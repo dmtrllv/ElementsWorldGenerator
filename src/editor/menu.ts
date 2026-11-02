@@ -1,10 +1,10 @@
-import { state, store } from "../state";
+import { observable, state } from "../state";
 import { SaveModal } from "../ui/modals/saves";
 import { ModalManager } from "./modals";
 import { ProjectManager } from "./project-manager";
 import { Module } from "./store";
 
-@store
+@observable
 export class Menu extends Module {
 	private readonly projectManager = this.editor.get(ProjectManager);
 	private readonly modalManager = this.editor.get(ModalManager);
@@ -35,7 +35,7 @@ export class Menu extends Module {
 
 let idCounter = 0;
 
-@store
+@observable
 export class MenuItem {
 	public readonly id: number = idCounter++;
 

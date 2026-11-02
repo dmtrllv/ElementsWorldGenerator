@@ -1,7 +1,7 @@
-import { state, store } from "../state";
+import { state, observable } from "../state";
 import { Module } from "./store";
 
-@store
+@observable
 export class NotificationManager extends Module {
 	#idCounter = 0;
 

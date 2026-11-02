@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { useSlider } from "../hooks/slider";
+import { Editor, ProjectManager } from "../../editor";
+import { observe } from "../../state";
+import { GroupInput } from "../components/params/group-input";
 
 import "./styles/sidebar.scss";
 
 const World = () => {
-	//const manager = Editor.useModule(ProjectManager);
-
+	const manager = Editor.useModule(ProjectManager);
+	const project = observe(manager.activeProject);
+	const params = project.world.worldParams;
+	
 	return (
-		null
+		<div>
+			<GroupInput group={params.geography} />
+		</div>
 	);
 };
 

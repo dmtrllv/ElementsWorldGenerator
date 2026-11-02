@@ -1,8 +1,8 @@
 import type React from "react";
-import { state, store } from "../state";
+import { state, observable } from "../state";
 import { Module } from "./store";
 
-@store
+@observable
 export class ModalManager extends Module {
 	@state
 	public readonly modals: Modal[] = [];
@@ -47,7 +47,7 @@ export class ModalManager extends Module {
 	}
 }
 
-@store
+@observable
 export class Modal {
 	private static idCounter = 0;
 

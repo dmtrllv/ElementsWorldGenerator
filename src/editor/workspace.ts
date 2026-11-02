@@ -1,7 +1,7 @@
-import { state, store } from "../state";
+import { state, observable } from "../state";
 import { Module } from "./store";
 
-@store
+@observable
 export class WorkspaceManager extends Module {
 	private idCounter = 0;
 
@@ -44,7 +44,7 @@ export class WorkspaceManager extends Module {
 type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extends [WorkspaceManager, number, string, ...infer Args] ? Args : never;
 export type WorkspaceType<T extends Workspace> = new (manager: WorkspaceManager, id: number, ...args: any[]) => T;
 
-@store
+@observable
 export abstract class Workspace {
 	public readonly id: number;
 	public readonly isClosable: boolean;
