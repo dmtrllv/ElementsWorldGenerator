@@ -40,7 +40,7 @@ export class Controller {
 		this.orbitControls.enableDamping = true;
 		this.orbitControls.dampingFactor = 0.08;
 		this.orbitControls.minDistance = 2;
-		this.orbitControls.maxDistance = 200;
+		this.orbitControls.maxDistance = 2000;
 		this.orbitControls.maxPolarAngle = Math.PI;
 		this.orbitControls.addEventListener("change", () => {
 			//this.onViewTargetChanged?.();

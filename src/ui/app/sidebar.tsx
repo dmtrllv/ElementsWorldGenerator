@@ -10,9 +10,10 @@ import { MapInspectorWorkspace, WorkspaceManager } from "../../editor/workspace"
 import { LatitudeMap } from "../../generator/maps/latitude-map";
 import type { MapGenerator, MapGeneratorType } from "../../generator/maps/map";
 import { CurveEditor } from "../components/curve-editor";
+import { ElevationMap } from "../../generator";
+import { Renderer } from "../../renderer";
 
 import "./styles/sidebar.scss";
-import { ElevationMap } from "../../generator";
 
 const World = () => {
 	const manager = Editor.useModule(ProjectManager);
@@ -27,19 +28,23 @@ const World = () => {
 
 	const project = Editor.useModule(ProjectManager).activeProject;
 	const workspaces = Editor.useModule(WorkspaceManager);
+	const renderer = Editor.useModule(Renderer);
 
-	const generateAndOpen = (e: React.MouseEvent, name: string, type: MapGeneratorType<MapGenerator>) => {
+	const generateAndOpen = (e: React.MouseEvent, name: string, type: MapGeneratorType<MapGenerator>, renderMesh: boolean) => {
 		e.stopPropagation();
 		e.preventDefault();
 		const map = project.world.generator.generateMap(type, true);
-		workspaces.open(MapInspectorWorkspace, name, map);
+		if (renderMesh)
+			renderer.renderHeightmap(name, map, world.size.y);
+		else
+			workspaces.open(MapInspectorWorkspace, name, map);
 	};
 
-	const mapTitle = (title: string, type: MapGeneratorType<MapGenerator>) => {
+	const mapTitle = (title: string, type: MapGeneratorType<MapGenerator>, renderMesh: boolean) => {
 		return (
 			<h4>
 				{title}
-				<i onClick={(e) => generateAndOpen(e, title + " Map", type)} className="fa-solid fa-play" />
+				<i onClick={(e) => generateAndOpen(e, title + " Map", type, renderMesh)} className="fa-solid fa-play" />
 			</h4>
 		);
 	};
@@ -51,7 +56,7 @@ const World = () => {
 				<Vector3Input name="size" value={world.size} onChange={v => world.size = v} />
 				<NumberInput name="chunkSize" value={world.chunkSize} onChange={v => world.chunkSize = v} />
 			</DropdownPanel>
-			<DropdownPanel title={mapTitle("Latitude", LatitudeMap)} open={false}>
+			<DropdownPanel title={mapTitle("Latitude", LatitudeMap, false)} open={false}>
 				<div className="input-field">
 					<div className="label">
 						Equator Axis:
@@ -65,7 +70,7 @@ const World = () => {
 				<NumberInput name="frequency" value={latitude.frequency} onChange={v => latitude.frequency = v} />
 				<ScalarInput name="distortion" workspaceName="Latitude Distortion" value={latitude.distortion} />
 			</DropdownPanel>
-			<DropdownPanel title={mapTitle("Elevation", ElevationMap)} open={false}>
+			<DropdownPanel title={mapTitle("Elevation", ElevationMap, true)} open={false}>
 				<CurveEditor name="Base Profile" curve={elevation.base} />
 				<ScalarInput name="Continentalness" workspaceName="Continentalness" value={elevation.continental} />
 				<DropdownPanel title="Mountains" open={false}>
