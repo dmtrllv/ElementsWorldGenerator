@@ -5,15 +5,20 @@ import { observe } from "../../state";
 import { GroupInput } from "../components/params/group-input";
 
 import "./styles/sidebar.scss";
+import { ContinentalMap } from "../../generator/maps/continental-map";
 
 const World = () => {
 	const manager = Editor.useModule(ProjectManager);
 	const project = observe(manager.activeProject);
 	const params = project.world.worldParams;
-	
+
 	return (
 		<div>
 			<GroupInput group={params.geography} />
+
+			<button onClick={() => {
+				console.log(project.world.generator.getMap(ContinentalMap).get(10, 10))
+			}}>Test</button>
 		</div>
 	);
 };
