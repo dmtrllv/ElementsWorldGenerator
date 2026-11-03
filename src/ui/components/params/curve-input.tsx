@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { observe } from "../../../state";
+import { useObservable } from "../../../reactive";
 import { clamp } from "three/src/math/MathUtils.js";
 import type { Curve, CurvePoint, InterpolationType } from "../../../generator/params";
 import { DropdownPanel } from "../dropdown";
@@ -12,7 +12,7 @@ type CurveEditorProps = {
 }
 
 export const CurveEditor = ({ curve }: CurveEditorProps) => {
-	curve = observe(curve);
+	curve = useObservable(curve);
 
 	const renderer = useRef(new CurveRenderer(curve));
 	const canvas = useRef<HTMLCanvasElement>(null);

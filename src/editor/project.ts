@@ -1,6 +1,6 @@
 import { World } from "../generator/world";
 import type { WorldParamProps } from "../generator/world-params";
-import { observable } from "../state";
+import { observable } from "../reactive";
 
 @observable
 export class ProjectInfo {

@@ -1,7 +1,7 @@
 import * as Three from "three";
 import { Scene } from "./scene";
 import { Controller } from "./controller";
-import { observable } from "../state";
+import { observable } from "../reactive";
 import { Module } from "../editor/store";
 import type { Editor } from "../editor";
 

@@ -1,11 +1,11 @@
-import { state, observable } from "../state";
+import { observable } from "../reactive";
 import { Module } from "./store";
 
 @observable
 export class NotificationManager extends Module {
 	#idCounter = 0;
 
-	@state
+	@observable
 	public readonly notifications: Notification[] = [];
 
 	public notify(notification: NotificationData) {

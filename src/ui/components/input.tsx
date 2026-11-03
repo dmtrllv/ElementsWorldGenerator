@@ -109,8 +109,8 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, .
 	const sx = useSlider(value.x, -Infinity, Infinity, "y");
 	const sy = useSlider(value.y, -Infinity, Infinity, "y");
 
-	const [x, setX] = useState(value.x.toString());
-	const [y, setY] = useState(value.y.toString());
+	const [x, _setX] = useState(value.x.toString());
+	const [y, _setY] = useState(value.y.toString());
 	const prevX = useRef(x);
 	const prevY = useRef(y);
 

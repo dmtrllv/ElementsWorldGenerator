@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useRef, type PropsWithChildren } from "react";
-import { observe } from "../state";
+import { useObservable } from "../reactive";
 import type { Module, ModuleType } from "./store";
 
 export class Editor {
@@ -12,7 +12,7 @@ export class Editor {
 
 	public static readonly useModule = <T extends Module>(type: ModuleType<T>): T => {
 		const editor = Editor.useContext();
-		return observe(editor.get(type));
+		return useObservable(editor.get(type));
 	}
 
 	private readonly stores: Map<ModuleType<any>, Module> = new Map();

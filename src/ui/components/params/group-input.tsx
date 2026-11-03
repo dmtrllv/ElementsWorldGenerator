@@ -1,6 +1,6 @@
 import type { ParamGroup } from "../../../generator/param-groups/param-group";
 import { Curve, Float, Range, Scalar, VectorField } from "../../../generator/params";
-import { observe } from "../../../state";
+import { useObservable } from "../../../reactive";
 import { NumberInput } from "../input";
 import { CurveEditor } from "./curve-input";
 import { RangeInput } from "./range-input";
@@ -15,7 +15,7 @@ import "./styles/group-input.scss";
 
 export const GroupInput = ({ group }: { group: ParamGroup<any> }) => {
 	const workspaces = Editor.useModule(WorkspaceManager);
-	group = observe(group);
+	group = useObservable(group);
 
 	const params = group.params();
 	const groups = group.subGroups();

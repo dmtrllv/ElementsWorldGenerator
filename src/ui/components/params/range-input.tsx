@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import type { Range } from "../../../generator/params";
 import { useSlider } from "../../hooks/slider";
 import { nameToLabel } from "../input";
-import { observe } from "../../../state";
+import { useObservable } from "../../../reactive";
 
 import "./styles/range.scss";
 
 export const RangeInput = ({ range }: { range: Range }) => {
-	const state = observe(range.state);
+	const state = useObservable(range.state);
 
 	const sx = useSlider(state[0], -Infinity, Infinity, "y", -0.05);
 	const sy = useSlider(state[1], -Infinity, Infinity, "y", -0.05);

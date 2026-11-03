@@ -1,10 +1,10 @@
-import { observable, state } from "../state";
+import { observable,} from "../reactive";
 import { Generator } from "./generator";
 import { WorldParams, type WorldParamProps } from "./world-params";
 
 @observable
 export class World {
-	@state
+	@observable
 	public readonly worldParams: WorldParams;
 	
 	public readonly generator: Generator;

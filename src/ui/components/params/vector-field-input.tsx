@@ -1,4 +1,4 @@
-import { observe } from "../../../state";
+import { useObservable } from "../../../reactive";
 import { nameToLabel, NumberInput } from "../input";
 import type { VectorField } from "../../../generator/params";
 import { DropdownPanel } from "../dropdown";
@@ -6,7 +6,7 @@ import { DropdownPanel } from "../dropdown";
 import "./styles/vector-field-input.scss";
 
 export const VectorFieldInput = ({ vectorField }: { vectorField: VectorField }) => {
-	const state = observe(vectorField.state);
+	const state = useObservable(vectorField.state);
 
 	return (
 		<DropdownPanel className="vector-field-input" title={<h4>{nameToLabel(vectorField.name)} <span>(vector field)</span></h4>} open={false}>

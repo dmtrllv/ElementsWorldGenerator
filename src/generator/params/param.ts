@@ -1,4 +1,4 @@
-import { observable, state } from "../../state";
+import { observable,} from "../../reactive";
 import type { WorldParams } from "../world-params";
 
 @observable
@@ -10,7 +10,7 @@ export abstract class Param<State extends {}> {
 	public get name() { return this.info.name; }
 	public get description() { return this.info.description; }
 
-	@state
+	@observable
 	public state: State;
 
 	public constructor(worldParams: WorldParams, info: ParamInfo<State>, state: State = info.default) {

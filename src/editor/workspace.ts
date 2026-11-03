@@ -1,4 +1,4 @@
-import { state, observable } from "../state";
+import { observable } from "../reactive";
 import type { Editor } from "./editor";
 import { Module } from "./store";
 
@@ -10,15 +10,15 @@ export class WorkspaceManager extends Module {
 		return this.idCounter++;
 	}
 
-	@state
+	@observable
 	public readonly workspaces: Workspace[] = [
 		
 	];
 
-	@state
+	@observable
 	public readonly layout: WorkspaceLayout = new WorkspaceLayout("y", null, []);
 
-	@state
+	@observable
 	public movingWorkspace: Workspace | null = null;
 
 	public constructor(editor: Editor) {
@@ -56,7 +56,7 @@ type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extend
 export type WorkspaceType<T extends Workspace> =
 	new (manager: WorkspaceManager, layout: WorkspaceLayout | null, id: number, ...args: any[]) => T;
 
-@observable
+@observable({})
 export abstract class Workspace {
 	public readonly id: number;
 	public readonly isClosable: boolean;
@@ -64,7 +64,7 @@ export abstract class Workspace {
 
 	protected readonly workspace: WorkspaceManager;
 
-	@state
+	@observable
 	public name: string;
 
 	public layout: WorkspaceLayout | null;
@@ -99,19 +99,19 @@ export class WorkspaceLayout {
 
 	public readonly id: number = WorkspaceLayout.idCounter++;
 
-	@state
+	@observable
 	private _direction: LayoutDirection | "tabs";
 
-	@state
+	@observable
 	private _fallbackDirection: LayoutDirection = "y";
 
-	@state
+	@observable
 	public activeWorkspace: number = 0;
 
-	@state
+	@observable
 	public children: Workspace[] | WorkspaceLayout[];
 
-	@state
+	@observable
 	public size: number | "flex" = "flex";
 
 	public parent: WorkspaceLayout | null;

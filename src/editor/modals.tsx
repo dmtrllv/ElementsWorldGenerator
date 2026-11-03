@@ -1,13 +1,13 @@
 import type React from "react";
-import { state, observable } from "../state";
+import { observable } from "../reactive";
 import { Module } from "./store";
 
 @observable
 export class ModalManager extends Module {
-	@state
+	@observable
 	public readonly modals: Modal[] = [];
 
-	@state
+	@observable
 	public confirmModal: ConfirmModal | null = null;
 
 	public confirm(message: string, title: string = "Confirm") {
@@ -54,19 +54,19 @@ export class Modal {
 	private readonly manager: ModalManager;
 	public readonly id: number;
 
-	@state
+	@observable
 	public title!: string;
 
-	@state
+	@observable
 	public closable: boolean = true;
 
-	@state
+	@observable
 	public Component!: ModalFC;
 
-	@state
+	@observable
 	public width: number = 640;
 
-	@state
+	@observable
 	public height: number = 480;
 
 	public constructor(manager: ModalManager, props: ModalProps) {

@@ -2,7 +2,7 @@ import { OrbitControls, PointerLockControls } from "three/examples/jsm/Addons.js
 import { ViewHelper } from "three/addons/helpers/ViewHelper.js";
 import type { Renderer } from "./renderer";
 import { Vector3, type Camera } from "three";
-import { state, observable } from "../state";
+import { observable } from "../reactive";
 
 @observable
 export class Controller {
@@ -17,10 +17,10 @@ export class Controller {
 	private readonly movement = new Vector3();
 	private readonly up = new Vector3(0, 1, 0);
 
-	@state
+	@observable
 	public movementSpeed = 12;
 
-	@state
+	@observable
 	private _cameraMode: CamerMode = "orbital";
 
 

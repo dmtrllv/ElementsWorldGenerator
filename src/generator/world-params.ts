@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { observable, state } from "../state";
+import { observable,} from "../reactive";
 import { GeographyParams } from "./param-groups/geography/geography";
 import type { ParamGroupProps } from "./param-groups/param-group";
 import { TerrainParams } from "./param-groups/terrain/terrain";
@@ -14,7 +14,7 @@ export class WorldParams {
 		}
 	}
 
-	@state
+	@observable
 	private _seed: number;
 
 
@@ -29,7 +29,7 @@ export class WorldParams {
 
 	private readonly seedChangeListeners: SeedChangeListener[] = [];
 
-	@state
+	@observable
 	public size: Vector3;
 
 	public readonly geography!: GeographyParams;

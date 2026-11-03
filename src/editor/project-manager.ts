@@ -1,4 +1,4 @@
-import { state, observable } from "../state";
+import { observable } from "../reactive";
 import { randomSeed } from "../utils";
 import type { Editor } from "./editor";
 import { Project, ProjectInfo } from "./project";
@@ -12,10 +12,10 @@ export class ProjectManager extends Module {
 		return projects.map((p: any) => new ProjectInfo(p.name));
 	}
 
-	@state
+	@observable
 	private readonly _projects: ProjectInfo[] = ProjectManager.loadProjects();
 
-	@state
+	@observable
 	private _activeProject: Project;
 
 	public get activeProject() { return this._activeProject; }

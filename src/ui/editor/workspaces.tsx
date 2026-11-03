@@ -3,7 +3,7 @@ import { Editor } from "../../editor";
 import { RendererWorkspace, Workspace, WorkspaceLayout, WorkspaceManager, type SplitEdge, type WorkspaceType } from "../../editor/workspace";
 import { RendererViewWorkspace } from "./workspaces/renderer";
 import React, { useMemo, useRef, useState, type CSSProperties } from "react";
-import { observe } from "../../state";
+import { useObservable } from "../../reactive";
 import { useEvent } from "../hooks/event";
 import { ParamGroupWorkspace } from "../../editor/workspaces/param-group-workspace";
 import { PramPreview } from "./workspaces/param-preview";
@@ -35,7 +35,7 @@ export const Workspaces = () => {
 
 const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: WorkspaceLayout, isFirst: boolean; }) => {
 	const workspaces = Editor.useModule(WorkspaceManager);
-	const layout = observe(initialLayout);
+	const layout = useObservable(initialLayout);
 
 	const [slidingState, setSlidingState] = useState<SlidingState>({
 		isSliding: false,
@@ -224,7 +224,7 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 };
 
 const WorkspacePanel = ({ workspace: initialWorkspace }: { workspace: Workspace }) => {
-	const workspace = observe(initialWorkspace);
+	const workspace = useObservable(initialWorkspace);
 
 	const Component = useMemo(
 		() => WorkspaceComponents.get(workspace.constructor as WorkspaceType<any>),

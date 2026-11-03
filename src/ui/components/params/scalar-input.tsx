@@ -1,4 +1,4 @@
-import { observe } from "../../../state";
+import { useObservable } from "../../../reactive";
 import { nameToLabel, NumberInput } from "../input";
 import type { Scalar } from "../../../generator/params";
 import { DropdownPanel } from "../dropdown";
@@ -6,7 +6,7 @@ import { DropdownPanel } from "../dropdown";
 import "./styles/scalar-input.scss";
 
 export const ScalarInput = ({ scalar }: { scalar: Scalar }) => {
-	const state = observe(scalar.state);
+	const state = useObservable(scalar.state);
 
 	return (
 		<DropdownPanel className="scalar-input" title={<h4>{nameToLabel(scalar.name)} <span>(noise)</span></h4>} open={false}>

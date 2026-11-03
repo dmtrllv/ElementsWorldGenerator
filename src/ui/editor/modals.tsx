@@ -1,6 +1,6 @@
 import { Editor } from "../../editor";
 import { ConfirmModal, Modal, ModalManager } from "../../editor/modals";
-import { observe } from "../../state";
+import { useObservable } from "../../reactive";
 import { last } from "../../utils";
 import { useEvent } from "../hooks/event";
 
@@ -35,7 +35,7 @@ export const Modals = () => {
 }
 
 const ModalWindow = (props: { modal: Modal }) => {
-	const modal = observe(props.modal);
+	const modal = useObservable(props.modal);
 	return (
 		<div className="modal" onMouseDown={e => e.stopPropagation()} style={{ width: modal.width + "px", height: modal.height + "px" }}>
 			<div className="titlebar">
@@ -50,7 +50,7 @@ const ModalWindow = (props: { modal: Modal }) => {
 };
 
 const ConfirmWindow = ({ modal }: { modal: ConfirmModal }) => {
-	const { message } = observe(modal);
+	const { message } = useObservable(modal);
 	return (
 		<div className="modal">
 			<div className="titlebar">

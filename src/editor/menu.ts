@@ -1,4 +1,4 @@
-import { observable, state } from "../state";
+import { observable } from "../reactive";
 import { SaveModal } from "../ui/modals/saves";
 import { ModalManager } from "./modals";
 import { ProjectManager } from "./project-manager";
@@ -9,7 +9,7 @@ export class Menu extends Module {
 	private readonly projectManager = this.editor.get(ProjectManager);
 	private readonly modalManager = this.editor.get(ModalManager);
 
-	@state
+	@observable
 	public readonly items: MenuItem[] = [
 		new MenuItem("File", [
 			new MenuItem("New"),
@@ -39,13 +39,13 @@ let idCounter = 0;
 export class MenuItem {
 	public readonly id: number = idCounter++;
 
-	@state
+	@observable
 	public text: string;
 
-	@state
+	@observable
 	public action: Function | null;
 
-	@state
+	@observable
 	public children: MenuChild[] | (() => MenuChild[]);
 
 	public constructor(text: string, children: MenuChild[] | (() => MenuChild[]) = [], action: Function | null = null) {

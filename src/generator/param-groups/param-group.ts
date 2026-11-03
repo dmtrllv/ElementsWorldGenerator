@@ -1,4 +1,4 @@
-import { observable, state } from "../../state";
+import { observable, } from "../../reactive";
 import type { Param, ParamInfo, ParamState, ParamType } from "../params/param";
 import type { WorldParams } from "../world-params";
 
@@ -110,7 +110,7 @@ const getGroupInfo = (target: Function): GroupInfo | null => {
 
 export const group = <T extends ParamGroup<T>>(info: GroupInfo) => (target: ParamGroupType<T>) => {
 	(target as any)[INFO] = info;
-	return observable(target);
+	observable(target);
 };
 
 export type GroupInfo = {
@@ -134,7 +134,7 @@ export const param = <T extends ParamGroup<T>, K extends ParamKeys<T>>(type: T[K
 		type,
 		info
 	};
-	state(target, key);
+	observable(target, key as any);
 };
 
 type ParamKeys<T extends ParamGroup<T>> = {

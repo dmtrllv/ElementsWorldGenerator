@@ -1,13 +1,13 @@
 import { useRef, useEffect, useState } from "react";
 import { Editor, ProjectManager } from "../../../editor";
 import type { ParamGroupWorkspace } from "../../../editor/workspaces/param-group-workspace";
-import { observe } from "../../../state";
+import { useObservable } from "../../../reactive";
 import { clamp } from "../../../utils";
 
 export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) => {
 	const world = Editor.useModule(ProjectManager).activeProject.world.worldParams;
-	const params = observe(world); // todo observe recursive?
-	const paramGroup = observe(workspace.paramGroup);
+	const params = useObservable(world); // todo observe recursive?
+	const paramGroup = useObservable(workspace.paramGroup);
 
 	const all = paramGroup.getAllParams();
 
@@ -20,9 +20,9 @@ export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) =
 	];
 
 	for(const p of all) {
-		observe(p);
+		useObservable(p);
 		if((typeof p.state === "object") && p.state) {
-			observe(p.state);
+			useObservable(p.state);
 			for(const k in p.state) {
 				dependencies.push(p.state[k]);
 			}

@@ -1,5 +1,5 @@
 import { Editor, Menu, MenuSep, type MenuChild, type MenuItem } from "../../editor";
-import { observe } from "../../state";
+import { useObservable } from "../../reactive";
 
 import "./styles/menubar.scss";
 
@@ -18,7 +18,7 @@ const getChildren = (item: MenuItem): MenuChild[] => {
 }
 
 const MenuItemView = ({ item }: { item: MenuItem }) => {
-	item = observe(item);
+	item = useObservable(item);
 
 	const children = getChildren(item);
 
