@@ -1,6 +1,6 @@
-import { getObservableState, notifyObservable, registerObservableState, type ObservableState } from "./internal";
+import { getObservableState, notifyObservable, registerObservableState, trackObservableRead, type ObservableState } from "./internal";
 
-type Constructor<T extends object = object> = new (...args: any[]) => T;
+type Constructor<T extends object = object> = (new (...args: any[]) => T) | (abstract new (...args: any[]) => T);
 
 type ClassMetadata = {
 	prototype: object;
@@ -66,6 +66,10 @@ const makeObservable = <T extends object>(value: T, tracked: Iterable<PropertyKe
 	let proxy: T;
 
 	proxy = new Proxy(value, {
+		get(target, key, receiver) {
+			trackObservableRead(state, key);
+			return Reflect.get(target, key, receiver);
+		},
 		set(target, key, next, receiver) {
 			const previous = Reflect.get(target, key, receiver);
 

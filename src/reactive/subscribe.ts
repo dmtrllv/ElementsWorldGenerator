@@ -3,7 +3,7 @@ import { getObservableState, type ObservableListener } from "./internal";
 export const subscribe: Subscriber = ((observable: object, keyOrHandler: PropertyKey | SubscribeHandler<any>, handler?: SubscribeHandlerWithKey<any, any>) => {
 	const state = getObservableState(observable);
 
-	if (!state) 
+	if (!state)
 		throw new TypeError("Cannot subscribe to a value that is not observable.");
 
 	if (typeof keyOrHandler === "function") {
@@ -14,17 +14,16 @@ export const subscribe: Subscriber = ((observable: object, keyOrHandler: Propert
 		return () => state.listeners.delete(listener);
 	}
 
-	if (typeof handler !== "function") 
+	if (typeof handler !== "function")
 		throw new TypeError("A property subscription requires a handler.");
 
 	let listeners = state.keyedListeners.get(keyOrHandler);
 
-	if (!listeners) 
+	if (!listeners)
 		state.keyedListeners.set(keyOrHandler, listeners = new Set());
 
-	const listener: ObservableListener = (key, value) => {
-		if (key === keyOrHandler) 
-			handler(value, keyOrHandler);
+	const listener: ObservableListener = () => {
+		handler(Reflect.get(state.proxy, keyOrHandler), keyOrHandler);
 	};
 
 	listeners.add(listener);
@@ -32,7 +31,7 @@ export const subscribe: Subscriber = ((observable: object, keyOrHandler: Propert
 	return () => {
 		listeners?.delete(listener);
 
-		if (listeners?.size === 0) 
+		if (listeners?.size === 0)
 			state.keyedListeners.delete(keyOrHandler);
 	};
 }) as Subscriber;
