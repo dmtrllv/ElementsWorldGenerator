@@ -108,9 +108,9 @@ const getGroupInfo = (target: Function): GroupInfo | null => {
 	return (target as any)[INFO];
 }
 
-export const group = <T extends ParamGroup<T>>(info: GroupInfo) => (target: ParamGroupType<T>) => {
+export const group = <T extends ParamGroup<T>>(info: GroupInfo) => (target: ParamGroupType<T>): ParamGroupType<T> => {
 	(target as any)[INFO] = info;
-	observable(target);
+	return observable(target) as ParamGroupType<T>;
 };
 
 export type GroupInfo = {

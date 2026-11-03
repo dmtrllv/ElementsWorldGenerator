@@ -2,7 +2,7 @@ import { World } from "../generator/world";
 import type { WorldParamProps } from "../generator/world-params";
 import { observable } from "../reactive";
 
-@observable
+@observable({ auto: true })
 export class ProjectInfo {
 	readonly name: string;
 
@@ -11,6 +11,7 @@ export class ProjectInfo {
 	}
 }
 
+@observable({ auto: true })
 export class Project {
 	public readonly info: ProjectInfo;
 	public readonly world: World;

@@ -1,4 +1,4 @@
-import { observable,} from "../../reactive";
+import { createObservable, observable,} from "../../reactive";
 import type { WorldParams } from "../world-params";
 
 @observable
@@ -16,7 +16,7 @@ export abstract class Param<State extends {}> {
 	public constructor(worldParams: WorldParams, info: ParamInfo<State>, state: State = info.default) {
 		this.worldParams = worldParams;
 		this.info = info;
-		this.state = state;
+		this.state = (state && typeof state === "object" ? createObservable(state) : state) as State;
 	}
 
 	public reset() {
