@@ -1,4 +1,4 @@
-import { ParamMap } from "../param-map";
+import { ParamMap } from "./param-map";
 import { ContinentalMap } from "./continental-map";
 
 export class CoastMap extends ParamMap<number> {

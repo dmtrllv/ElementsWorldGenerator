@@ -1,7 +1,10 @@
-import { ParamMap } from "../param-map";
+import { dependency, ParamMap } from "./param-map";
 import { ContinentalMap } from "./continental-map";
 
 export class OceanMap extends ParamMap<number> {
+	@dependency(ContinentalMap)
+	public readonly continental!: ContinentalMap;
+
 	private readonly params = this.worldParams.geography.oceanParams;
 	private _buffer: Float32Array | null = null;
 
@@ -11,12 +14,12 @@ export class OceanMap extends ParamMap<number> {
 
 		const width = this.worldParams.size.x;
 		const height = this.worldParams.size.z;
-		const continental = this.generator.getMap(ContinentalMap);
+		
 		const buffer = new Float32Array(width * height);
 
 		for (let z = 0; z < height; z++) {
 			for (let x = 0; x < width; x++) {
-				const value = continental.get(x, z);
+				const value = this.continental.get(x, z);
 
 				if (value >= 0.5) {
 					buffer[z * width + x] = 0;

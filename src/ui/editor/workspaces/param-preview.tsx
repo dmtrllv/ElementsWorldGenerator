@@ -1,61 +1,47 @@
 import { useRef, useEffect, useState } from "react";
-import { Editor, ProjectManager } from "../../../editor";
+//import { Editor, ProjectManager } from "../../../editor";
 import type { ParamGroupWorkspace } from "../../../editor/workspaces/param-group-workspace";
-import { useObservable } from "../../../reactive";
+//import { useObservable } from "../../../reactive";
 import { clamp } from "../../../utils";
 
-export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) => {
-	const world = Editor.useModule(ProjectManager).activeProject.world.worldParams;
-	const params = useObservable(world); // todo observe recursive?
-	const paramGroup = useObservable(workspace.paramGroup);
-
-	const all = paramGroup.getAllParams();
+export const PramPreview = ({ }: { workspace: ParamGroupWorkspace }) => {
+	//const world = Editor.useModule(ProjectManager).activeProject.world.worldParams;
+	//const params = useObservable(world); // todo observe recursive?
+	//const paramGroup = useObservable(workspace.paramGroup);
 
 	const canvas = useRef<HTMLCanvasElement>(null);
 
-	const dependencies = [
-		params.size.x,
-		params.size.z,
-		world.seed,
-	];
+	//const dependencies = [
+	//	params.size.x,
+	//	params.size.z,
+	//	world.seed,
+	//];
 
-	for (const p of all) {
-		useObservable(p);
-		if ((typeof p.state === "object") && p.state) {
-			useObservable(p.state);
-			for (const k in p.state) {
-				dependencies.push(p.state[k]);
-			}
-		} else {
-			dependencies.push(p.state);
-		}
-	}
+	//useEffect(() => {
+	//	const timeout = setTimeout(() => {
+	//		const ctx = canvas.current?.getContext("2d");
+	//		if (!ctx)
+	//			return;
 
-	useEffect(() => {
-		const timeout = setTimeout(() => {
-			const ctx = canvas.current?.getContext("2d");
-			if (!ctx)
-				return;
+	//		const width = params.size.x;
+	//		const height = params.size.z;
+	//		if (!width || !height)
+	//			return;
 
-			const width = params.size.x;
-			const height = params.size.z;
-			if (!width || !height)
-				return;
+	//		canvas.current!.width = width;
+	//		canvas.current!.height = height;
 
-			canvas.current!.width = width;
-			canvas.current!.height = height;
+	//		const image = ctx.createImageData(width, height);
+	//		const pixels = new Uint32Array(image.data.buffer);
+	//		const buffer = paramGroup.preview;
+	//		if (buffer)
+	//			pixels.set(buffer);
+	//		ctx.putImageData(image, 0, 0);
+	//		console.log("render");
+	//	}, 100);
 
-			const image = ctx.createImageData(width, height);
-			const pixels = new Uint32Array(image.data.buffer);
-			const buffer = paramGroup.preview;
-			if (buffer)
-				pixels.set(buffer);
-			ctx.putImageData(image, 0, 0);
-			console.log("render");
-		}, 100);
-
-		return () => clearTimeout(timeout);
-	}, dependencies);
+	//	return () => clearTimeout(timeout);
+	//}, dependencies);
 
 	const [state, setState] = useState({
 		isSliding: false,

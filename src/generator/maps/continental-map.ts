@@ -1,4 +1,4 @@
-import { ParamMap } from "../param-map";
+import { ParamMap } from "./param-map";
 
 export class ContinentalMap extends ParamMap<number> {
 	private _buffer?: Float32Array | null = null;

@@ -15,19 +15,7 @@ export class WorldParams {
 	}
 
 	@observable
-	private _seed: number;
-
-
-	public get seed() {
-		return this._seed;
-	}
-
-	public set seed(seed: number) {
-		this._seed = seed;
-		this.seedChangeListeners.forEach(l => l(seed));
-	}
-
-	private readonly seedChangeListeners: SeedChangeListener[] = [];
+	public seed: number;
 
 	@observable
 	public size: Vector3;
@@ -36,19 +24,10 @@ export class WorldParams {
 	public readonly terrain!: TerrainParams;
 
 	public constructor(seed: number, { size, geography, terrain }: WorldParamProps) {
-		this._seed = seed;
+		this.seed = seed;
 		this.size = size;
 		this.geography = GeographyParams.init(this, geography);
 		this.terrain = TerrainParams.init(this, terrain);
-	}
-
-	public onSeedChange(handler: SeedChangeListener) {
-		this.seedChangeListeners.push(handler);
-		return () => {
-			const index = this.seedChangeListeners.indexOf(handler);
-			if (index > -1)
-				this.seedChangeListeners.splice(index, 1);
-		};
 	}
 }
 

@@ -16,15 +16,11 @@ import "./styles/group-input.scss";
 export const GroupInput = ({ group }: { group: ParamGroup<any> }) => {
 	const workspaces = Editor.useModule(WorkspaceManager);
 	group = useObservable(group);
-	const hasPreview = true; // group.hasPreview
+
 	const params = group.params();
 	const groups = group.subGroups();
 
 	const preview = (e: React.MouseEvent) => {
-		if (!hasPreview) {
-			return;
-		}
-
 		e.preventDefault();
 		e.stopPropagation();
 
@@ -34,7 +30,7 @@ export const GroupInput = ({ group }: { group: ParamGroup<any> }) => {
 	const title = (
 		<h4>
 			{group.name}
-			{hasPreview && <i onClick={preview} className="fa-solid fa-play" />}
+			{/*{hasPreview && <i onClick={preview} className="fa-solid fa-play" />}*/}
 		</h4>
 	);
 

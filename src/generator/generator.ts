@@ -1,4 +1,4 @@
-import { ParamMap, type ParamMapType } from "./param-map";
+import { ParamMap, type ParamMapType } from "./maps/param-map";
 import type { WorldParams } from "./world-params";
 
 export class Generator {
