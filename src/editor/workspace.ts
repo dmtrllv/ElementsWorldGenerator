@@ -1,4 +1,5 @@
 import { state, observable } from "../state";
+import type { Editor } from "./editor";
 import { Module } from "./store";
 
 @observable
@@ -10,39 +11,54 @@ export class WorkspaceManager extends Module {
 	}
 
 	@state
-	public readonly workspaces: Workspace[] = [new RendererWorkspace(this, this.nextId())];
+	public readonly workspaces: Workspace[] = [
+		new RendererWorkspace(this, null, this.nextId()),
+		new TestWorkspace(this, null, this.nextId(), "test 1"),
+		new TestWorkspace(this, null, this.nextId(), "test 2")
+	];
 
 	@state
-	private _activeWorkspace: Workspace = this.workspaces[0]!;
+	public readonly layout: WorkspaceLayout = new WorkspaceLayout("y", null, [
+		new WorkspaceLayout("tabs", null, [this.workspaces[0]!, this.workspaces[1]!]),
+		new WorkspaceLayout("tabs", null, [this.workspaces[2]!])
+	]);
 
-	public get activeWorkspace() { return this._activeWorkspace; }
+	@state
+	public movingWorkspace: Workspace | null = null;
+
+	public constructor(editor: Editor) {
+		super(editor);
+		this.layout.attach();
+	}
 
 	public open<T extends WorkspaceType<any>>(workspaceType: T, name: string, ...args: WorkspaceArgs<T>) {
-		for (const w of this.workspaces)
-			if ((w.constructor === workspaceType) && w.isUnique || w.name === name)
-				return this.focus(w);
-		const workspace = new (workspaceType as any)(this, this.nextId(), name, ...args);
+		for (const workspace of this.workspaces) {
+			if ((workspace.constructor === workspaceType && workspace.isUnique) || workspace.name === name)
+				return workspace.layout?.focus(workspace);
+		}
+
+		const workspace = new (workspaceType as any)(this, null, this.nextId(), name, ...args);
+
 		this.workspaces.push(workspace);
-		return this.focus(workspace);
+		this.layout.add(workspace);
+
+		return workspace.layout?.focus(workspace);
 	}
 
 	public close(workspace: Workspace) {
-		const index = this.workspaces.indexOf(workspace);
-		if (index > -1)
-			this.workspaces.splice(index, 1);
-		this._activeWorkspace = this.workspaces[index === 0 ? 0 : index - 1]!;
-	}
+		workspace.layout?.remove(workspace);
 
-	public focus(workspace: Workspace) {
-		if (!this.workspaces.includes(workspace))
-			return false;
-		this._activeWorkspace = workspace;
-		return true;
+		const index = this.workspaces.indexOf(workspace);
+
+		if (index !== -1)
+			this.workspaces.splice(index, 1);
 	}
 }
 
-type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extends [WorkspaceManager, number, string, ...infer Args] ? Args : never;
-export type WorkspaceType<T extends Workspace> = new (manager: WorkspaceManager, id: number, ...args: any[]) => T;
+type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extends [WorkspaceManager, WorkspaceLayout | null, number, string, ...infer Args] ? Args : never;
+
+export type WorkspaceType<T extends Workspace> =
+	new (manager: WorkspaceManager, layout: WorkspaceLayout | null, id: number, ...args: any[]) => T;
 
 @observable
 export abstract class Workspace {
@@ -55,8 +71,11 @@ export abstract class Workspace {
 	@state
 	public name: string;
 
-	public constructor(workspace: WorkspaceManager, id: number, name: string, isClosable: boolean = true, isUnique: boolean = false) {
+	public layout: WorkspaceLayout | null;
+
+	public constructor(workspace: WorkspaceManager, layout: WorkspaceLayout | null, id: number, name: string, isClosable: boolean = true, isUnique: boolean = false) {
 		this.id = id;
+		this.layout = layout;
 		this.workspace = workspace;
 		this.name = name;
 		this.isClosable = isClosable;
@@ -70,7 +89,313 @@ export abstract class Workspace {
 }
 
 export class RendererWorkspace extends Workspace {
-	public constructor(workspace: WorkspaceManager, id: number) {
-		super(workspace, id, "Renderer", false, true);
+	public constructor(workspace: WorkspaceManager, layout: WorkspaceLayout | null, id: number) {
+		super(workspace, layout, id, "Renderer", false, true);
+	}
+}
+
+export class TestWorkspace extends Workspace { }
+
+export type LayoutDirection = "x" | "y";
+export type SplitEdge = "top" | "right" | "bottom" | "left";
+
+@observable
+export class WorkspaceLayout {
+	private static idCounter = 0;
+
+	public readonly id: number = WorkspaceLayout.idCounter++;
+
+	@state
+	private _direction: LayoutDirection | "tabs";
+
+	@state
+	private _fallbackDirection: LayoutDirection = "y";
+
+	@state
+	public activeWorkspace: number = 0;
+
+	@state
+	public children: Workspace[] | WorkspaceLayout[];
+
+	@state
+	public size: number | "flex" = "flex";
+
+	public parent: WorkspaceLayout | null;
+
+	public constructor(direction: LayoutDirection | "tabs", parent: WorkspaceLayout | null, children: Workspace[] | WorkspaceLayout[]) {
+		this._direction = direction;
+		this.parent = parent;
+		this.children = children;
+	}
+
+	public get direction(): LayoutDirection {
+		if (this._direction !== "tabs")
+			return this._direction;
+
+		return this.parent?.direction ?? this._fallbackDirection;
+	}
+
+	public set direction(direction: LayoutDirection | "tabs") {
+		if (direction === "tabs") {
+			this._direction = "tabs";
+			return;
+		}
+
+		if (this._direction === "tabs") {
+			this._fallbackDirection = direction;
+			return;
+		}
+
+		this._direction = direction;
+	}
+
+	public isWorkspace(): this is Omit<WorkspaceLayout, "children"> & { readonly children: Workspace[] } {
+		return this._direction === "tabs";
+	}
+
+	public isLayout(): this is Omit<WorkspaceLayout, "children"> & { readonly children: WorkspaceLayout[] } {
+		return this._direction !== "tabs";
+	}
+
+	public attach(parent: WorkspaceLayout | null = this.parent) {
+		this.parent = parent;
+
+		if (this.isWorkspace()) {
+			for (const workspace of this.children)
+				workspace.layout = this;
+
+			this.activeWorkspace = Math.max(0, Math.min(this.activeWorkspace, this.children.length - 1));
+			return;
+		}
+
+		for (const child of this.children as any[])
+			child.attach(this);
+	}
+
+	public getFirstPanel(): WorkspaceLayout {
+		if (this.isWorkspace())
+			return this;
+
+		if (this.children.length === 0) {
+			const panel = new WorkspaceLayout("tabs", this, []) as any;
+			this.children.push(panel);
+			return panel;
+		}
+
+		return (this.children[0]! as any).getFirstPanel();
+	}
+
+	public add(workspace: Workspace) {
+		workspace.layout?.remove(workspace);
+
+		const panel = this.getFirstPanel();
+
+		panel.addWorkspace(workspace);
+	}
+
+	private addWorkspace(workspace: Workspace) {
+		if (!this.isWorkspace())
+			throw new Error("Cannot add a workspace to a directional layout.");
+
+		this.children.push(workspace);
+		workspace.layout = this;
+		this.focus(workspace);
+	}
+
+	public focus(workspace: Workspace) {
+		if (!this.isWorkspace())
+			return;
+
+		const index = this.children.indexOf(workspace);
+
+		if (index !== -1)
+			this.activeWorkspace = index;
+	}
+
+	public remove(workspace: Workspace) {
+		if (!this.isWorkspace())
+			return;
+
+		if (!this.detachWorkspace(workspace))
+			return;
+
+		this.normalize();
+	}
+
+	private detachWorkspace(workspace: Workspace): boolean {
+		if (!this.isWorkspace())
+			return false;
+
+		const index = this.children.indexOf(workspace);
+
+		if (index === -1)
+			return false;
+
+		this.children.splice(index, 1);
+
+		if (this.activeWorkspace >= this.children.length)
+			this.activeWorkspace = Math.max(0, this.children.length - 1);
+		else if (this.activeWorkspace > index)
+			this.activeWorkspace--;
+
+		workspace.layout = null;
+
+		return true;
+	}
+
+	private normalize() {
+		let current: WorkspaceLayout | null = this;
+
+		while (current) {
+			const parent = current.parent;
+
+			if (current.isWorkspace()) {
+				if (current.children.length > 0 || !parent)
+					return;
+
+				current = current.removeFromParent();
+				continue;
+			}
+
+			const children = current.children;
+
+			if (children.length === 0) {
+				if (!parent)
+					return;
+
+				current = current.removeFromParent();
+				continue;
+			}
+
+			if (children.length === 1) {
+				const remaining = children[0]! as any;
+
+				if (parent) {
+					const siblings = parent.children as WorkspaceLayout[];
+					const index = siblings.indexOf(current);
+
+					if (index === -1)
+						return;
+
+					remaining.size = current.size;
+					siblings[index] = remaining;
+					remaining.attach(parent);
+
+					current = parent;
+					continue;
+				}
+
+				current.adopt(remaining);
+				return;
+			}
+
+			return;
+		}
+	}
+
+	private removeFromParent(): WorkspaceLayout | null {
+		const parent = this.parent;
+
+		if (!parent || !parent.isLayout())
+			return null;
+
+		const children = parent.children as WorkspaceLayout[];
+		const index = children.indexOf(this);
+
+		if (index === -1)
+			return null;
+
+		children.splice(index, 1);
+		this.parent = null;
+
+		return parent;
+	}
+
+	private adopt(layout: WorkspaceLayout) {
+		const direction = this.direction;
+
+		this._direction = layout._direction;
+		this.children = layout.children;
+		this.activeWorkspace = layout.activeWorkspace;
+		this.size = layout.size;
+
+		if (this._direction === "tabs")
+			this._fallbackDirection = direction;
+
+		this.attach(this.parent);
+		layout.parent = null;
+	}
+
+	public split(edge: SplitEdge, workspace: Workspace) {
+		if (!this.isWorkspace())
+			throw new Error("Only workspace panels can be split.");
+
+		const direction: LayoutDirection =
+			edge === "left" || edge === "right" ? "x" : "y";
+
+		const source = workspace.layout;
+
+		if (source === this) {
+			if (this.children.length <= 1)
+				return;
+
+			this.detachWorkspace(workspace);
+		} else if (source) {
+			source.detachWorkspace(workspace);
+		}
+
+		const newPanel = new WorkspaceLayout("tabs", null, [workspace]);
+		workspace.layout = newPanel;
+
+		const parent = this.parent;
+
+		if (!parent) {
+			const oldPanel = new WorkspaceLayout("tabs", this, this.children);
+			oldPanel.activeWorkspace = this.activeWorkspace;
+			oldPanel.size = this.size;
+			oldPanel._fallbackDirection = this._fallbackDirection;
+
+			const children = edge === "left" || edge === "top" ? [newPanel, oldPanel] : [oldPanel, newPanel];
+
+			this._direction = direction;
+			this.children = children as any;
+
+			for (const child of children)
+				child.attach(this);
+
+		} else {
+			const siblings = parent.children as WorkspaceLayout[];
+			const index = siblings.indexOf(this);
+
+			if (index === -1)
+				throw new Error("Workspace panel is not attached to its parent.");
+
+			if (parent._direction === direction) {
+				const insertIndex = edge === "left" || edge === "top"
+					? index
+					: index + 1;
+
+				siblings.splice(insertIndex, 0, newPanel);
+				newPanel.attach(parent);
+
+			} else {
+				const split = new WorkspaceLayout(direction, parent, []);
+
+				split.size = this.size;
+				this.size = "flex";
+
+				const children = edge === "left" || edge === "top" ? [newPanel, this] : [this, newPanel];
+
+				split.children = children;
+
+				for (const child of children)
+					child.attach(split);
+
+				siblings.splice(index, 1, split);
+			}
+		}
+
+		if (source && source !== this)
+			source.normalize();
 	}
 }
