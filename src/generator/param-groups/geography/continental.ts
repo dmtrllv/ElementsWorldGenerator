@@ -1,5 +1,5 @@
-import { Curve, Float, Range, Scalar, VectorField } from "../params";
-import { group, param, ParamGroup } from "./param-group";
+import { Curve, Float, Range, Scalar, VectorField } from "../../params";
+import { group, param, ParamGroup } from "../param-group";
 
 @group({
 	name: "Continental",

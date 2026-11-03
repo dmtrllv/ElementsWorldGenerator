@@ -1,5 +1,5 @@
-import { Curve, Float } from "../params";
-import { group, param, ParamGroup } from "./param-group";
+import { Curve, Float } from "../../params";
+import { group, param, ParamGroup } from "./../param-group";
 
 @group({
 	name: "Coast",
@@ -12,13 +12,6 @@ export class CoastParams extends ParamGroup<CoastParams> {
 		default: 1
 	})
 	public readonly transitionWitdth!: Float;
-
-	@param(Float, {
-		name: "Distance",
-		description: "",
-		default: 1
-	})
-	public readonly distance!: Float;
 
 	@param(Curve, {
 		name: "Falloff",

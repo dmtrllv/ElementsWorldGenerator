@@ -1,7 +1,8 @@
 import { Vector3 } from "three";
 import { observable, state } from "../state";
-import { GeographyParams } from "./param-groups/geography";
+import { GeographyParams } from "./param-groups/geography/geography";
 import type { ParamGroupProps } from "./param-groups/param-group";
+import { TerrainParams } from "./param-groups/terrain/terrain";
 
 @observable
 export class WorldParams {
@@ -9,6 +10,7 @@ export class WorldParams {
 		return {
 			size: new Vector3(512, 128, 512),
 			geography: GeographyParams.getDefaultProps(),
+			terrain: TerrainParams.getDefaultProps()
 		}
 	}
 
@@ -31,11 +33,13 @@ export class WorldParams {
 	public size: Vector3;
 
 	public readonly geography!: GeographyParams;
+	public readonly terrain!: TerrainParams;
 
-	public constructor(seed: number, { size, geography }: WorldParamProps) {
+	public constructor(seed: number, { size, geography, terrain }: WorldParamProps) {
 		this._seed = seed;
 		this.size = size;
 		this.geography = GeographyParams.init(this, geography);
+		this.terrain = TerrainParams.init(this, terrain);
 	}
 
 	public onSeedChange(handler: SeedChangeListener) {
@@ -51,6 +55,7 @@ export class WorldParams {
 export type WorldParamProps = {
 	size: Vector3;
 	geography: ParamGroupProps<GeographyParams>;
+	terrain: ParamGroupProps<TerrainParams>;
 }
 
 export type SeedChangeListener = (newSeed: number) => void;

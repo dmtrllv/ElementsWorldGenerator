@@ -1,7 +1,7 @@
 import { CoastParams } from "./coast";
 import { ContinentalParams } from "./continental";
 import { OceanParams } from "./ocean";
-import { group, ParamGroup, subGroup } from "./param-group";
+import { group, ParamGroup, subGroup } from "../param-group";
 
 @group({
 	name: "Geography",

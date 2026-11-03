@@ -1,5 +1,5 @@
-import { Scalar } from "../params";
-import { group, param, ParamGroup } from "./param-group";
+import { Scalar } from "../../params";
+import { group, param, ParamGroup } from "../param-group";
 
 @group({
 	name: "Ocean",
