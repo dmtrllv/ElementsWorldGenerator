@@ -1,10 +1,8 @@
 export const observable: ObservableDecorator = (configOrTarget: any, key?: any) => {
 	if (key !== undefined) {
 		// property decorator
-	} else if ("inherit" in configOrTarget) {
-		// class decorator with config
 	} else {
-		// class decorator
+		// class decorator with optional config (check if configOrTarget)
 	}
 	throw new Error("Not implemented!");
 };
@@ -22,4 +20,5 @@ export interface ObservableDecorator {
 
 export type ObservableConfig = {
 	inherit: boolean;
+	auto: boolean;
 };
