@@ -5,10 +5,10 @@ import { RendererViewWorkspace } from "./workspaces/renderer";
 import React, { useMemo, useRef, useState, type CSSProperties } from "react";
 import { useObservable } from "../../reactive";
 import { useEvent } from "../hooks/event";
-import { ParamGroupWorkspace } from "../../editor/workspaces/param-group-workspace";
-import { PramPreview } from "./workspaces/param-preview";
+import { MapPreview } from "./workspaces/map-preview";
 
 import "./styles/workspace.scss";
+import { MapPreviewWorkspace } from "../../editor/workspaces/map-preview";
 
 type DropEdge = SplitEdge | "center";
 
@@ -249,4 +249,4 @@ const register = <T extends Workspace>(type: WorkspaceType<T>, component: React.
 };
 
 register(RendererWorkspace, RendererViewWorkspace);
-register(ParamGroupWorkspace, PramPreview);
+register(MapPreviewWorkspace, MapPreview);

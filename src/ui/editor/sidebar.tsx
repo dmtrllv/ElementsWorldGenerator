@@ -3,14 +3,15 @@ import { useSlider } from "../hooks/slider";
 import { Editor, ProjectManager } from "../../editor";
 import { useObservable } from "../../reactive";
 import { GroupInput } from "../components/params/group-input";
-import { ContinentalMap } from "../../generator/maps/continental-map";
 import { DropdownPanel, NumberInput, Vector2Input, Vector3Input } from "../components";
-import { Region } from "../../generator";
+import { WorkspaceManager } from "../../editor/workspace";
+import { MapPreviewWorkspace } from "../../editor/workspaces/map-preview";
 
 import "./styles/sidebar.scss";
 
 const World = () => {
 	const manager = Editor.useModule(ProjectManager);
+	const w = Editor.useModule(WorkspaceManager);
 	const project = useObservable(manager.activeProject);
 	const params = useObservable(project.world.worldParams);
 
@@ -25,7 +26,7 @@ const World = () => {
 			{/*<GroupInput group={params.terrain} />*/}
 
 			<button onClick={() => {
-				console.log(project.world.generator.getMap(ContinentalMap).generate(new Region(0, 0, 100, 100)))
+				w.open(MapPreviewWorkspace, "Continental")
 			}}>Test</button>
 		</div>
 	);
