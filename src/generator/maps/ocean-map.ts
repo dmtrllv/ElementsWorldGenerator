@@ -14,7 +14,7 @@ export class OceanMap extends ParamMap<number> {
 
 		const width = this.worldParams.size.x;
 		const height = this.worldParams.size.z;
-		
+
 		const buffer = new Float32Array(width * height);
 
 		for (let z = 0; z < height; z++) {
@@ -41,5 +41,9 @@ export class OceanMap extends ParamMap<number> {
 	public override get(x: number, z: number): number {
 		this.generate();
 		return this._buffer![z * this.worldParams.size.x + x]!;
+	}
+
+	public override dispose(): void {
+		this._buffer = null;
 	}
 }

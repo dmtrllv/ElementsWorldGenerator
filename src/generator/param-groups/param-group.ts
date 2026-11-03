@@ -50,7 +50,7 @@ export abstract class ParamGroup<T extends ParamGroup<T>> {
 		return c;
 	}
 
-	public subGroups(this: T): Record<string, ParamGroup<any>> {
+	public subGroups(): Record<string, ParamGroup<any>> {
 		const groups = (this.constructor as any)[SUB_GROUPS];
 		const c: any = {};
 		for (const n in groups) {
@@ -71,9 +71,21 @@ export abstract class ParamGroup<T extends ParamGroup<T>> {
 		this.worldParams = worldParams;
 		this.info = info;
 	}
+
+	public toProps(): ParamGroupProps<T> {
+		const props: Record<string, unknown> = {};
+
+		for (const [key, group] of Object.entries(this.subGroups()))
+			props[key] = group.toProps();
+
+		for (const [key, param] of Object.entries(this.params()))
+			props[key] = param.snapshot();
+
+		return props as ParamGroupProps<T>;
+	}
 }
 
-export type ParamGroupType<T extends ParamGroup<T>> = new (worldParams: WorldParams, info: GroupInfo) => T;
+export type ParamGroupType<T extends ParamGroup<any>> = new (worldParams: WorldParams, info: GroupInfo) => T;
 
 export type ParamGroupProps<T extends ParamGroup<T>> = {
 	[K in GroupKeys<T>]: T[K] extends ParamGroup<any> ? ParamGroupProps<T[K]> : never;
@@ -133,7 +145,7 @@ const getSubGroupType = <T extends ParamGroup<T>>(target: ParamGroupType<T> | ty
 	return ctor[SUB_GROUPS]?.[key] as any;
 };
 
-export const subGroup = <T extends ParamGroup<T>, K extends GroupKeys<T>>(type: T[K] extends ParamGroup<any> ? ParamGroupType<T[K]> : never) => (target: T, key: K) => {
+export const subGroup = <T extends ParamGroup<T>, K extends keyof T>(type: new (...args: any[]) => T[K]) => (target: T, key: K) => {
 	const ctor = target.constructor as any;
 	if (!ctor[SUB_GROUPS])
 		ctor[SUB_GROUPS] = {};

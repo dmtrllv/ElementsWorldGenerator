@@ -1,5 +1,5 @@
 import { Vector2, Vector3 } from "three";
-import { observable,} from "../reactive";
+import { observable, } from "../reactive";
 import { GeographyParams } from "./param-groups/geography/geography";
 import type { ParamGroupProps } from "./param-groups/param-group";
 import { TerrainParams } from "./param-groups/terrain/terrain";
@@ -33,6 +33,15 @@ export class WorldParams {
 		this.chunkSize = chunkSize;
 		this.geography = GeographyParams.init(this, geography);
 		this.terrain = TerrainParams.init(this, terrain);
+	}
+
+	public toProps(): WorldParamProps {
+		return {
+			size: this.size.clone(),
+			chunkSize: this.chunkSize.clone(),
+			geography: this.geography.toProps(),
+			terrain: this.terrain.toProps()
+		};
 	}
 }
 

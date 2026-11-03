@@ -39,4 +39,8 @@ export class ContinentalMap extends ParamMap<number> {
 		this.generate();
 		return this._buffer![z * this.generator.worldParams.size.x + x]!
 	}
+
+	public override dispose(): void {
+		this._buffer = null;
+	}
 }

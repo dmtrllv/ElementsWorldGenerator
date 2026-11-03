@@ -1,5 +1,22 @@
-import { createObservable, observable,} from "../../reactive";
+import { createObservable, observable, } from "../../reactive";
 import type { WorldParams } from "../world-params";
+
+const cloneValue = <T>(value: T): T => {
+    if (Array.isArray(value))
+        return value.map(cloneValue) as T;
+
+    if (value && typeof value === "object") {
+        const source = value as Record<string, unknown>;
+        const target = Object.create(Object.getPrototypeOf(value)) as Record<string, unknown>;
+
+        for (const key of Object.keys(source))
+            target[key] = cloneValue(source[key]);
+
+        return target as T;
+    }
+
+    return value;
+};
 
 @observable
 export abstract class Param<State extends {}> {
@@ -25,7 +42,11 @@ export abstract class Param<State extends {}> {
 		else
 			this.state = this.info.default;
 	}
-}
+
+	public snapshot(): State {
+		return cloneValue(this.state);
+	}
+}1
 
 export type ParamInfo<T> = {
 	readonly name: string;
