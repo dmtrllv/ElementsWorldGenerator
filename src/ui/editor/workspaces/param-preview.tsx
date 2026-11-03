@@ -49,6 +49,7 @@ export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) =
 			const pixels = new Uint32Array(image.data.buffer);
 			paramGroup.preview!(pixels);
 			ctx.putImageData(image, 0, 0);
+			console.log("render");
 		}, 100);
 
 		return () => clearTimeout(timeout);

@@ -1,22 +1,12 @@
 import { fnv1a } from "fast-fnv1a";
-import type { WorldParams } from "../world-params";
-import { Param, type ParamInfo } from "./param";
+import { Param } from "./param";
 import alea from "alea";
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
+import { computed } from "../../reactive";
 
 export class Scalar extends Param<ScalarState> {
-	private _noise2D: NoiseFunction2D;
-
-	public constructor(worldParams: WorldParams, info: ParamInfo<ScalarState>, state: ScalarState) {
-		super(worldParams, info, state);
-		this._noise2D = this.createNoiseFn();
-		
-		worldParams.onSeedChange(() => {
-			this._noise2D = this.createNoiseFn();
-		})
-	}
-
-	private createNoiseFn() {
+	@computed
+	private get noise2D(): NoiseFunction2D {
 		const seed = fnv1a(`${this.worldParams.seed}:${this.name}:${this.state.seedOffset}`);
 		return createNoise2D(alea(seed));
 	}
@@ -32,7 +22,7 @@ export class Scalar extends Param<ScalarState> {
 		let maxAmplitude = 0;
 
 		for (let i = 0; i < this.state.octaves; i++) {
-			total += this._noise2D(x * frequency, y * frequency) * amplitude;
+			total += this.noise2D(x * frequency, y * frequency) * amplitude;
 			maxAmplitude += amplitude;
 
 			amplitude *= this.state.persistence;

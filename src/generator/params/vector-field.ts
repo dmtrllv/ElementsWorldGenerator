@@ -1,28 +1,20 @@
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
-import { Param, type ParamInfo } from "./param";
+import { Param } from "./param";
 import alea from "alea";
 import { fnv1a } from "fast-fnv1a";
-import type { WorldParams } from "../world-params";
-import type { ScalarState } from "./scalar";
 import { Vector2 } from "three";
+import { computed } from "../../reactive";
 
 export class VectorField extends Param<VectorFieldState> {
-	private _noise2DX: NoiseFunction2D;
-	private _noise2DY: NoiseFunction2D;
-
-	public constructor(worldParams: WorldParams, info: ParamInfo<ScalarState>, state: ScalarState) {
-		super(worldParams, info, state);
-		this._noise2DX = this.createNoiseFn("x");
-		this._noise2DY = this.createNoiseFn("y");
-
-		worldParams.onSeedChange(() => {
-			this._noise2DX = this.createNoiseFn("x");
-			this._noise2DY = this.createNoiseFn("y");
-		})
+	@computed
+	private get noise2DX():NoiseFunction2D {
+		const seed = fnv1a(`${this.worldParams.seed}:${this.name}:${this.state.seedOffset}:x`);
+		return createNoise2D(alea(seed));
 	}
 
-	private createNoiseFn(axis: string) {
-		const seed = fnv1a(`${this.worldParams.seed}:${this.name}:${this.state.seedOffset}:${axis}`);
+	@computed
+	private get noise2DY():NoiseFunction2D {
+		const seed = fnv1a(`${this.worldParams.seed}:${this.name}:${this.state.seedOffset}:y`);
 		return createNoise2D(alea(seed));
 	}
 
@@ -38,8 +30,8 @@ export class VectorField extends Param<VectorFieldState> {
 		let maxAmplitude = 0;
 
 		for (let i = 0; i < this.state.octaves; i++) {
-			totalX += this._noise2DX(x * frequency, y * frequency) * amplitude;
-			totalY += this._noise2DY(x * frequency, y * frequency) * amplitude;
+			totalX += this.noise2DX(x * frequency, y * frequency) * amplitude;
+			totalY += this.noise2DY(x * frequency, y * frequency) * amplitude;
 			maxAmplitude += amplitude;
 
 			amplitude *= this.state.persistence;

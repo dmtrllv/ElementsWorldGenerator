@@ -4,17 +4,20 @@ import { Editor, ProjectManager } from "../../editor";
 import { useObservable } from "../../reactive";
 import { GroupInput } from "../components/params/group-input";
 import { ContinentalMap } from "../../generator/maps/continental-map";
+import { NumberInput } from "../components";
 
 import "./styles/sidebar.scss";
 
 const World = () => {
 	const manager = Editor.useModule(ProjectManager);
 	const project = useObservable(manager.activeProject);
-	const params = project.world.worldParams;
+	const params = useObservable(project.world.worldParams);
 
 	return (
 		<div>
+			<NumberInput name="Seed" value={params.seed} onChange={v => params.seed = v} />
 			<GroupInput group={params.geography} />
+			{/*<GroupInput group={params.terrain} />*/}
 
 			<button onClick={() => {
 				console.log(project.world.generator.getMap(ContinentalMap).get(10, 10))
