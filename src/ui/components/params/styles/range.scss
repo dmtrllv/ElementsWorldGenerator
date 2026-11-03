@@ -1,0 +1,44 @@
+.range {
+	.inputs {
+		display: flex;
+		min-width: 0;
+
+		.input {
+			position: relative;
+			flex: 1 1 0;
+			min-width: 0;
+
+			.label {
+				position: absolute;
+				top: calc(50% - 1px);
+				left: 10px;
+				transform: translateY(-50%);
+				color: var(--fg-1);
+				z-index: 1;
+				user-select: none;
+				cursor: ns-resize;
+
+				&.min {
+					//color: #f06d6d;
+				}
+				&.max {
+					//color: #1889cb;
+				}
+			}
+
+			input {
+				display: block;
+				padding: 4px 0 4px 44px;
+				border-radius: 0;
+			}
+
+			&:first-child input {
+				border-radius: 4px 0 0 4px;
+			}
+
+			&:last-child input {
+				border-radius: 0 4px 4px 0;
+			}
+		}
+	}
+}

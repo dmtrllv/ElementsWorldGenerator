@@ -56,8 +56,7 @@
 	}
 
 	&.vec2,
-	&.vec3,
-	&.range {
+	&.vec3{
 		.inputs {
 			display: flex;
 			min-width: 0;

@@ -9,7 +9,7 @@ import { VectorFieldInput } from "./vector-field-input";
 import { DropdownPanel } from "../dropdown";
 import { Editor } from "../../../editor";
 import { WorkspaceManager } from "../../../editor/workspace";
-import { ParamGroupWorkspace } from "../../../editor/workspaces/renderer";
+import { ParamGroupWorkspace } from "../../../editor/workspaces/param-group-workspace";
 
 import "./styles/group-input.scss";
 

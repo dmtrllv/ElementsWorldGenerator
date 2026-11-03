@@ -4,6 +4,19 @@ import type { WorldParams } from "../world-params";
 
 @observable
 export abstract class ParamGroup<T extends ParamGroup<T>> {
+	public getAllParams(): Param<any>[] {
+		const params: any = [];
+
+		const groups = (this.constructor as any)[SUB_GROUPS];
+		for (const n in groups)
+			params.push(...(this as any)[n].getAllParams());
+
+		for (const n in (this.constructor as any)[PARAMS])
+			params.push((this as any)[n]);
+
+		return params;
+	}
+
 	public static getDefaultProps<T extends typeof ParamGroup<any>>(this: T): ParamGroupProps<InstanceType<T>> {
 		const props: any = {};
 

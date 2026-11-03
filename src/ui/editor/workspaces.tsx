@@ -5,7 +5,7 @@ import { RendererViewWorkspace } from "./workspaces/renderer";
 import React, { useMemo, useRef, useState, type CSSProperties } from "react";
 import { observe } from "../../state";
 import { useEvent } from "../hooks/event";
-import { ParamGroupWorkspace } from "../../editor/workspaces/renderer";
+import { ParamGroupWorkspace } from "../../editor/workspaces/param-group-workspace";
 import { PramPreview } from "./workspaces/param-preview";
 
 import "./styles/workspace.scss";

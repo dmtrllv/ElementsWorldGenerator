@@ -71,7 +71,6 @@ export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, val
 		}
 	};
 
-
 	useEffect(() => {
 		const v = value.toString();
 		if (prevVal.current !== v) {
@@ -110,12 +109,23 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, .
 	const sx = useSlider(value.x, -Infinity, Infinity, "y");
 	const sy = useSlider(value.y, -Infinity, Infinity, "y");
 
+	const [x, setX] = useState(value.x.toString());
+	const [y, setY] = useState(value.y.toString());
+	const prevX = useRef(x);
+	const prevY = useRef(y);
 
-	const update = (value: Vector2) => {
-		sx.set(value.x);
-		sy.set(value.y);
-		onChange?.(value);
+
+	const update = (target: "x" | "y") => (e: React.ChangeEvent<HTMLInputElement>) => {
+		const val = e.target.value;
+		console.log(target, val);
+		//sx.set(value.x);
+		//sy.set(value.y);
+		//onChange?.(value);
 	};
+
+	useEffect(() => {
+		console.log(sx, sy, prevX.current, prevY.current)
+	}, [sx.size, sy.size])
 
 	return (
 		<div className="input-field vec3">
@@ -123,11 +133,11 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name, .
 			<div className="inputs">
 				<div className="input">
 					<div className="label x" onMouseDown={sx.onMouseDown}>x</div>
-					<input {...props} value={sx.size} id={name + ".x"} name={name + ".x"} placeholder={name + ".x"} type="number" onChange={(e) => update(new Vector2(+e.target.value, sy.size))} />
+					<input {...props} value={sx.size} id={name + ".x"} name={name + ".x"} placeholder={name + ".x"} type="text" onChange={update("x")} />
 				</div>
 				<div className="input" >
 					<div className="label y" onMouseDown={sy.onMouseDown}>y</div>
-					<input {...props} value={sy.size} id={name + ".y"} name={name + ".y"} placeholder={name + ".y"} type="number" onChange={(e) => update(new Vector2(sx.size, +e.target.value))} />
+					<input {...props} value={sy.size} id={name + ".y"} name={name + ".y"} placeholder={name + ".y"} type="text" onChange={update("y")} />
 				</div>
 			</div>
 		</div>

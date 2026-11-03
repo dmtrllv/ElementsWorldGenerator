@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { Editor, ProjectManager } from "../../../editor";
-import type { ParamGroupWorkspace } from "../../../editor/workspaces/renderer";
+import type { ParamGroupWorkspace } from "../../../editor/workspaces/param-group-workspace";
 import { observe } from "../../../state";
 import { clamp } from "../../../utils";
 
@@ -9,6 +9,8 @@ export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) =
 	const params = observe(world); // todo observe recursive?
 	const paramGroup = observe(workspace.paramGroup);
 
+	const all = paramGroup.getAllParams();
+
 	const canvas = useRef<HTMLCanvasElement>(null);
 
 	const dependencies = [
@@ -16,6 +18,18 @@ export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) =
 		params.size.z,
 		world.seed,
 	];
+
+	for(const p of all) {
+		observe(p);
+		if((typeof p.state === "object") && p.state) {
+			observe(p.state);
+			for(const k in p.state) {
+				dependencies.push(p.state[k]);
+			}
+		} else {
+			dependencies.push(p.state);
+		}
+	}
 
 	useEffect(() => {
 		const timeout = setTimeout(() => {
@@ -35,7 +49,6 @@ export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) =
 			const pixels = new Uint32Array(image.data.buffer);
 			paramGroup.preview!(pixels);
 			ctx.putImageData(image, 0, 0);
-			console.log("rendered");
 		}, 100);
 
 		return () => clearTimeout(timeout);
@@ -71,7 +84,6 @@ export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) =
 
 			if (!state.isSliding)
 				return;
-
 
 			const x = state.downOffset[0]! + (e.clientX - state.downPos[0]!) / state.scale;
 			const y = state.downOffset[1]! + (e.clientY - state.downPos[1]!) / state.scale;

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { clamp } from "../../utils";
 
-export const useSlider = (init: number, min: number, max: number, dir: "x" | "y") => {
+export const useSlider = (init: number, min: number, max: number, dir: "x" | "y", scale: number = 1) => {
 	const [size, setSize] = useState(init);
 	const [isSliding, setIsSliding] = useState(false);
 	const downPos = useRef(0);
@@ -17,10 +17,10 @@ export const useSlider = (init: number, min: number, max: number, dir: "x" | "y"
 				return;
 			let delta;
 			if (dir === "x")
-				delta = e.clientX - downPos.current;
+				delta = (e.clientX - downPos.current) * scale;
 			else
-				delta = e.clientY - downPos.current;
-			setSize(clamp(startSize.current + delta, min, max));
+				delta = (e.clientY - downPos.current) * scale;
+			setSize(Math.round(clamp(startSize.current + delta, min, max) * 100) / 100);
 		};
 		window.addEventListener("mouseup", onMouseUp);
 		window.addEventListener("mousemove", onMouseMove);
