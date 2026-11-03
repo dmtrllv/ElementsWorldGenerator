@@ -73,13 +73,13 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 				const nx = x + warp.x * this.warpStrength.state;
 				const nz = z + warp.y * this.warpStrength.state;
 
-				const value = this.shape.evaluate(this.distribution.get(nx, nz));
-				const normalized = (value - min) / (max - min);
-				const color = Math.round(Math.max(0, Math.min(1, normalized)) * 255);
+				const noise = this.distribution.get(nx, nz);
+				const normalized = (noise - min) / (max - min);
+				const value = this.shape.evaluate(normalized);
+				const color = Math.round(Math.max(0, Math.min(1, value)) * 255);
 
 				buffer[z * width + x] = 0xff000000 | color << 16 | color << 8 | color;
 			}
-
 		}
 	}
 }

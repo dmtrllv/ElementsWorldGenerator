@@ -3,9 +3,9 @@ import { useSlider } from "../hooks/slider";
 import { Editor, ProjectManager } from "../../editor";
 import { observe } from "../../state";
 import { GroupInput } from "../components/params/group-input";
+import { ContinentalMap } from "../../generator/maps/continental-map";
 
 import "./styles/sidebar.scss";
-import { ContinentalMap } from "../../generator/maps/continental-map";
 
 const World = () => {
 	const manager = Editor.useModule(ProjectManager);
