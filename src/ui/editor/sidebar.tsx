@@ -4,7 +4,7 @@ import { Editor, ProjectManager } from "../../editor";
 import { useObservable } from "../../reactive";
 import { GroupInput } from "../components/params/group-input";
 import { ContinentalMap } from "../../generator/maps/continental-map";
-import { NumberInput } from "../components";
+import { DropdownPanel, NumberInput, Vector2Input, Vector3Input } from "../components";
 
 import "./styles/sidebar.scss";
 
@@ -15,7 +15,11 @@ const World = () => {
 
 	return (
 		<div>
-			<NumberInput name="Seed" value={params.seed} onChange={v => params.seed = v} />
+			<DropdownPanel title="World">
+				<NumberInput name="Seed" value={params.seed} onChange={v => params.seed = v} />
+				<Vector3Input name="Size" value={params.size} onChange={v => params.size = v} />
+				<Vector2Input name="Chunk size" value={params.chunkSize} onChange={v => params.chunkSize = v} />
+			</DropdownPanel>
 			<GroupInput group={params.geography} />
 			{/*<GroupInput group={params.terrain} />*/}
 

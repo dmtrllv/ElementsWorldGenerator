@@ -1,4 +1,4 @@
-import { getObservableState, collectObservableDependencies, notifyObservableKey, subscribeObservableDependency, type ObservableListener, notifyObservable } from "./internal";
+import { getObservableState, collectObservableDependencies, subscribeObservableDependency, type ObservableListener, notifyObservable } from "./internal";
 
 type ComputedEntry = {
 	value: unknown;

@@ -18,7 +18,7 @@ export abstract class ParamMap<T> {
 
 export type ParamMapType<T extends ParamMap<any>> = new (generator: Generator) => T;
 
-export const dependency = <T extends ParamMap<any>, K extends keyof T>(type: DependencyType<T, K>) => (target: T, key: K) => {
+export const dependency = <T extends ParamMap<any>, K extends keyof T>(_type: DependencyType<T, K>) => (_target: T, _key: K) => {
 	
 };
 

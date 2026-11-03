@@ -1,4 +1,4 @@
-import type { ParamGroup } from "../../../generator/param-groups/param-group";
+import type { ParamGroup } from "../../../generator/param-groups";
 import { Curve, Float, Range, Scalar, VectorField } from "../../../generator/params";
 import { useObservable } from "../../../reactive";
 import { NumberInput } from "../input";
@@ -7,30 +7,19 @@ import { RangeInput } from "./range-input";
 import { ScalarInput } from "./scalar-input";
 import { VectorFieldInput } from "./vector-field-input";
 import { DropdownPanel } from "../dropdown";
-import { Editor } from "../../../editor";
-import { WorkspaceManager } from "../../../editor/workspace";
-import { ParamGroupWorkspace } from "../../../editor/workspaces/param-group-workspace";
 
 import "./styles/group-input.scss";
 
 export const GroupInput = ({ group }: { group: ParamGroup<any> }) => {
-	const workspaces = Editor.useModule(WorkspaceManager);
 	group = useObservable(group);
 
 	const params = group.params();
 	const groups = group.subGroups();
 
-	const preview = (e: React.MouseEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-
-		workspaces.open(ParamGroupWorkspace, `${group.name} - Param Group`, group);
-	};
-
+	
 	const title = (
 		<h4>
 			{group.name}
-			{/*{hasPreview && <i onClick={preview} className="fa-solid fa-play" />}*/}
 		</h4>
 	);
 
