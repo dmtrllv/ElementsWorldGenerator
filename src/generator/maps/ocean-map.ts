@@ -1,49 +1,36 @@
-import { dependency, ParamMap } from "./param-map";
+import { MapData } from "./map-data";
+import { MapGenerator } from "./map-generator";
 import { ContinentalMap } from "./continental-map";
+import type { Region } from "../region";
 
-export class OceanMap extends ParamMap<number> {
-	@dependency(ContinentalMap)
-	public readonly continental!: ContinentalMap;
+export class OceanMap extends MapGenerator<Float32Array> {
+    private readonly params = this.worldParams.geography.oceanParams;
 
-	private readonly params = this.worldParams.geography.oceanParams;
-	private _buffer: Float32Array | null = null;
+    public generate(region: Region): MapData<Float32Array> {
+        this.validateRegion(region);
 
-	public generate(overwrite: boolean = false): void {
-		if (this._buffer && !overwrite)
-			return;
+        const continental = this.generator.getMap(ContinentalMap).generate(region);
+        const buffer = new Float32Array(region.width * region.height);
 
-		const width = this.worldParams.size.x;
-		const height = this.worldParams.size.z;
+        for (let z = region.z; z < region.maxZ; z++) {
+            for (let x = region.x; x < region.maxX; x++) {
+                const index = (z - region.z) * region.width + (x - region.x);
+                const value = continental.get(x, z);
 
-		const buffer = new Float32Array(width * height);
+                if (value >= 0.5) {
+                    buffer[index] = 0;
+                    continue;
+                }
 
-		for (let z = 0; z < height; z++) {
-			for (let x = 0; x < width; x++) {
-				const value = this.continental.get(x, z);
+                const oceanicness = 1 - value * 2;
+                const distribution = (this.params.distribution.get(x, z) + 1) * 0.5;
+                const shelf = (this.params.shelf.get(x, z) + 1) * 0.5;
 
-				if (value >= 0.5) {
-					buffer[z * width + x] = 0;
-					continue;
-				}
+                const variation = distribution * (1 - shelf * oceanicness);
+                buffer[index] = Math.max(0, Math.min(1, oceanicness * variation));
+            }
+        }
 
-				const oceanicness = 1 - value * 2;
-				const distribution = (this.params.distribution.get(x, z) + 1) * 0.5;
-				const shelf = (this.params.shelf.get(x, z) + 1) * 0.5;
-
-				const variation = distribution * (1 - shelf * oceanicness);
-				buffer[z * width + x] = Math.max(0, Math.min(1, oceanicness * variation));
-			}
-		}
-
-		this._buffer = buffer;
-	}
-
-	public override get(x: number, z: number): number {
-		this.generate();
-		return this._buffer![z * this.worldParams.size.x + x]!;
-	}
-
-	public override dispose(): void {
-		this._buffer = null;
-	}
+        return new MapData(region, buffer);
+    }
 }
