@@ -162,17 +162,17 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 	};
 
 	useEffect(() => {
-		const panel = layoutRef.current;
+		//const panel = layoutRef.current;
 
-		if (!panel || !layout.isWorkspace() || isFirst)
-			return;
+		//if (!panel || !layout.isWorkspace() || isFirst)
+		//	return;
 
-		const vertical = layout.direction === "y";
+		//const vertical = layout.direction === "y";
 
-		const s = vertical ? panel.clientHeight : panel.clientWidth;
-		if(s !== layout.size)
-			layout.size = s;
-	});
+		//const s = vertical ? panel.clientHeight : panel.clientWidth;
+		//if(s !== layout.size)
+		//	layout.size = s;
+	}, [layout.parent?.children]);
 
 	if (layout.isWorkspace()) {
 		const showDropControls = !!workspaces.movingWorkspace;
