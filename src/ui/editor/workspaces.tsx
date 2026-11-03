@@ -169,8 +169,10 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 
 		const vertical = layout.direction === "y";
 
-		layout.size = vertical ? panel.clientHeight : panel.clientWidth;
-	}, []);
+		const s = vertical ? panel.clientHeight : panel.clientWidth;
+		if(s !== layout.size)
+			layout.size = s;
+	});
 
 	if (layout.isWorkspace()) {
 		const showDropControls = !!workspaces.movingWorkspace;
