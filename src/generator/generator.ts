@@ -1,9 +1,9 @@
-import { ParamMap, type ParamMapType } from "./maps/param-map";
+import type { MapGenerator, MapGeneratorType } from "./maps/map-generator";
 import type { WorldParams } from "./world-params";
 
 export class Generator {
 	public readonly worldParams: WorldParams;
-	protected readonly maps = new Map<ParamMapType<any>, ParamMap<any>>();
+	protected readonly maps = new Map<MapGeneratorType<any>, MapGenerator<any>>();
 
 	private disposed = false;
 
@@ -11,12 +11,13 @@ export class Generator {
 		this.worldParams = worldParams;
 	}
 
-	public getMap<T extends ParamMapType<any>>(type: T, overwrite: boolean = false): InstanceType<T> {
+	public getMap<T extends MapGeneratorType<any>>(type: T): InstanceType<T> {
 		if (this.disposed)
 			throw new Error("Cannot access a disposed generator!");
 
-		if (this.maps.has(type) && !overwrite)
+		if (this.maps.has(type))
 			return this.maps.get(type) as InstanceType<T>;
+		
 		const map = new (type as any)(this);
 		this.maps.set(type, map);
 		return map;
