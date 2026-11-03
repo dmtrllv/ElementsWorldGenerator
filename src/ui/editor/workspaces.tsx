@@ -1,10 +1,12 @@
 
 import { Editor } from "../../editor";
-import { RendererWorkspace, TestWorkspace, Workspace, WorkspaceLayout, WorkspaceManager, type SplitEdge, type WorkspaceType } from "../../editor/workspace";
+import { RendererWorkspace, Workspace, WorkspaceLayout, WorkspaceManager, type SplitEdge, type WorkspaceType } from "../../editor/workspace";
 import { RendererViewWorkspace } from "./workspaces/renderer";
-import React, { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import React, { useMemo, useRef, useState, type CSSProperties } from "react";
 import { observe } from "../../state";
 import { useEvent } from "../hooks/event";
+import { ParamGroupWorkspace } from "../../editor/workspaces/renderer";
+import { PramPreview } from "./workspaces/param-preview";
 
 import "./styles/workspace.scss";
 
@@ -22,7 +24,7 @@ export const Workspaces = () => {
 	useEvent("mouseup", () => {
 		if (workspace.movingWorkspace)
 			workspace.movingWorkspace = null;
-	}, undefined, []);
+	});
 
 	return (
 		<div id="workspace">
@@ -56,9 +58,6 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 		if (workspaces.movingWorkspace)
 			return;
 
-		e.preventDefault();
-		e.stopPropagation();
-
 		const panel = layoutRef.current;
 
 		if (!panel)
@@ -82,7 +81,7 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 		const delta = slidingState.pos - position;
 
 		layout.size = Math.max(50, slidingState.size + delta);
-	}, undefined, [layout.direction, slidingState, workspaces.movingWorkspace, layout]);
+	});
 
 	useEvent("mouseup", () => {
 		if (!slidingState.isSliding)
@@ -93,7 +92,7 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 			size: 0,
 			pos: 0
 		});
-	}, undefined, [slidingState]);
+	});
 
 	const onPanelMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
 		if (!workspaces.movingWorkspace || !panelRef.current)
@@ -161,19 +160,6 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 		setClosestEdge("center");
 	};
 
-	useEffect(() => {
-		//const panel = layoutRef.current;
-
-		//if (!panel || !layout.isWorkspace() || isFirst)
-		//	return;
-
-		//const vertical = layout.direction === "y";
-
-		//const s = vertical ? panel.clientHeight : panel.clientWidth;
-		//if(s !== layout.size)
-		//	layout.size = s;
-	}, [layout.parent?.children]);
-
 	if (layout.isWorkspace()) {
 		const showDropControls = !!workspaces.movingWorkspace;
 
@@ -192,12 +178,7 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 					))}
 				</div>
 
-				<div
-					className="panel"
-					ref={panelRef}
-					onMouseMove={onPanelMouseMove}
-					onMouseUp={onPanelMouseUp}
-				>
+				<div className="panel" ref={panelRef} onMouseMove={onPanelMouseMove} onMouseUp={onPanelMouseUp} >
 					{layout.children.map((workspace, i) => (
 						<div
 							key={workspace.id}
@@ -207,12 +188,17 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 						</div>
 					))}
 
-					{showDropControls && (
-						<div className={`drop-controls ${closestEdge}`} />
-					)}
+					<div className={`drop-controls ${closestEdge} ${showDropControls ? "show" : ""}`}>
+						<div className="left" />
+						<div className="top" />
+						<div className="right" />
+						<div className="bottom" />
+						<div className="center" />
+					</div>
+
 				</div>
 				{!isFirst && (
-					<div className="slider" onMouseDown={onStartSlide} />
+					<div className={`slider ${slidingState.isSliding ? "active" : ""}`} onMouseDown={onStartSlide} />
 				)}
 			</div>
 		);
@@ -229,7 +215,7 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 					/>
 				))}
 				{!isFirst && (
-					<div className="slider" onMouseDown={onStartSlide} />
+					<div className={`slider ${slidingState.isSliding ? "active" : ""}`} onMouseDown={onStartSlide} />
 				)}
 			</div>
 		);
@@ -262,9 +248,5 @@ const register = <T extends Workspace>(type: WorkspaceType<T>, component: React.
 	WorkspaceComponents.set(type, component);
 };
 
-const TestViewWorkspace = () => {
-	return <h1>Test</h1>;
-};
-
 register(RendererWorkspace, RendererViewWorkspace);
-register(TestWorkspace, TestViewWorkspace);
+register(ParamGroupWorkspace, PramPreview);

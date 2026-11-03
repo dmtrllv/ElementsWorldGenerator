@@ -1,9 +1,16 @@
 .group-input {
-	//border: 1px solid white;
-	h3 {
-		font-size: 20px;
-		padding: 10px;
-		margin: 0px;
+	.header h4 i {
+		color: var(--fg-1);
+		position: absolute;
+		right: 50px;
+		top: 50%;
+		transform: translateY(-50%);
+		opacity: 0.65;
+		&:hover {
+			transition: 150ms;
+			opacity: 1;
+			color: #0a890a;
+		}
 	}
 	.dropdown-panel {
 		margin-bottom: 5px;

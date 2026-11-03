@@ -57,4 +57,29 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 		default: [-1, 1]
 	})
 	public readonly normalization!: Range;
+
+	public override preview(buffer: Uint32Array): void {
+
+		const width = this.worldParams.size.x;
+		const height = this.worldParams.size.z;
+
+		const min = this.normalization.min;
+		const max = this.normalization.max;
+
+		for (let z = 0; z < height; z++) {
+			for (let x = 0; x < width; x++) {
+				const warp = this.warp.get(x, z);
+
+				const nx = x + warp.x * this.warpStrength.state;
+				const nz = z + warp.y * this.warpStrength.state;
+
+				const value = this.shape.evaluate(this.distribution.get(nx, nz));
+				const normalized = (value - min) / (max - min);
+				const color = Math.round(Math.max(0, Math.min(1, normalized)) * 255);
+
+				buffer[z * width + x] = 0xff000000 | color << 16 | color << 8 | color;
+			}
+
+		}
+	}
 }

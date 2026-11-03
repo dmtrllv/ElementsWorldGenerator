@@ -2,16 +2,17 @@ import { observable, state } from "../../state";
 import type { Param, ParamInfo, ParamState, ParamType } from "../params/param";
 import type { WorldParams } from "../world-params";
 
+@observable
 export abstract class ParamGroup<T extends ParamGroup<T>> {
 	public static getDefaultProps<T extends typeof ParamGroup<any>>(this: T): ParamGroupProps<InstanceType<T>> {
 		const props: any = {};
 
 		const groups = (this as any)[SUB_GROUPS];
-		for(const n in groups)
+		for (const n in groups)
 			props[n] = groups[n].getDefaultProps();
-		
+
 		const params = (this as any)[PARAMS];
-		for(const n in params)
+		for (const n in params)
 			props[n] = params[n].info.default;
 
 		return props;
@@ -70,6 +71,8 @@ export abstract class ParamGroup<T extends ParamGroup<T>> {
 		this.worldParams = worldParams;
 		this.info = info;
 	}
+
+	public preview?(buffer: Uint32Array): void;
 }
 
 export type ParamGroupType<T extends ParamGroup<T>> = new (worldParams: WorldParams, info: GroupInfo) => T;
@@ -110,7 +113,7 @@ const getParamType = <T extends ParamGroup<T>>(target: ParamGroupType<T> | typeo
 };
 
 export const param = <T extends ParamGroup<T>, K extends ParamKeys<T>>(type: T[K] extends Param<any> ? ParamType<T[K]> : never, info: ParamInfo<ParamState<T[K]>>) => (target: T, key: K) => {
-	
+
 	const ctor = target.constructor as any;
 	if (!ctor[PARAMS])
 		ctor[PARAMS] = {};

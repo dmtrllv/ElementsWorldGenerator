@@ -33,7 +33,7 @@ export const Sidebar = () => {
 	const [activeTab, setActiveTab] = useState("World");
 
 	return (
-		<div id="sidebar" style={{ flexBasis: width }}>
+		<div id="sidebar" style={{ flexBasis: width, minWidth: width, maxWidth: width }}>
 			<div className="content">
 				{Object.keys(tabs).map((key) => {
 					const Component = tabs[key as keyof typeof tabs]!;

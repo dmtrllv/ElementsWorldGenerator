@@ -12,22 +12,18 @@ export class WorkspaceManager extends Module {
 
 	@state
 	public readonly workspaces: Workspace[] = [
-		new RendererWorkspace(this, null, this.nextId()),
-		new TestWorkspace(this, null, this.nextId(), "test 1"),
-		new TestWorkspace(this, null, this.nextId(), "test 2")
+		
 	];
 
 	@state
-	public readonly layout: WorkspaceLayout = new WorkspaceLayout("y", null, [
-		new WorkspaceLayout("tabs", null, [this.workspaces[0]!, this.workspaces[1]!]),
-		new WorkspaceLayout("tabs", null, [this.workspaces[2]!])
-	]);
+	public readonly layout: WorkspaceLayout = new WorkspaceLayout("y", null, []);
 
 	@state
 	public movingWorkspace: Workspace | null = null;
 
 	public constructor(editor: Editor) {
 		super(editor);
+		(this as any).open(RendererWorkspace, "Renderer");
 		this.layout.attach();
 	}
 
@@ -55,7 +51,7 @@ export class WorkspaceManager extends Module {
 	}
 }
 
-type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extends [WorkspaceManager, WorkspaceLayout | null, number, string, ...infer Args] ? Args : never;
+type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extends [manager: WorkspaceManager, layout: WorkspaceLayout | null, id: number, string, ...infer Args] ? Args : never;
 
 export type WorkspaceType<T extends Workspace> =
 	new (manager: WorkspaceManager, layout: WorkspaceLayout | null, id: number, ...args: any[]) => T;
@@ -89,12 +85,10 @@ export abstract class Workspace {
 }
 
 export class RendererWorkspace extends Workspace {
-	public constructor(workspace: WorkspaceManager, layout: WorkspaceLayout | null, id: number) {
-		super(workspace, layout, id, "Renderer", false, true);
+	public constructor(workspace: WorkspaceManager, layout: WorkspaceLayout | null, id: number, name: string) {
+		super(workspace, layout, id, name, false, true);
 	}
 }
-
-export class TestWorkspace extends Workspace { }
 
 export type LayoutDirection = "x" | "y";
 export type SplitEdge = "top" | "right" | "bottom" | "left";
@@ -371,9 +365,7 @@ export class WorkspaceLayout {
 				throw new Error("Workspace panel is not attached to its parent.");
 
 			if (parent._direction === direction) {
-				const insertIndex = edge === "left" || edge === "top"
-					? index
-					: index + 1;
+				const insertIndex = edge === "left" || edge === "top" ? index : index + 1;
 
 				siblings.splice(insertIndex, 0, newPanel);
 				newPanel.attach(parent);

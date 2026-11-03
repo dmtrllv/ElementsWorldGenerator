@@ -7,17 +7,39 @@ import { RangeInput } from "./range-input";
 import { ScalarInput } from "./scalar-input";
 import { VectorFieldInput } from "./vector-field-input";
 import { DropdownPanel } from "../dropdown";
+import { Editor } from "../../../editor";
+import { WorkspaceManager } from "../../../editor/workspace";
+import { ParamGroupWorkspace } from "../../../editor/workspaces/renderer";
 
 import "./styles/group-input.scss";
 
-export const GroupInput = ({ group }: { group: ParamGroup }) => {
+export const GroupInput = ({ group }: { group: ParamGroup<any> }) => {
+	const workspaces = Editor.useModule(WorkspaceManager);
 	group = observe(group);
 
 	const params = group.params();
 	const groups = group.subGroups();
 
+	const preview = (e: React.MouseEvent) => {
+		if (!group.preview) {
+			return;
+		}
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		workspaces.open(ParamGroupWorkspace, `${group.name} - Param Group`, group);
+	};
+
+	const title = (
+		<h4>
+			{group.name}
+			{group.preview && <i onClick={preview} className="fa-solid fa-play" />}
+		</h4>
+	);
+
 	return (
-		<DropdownPanel className="group-input" title={group.name}>
+		<DropdownPanel className="group-input" title={title}>
 			{Object.values(params).map(param => <ParamInput key={param.name} param={param} />)}
 			{Object.values(groups).map(group => <GroupInput key={group.name} group={group} />)}
 		</DropdownPanel>

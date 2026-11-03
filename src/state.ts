@@ -243,8 +243,10 @@ export const state = <T extends object>(target: T, key: PropertyKey) => {
 export const observe = <T>(state: T): T => {
 	const dispatchers = getDispatchers(state);
 
-	if (!dispatchers)
+	if (!dispatchers) {
+		console.log({ state })
 		throw new Error("value is not an observable state!");
+	}
 
 	const [value, setValue] = useState<{ state: T }>({ state });
 
