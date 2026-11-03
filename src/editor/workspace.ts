@@ -56,7 +56,7 @@ type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extend
 export type WorkspaceType<T extends Workspace> =
 	new (manager: WorkspaceManager, layout: WorkspaceLayout | null, id: number, ...args: any[]) => T;
 
-@observable({})
+@observable()
 export abstract class Workspace {
 	public readonly id: number;
 	public readonly isClosable: boolean;

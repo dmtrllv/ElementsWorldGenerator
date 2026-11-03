@@ -16,12 +16,12 @@ import "./styles/group-input.scss";
 export const GroupInput = ({ group }: { group: ParamGroup<any> }) => {
 	const workspaces = Editor.useModule(WorkspaceManager);
 	group = useObservable(group);
-
+	const hasPreview = true; // group.hasPreview
 	const params = group.params();
 	const groups = group.subGroups();
 
 	const preview = (e: React.MouseEvent) => {
-		if (!group.preview) {
+		if (!hasPreview) {
 			return;
 		}
 
@@ -34,7 +34,7 @@ export const GroupInput = ({ group }: { group: ParamGroup<any> }) => {
 	const title = (
 		<h4>
 			{group.name}
-			{group.preview && <i onClick={preview} className="fa-solid fa-play" />}
+			{hasPreview && <i onClick={preview} className="fa-solid fa-play" />}
 		</h4>
 	);
 
@@ -47,17 +47,20 @@ export const GroupInput = ({ group }: { group: ParamGroup<any> }) => {
 };
 
 export const ParamInput = ({ param }: { param: any }) => {
-	switch (param.constructor) {
-		case Curve:
-			return <CurveEditor curve={param} />;
-		case Scalar:
-			return <ScalarInput scalar={param} />;
-		case Float:
-			return <NumberInput name={param.name} value={param.state} onChange={v => param.state = v} />;
-		case VectorField:
-			return <VectorFieldInput vectorField={param} />;
-		case Range:
-			return <RangeInput range={param} />;
-	}
+	if (param instanceof Curve)
+		return <CurveEditor curve={param} />;
+
+	if (param instanceof Scalar)
+		return <ScalarInput scalar={param} />;
+
+	if (param instanceof Float)
+		return <NumberInput name={param.name} value={param.state} onChange={v => param.state = v} />;
+
+	if (param instanceof VectorField)
+		return <VectorFieldInput vectorField={param} />;
+
+	if (param instanceof Range)
+		return <RangeInput range={param} />;
+
 	return null;
 };

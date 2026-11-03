@@ -19,11 +19,11 @@ export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) =
 		world.seed,
 	];
 
-	for(const p of all) {
+	for (const p of all) {
 		useObservable(p);
-		if((typeof p.state === "object") && p.state) {
+		if ((typeof p.state === "object") && p.state) {
 			useObservable(p.state);
-			for(const k in p.state) {
+			for (const k in p.state) {
 				dependencies.push(p.state[k]);
 			}
 		} else {
@@ -39,7 +39,7 @@ export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) =
 
 			const width = params.size.x;
 			const height = params.size.z;
-			if (!width || !height || !paramGroup.preview)
+			if (!width || !height)
 				return;
 
 			canvas.current!.width = width;
@@ -47,7 +47,9 @@ export const PramPreview = ({ workspace }: { workspace: ParamGroupWorkspace }) =
 
 			const image = ctx.createImageData(width, height);
 			const pixels = new Uint32Array(image.data.buffer);
-			paramGroup.preview!(pixels);
+			const buffer = paramGroup.preview;
+			if (buffer)
+				pixels.set(buffer);
 			ctx.putImageData(image, 0, 0);
 			console.log("render");
 		}, 100);

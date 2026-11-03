@@ -1,3 +1,4 @@
+import { computed } from "../../../reactive";
 import { Curve, Float, Range, Scalar, VectorField } from "../../params";
 import { group, param, ParamGroup } from "../param-group";
 
@@ -58,11 +59,13 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 	})
 	public readonly normalization!: Range;
 
-	public override preview(buffer: Uint32Array): void {
-
+	@computed
+	public override get preview(): Uint32Array | null {
+		console.log(this.worldParams.seed)
 		const width = this.worldParams.size.x;
 		const height = this.worldParams.size.z;
-
+		const buffer = new Uint32Array(width * height);
+		
 		const min = this.normalization.min;
 		const max = this.normalization.max;
 
@@ -81,5 +84,7 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 				buffer[z * width + x] = 0xff000000 | color << 16 | color << 8 | color;
 			}
 		}
+
+		return buffer;
 	}
 }

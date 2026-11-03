@@ -1,4 +1,4 @@
-import { observable, } from "../../reactive";
+import { computed, observable, } from "../../reactive";
 import type { Param, ParamInfo, ParamState, ParamType } from "../params/param";
 import type { WorldParams } from "../world-params";
 
@@ -85,7 +85,10 @@ export abstract class ParamGroup<T extends ParamGroup<T>> {
 		this.info = info;
 	}
 
-	public preview?(buffer: Uint32Array): void;
+	@computed
+	public get preview(): Uint32Array | null {
+		return null
+	}
 }
 
 export type ParamGroupType<T extends ParamGroup<T>> = new (worldParams: WorldParams, info: GroupInfo) => T;

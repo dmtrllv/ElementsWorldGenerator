@@ -1,5 +1,7 @@
+import { observable } from "../../reactive";
 import { Param } from "./param";
 
+@observable({ inherit: true })
 export class Curve extends Param<CurveState> {
 	public static get defaultPoints(): CurvePoint[] {
 		return [

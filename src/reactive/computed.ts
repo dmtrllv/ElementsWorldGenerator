@@ -1,4 +1,4 @@
-import { getObservableState, collectObservableDependencies, notifyObservableKey, subscribeObservableDependency, type ObservableListener } from "./internal";
+import { getObservableState, collectObservableDependencies, notifyObservableKey, subscribeObservableDependency, type ObservableListener, notifyObservable } from "./internal";
 
 type ComputedEntry = {
 	value: unknown;
@@ -19,7 +19,7 @@ export const computed: ComputedDecorator = (_target, key, descriptor) => {
 
 	const cache = new WeakMap<object, ComputedEntry>();
 
-	descriptor.get = function(this: object) {
+	descriptor.get = function (this: object) {
 		// During construction, the instance has not been wrapped in its observable proxy yet.
 		if (!getObservableState(this))
 			return getter.call(this);
@@ -72,7 +72,7 @@ export const computed: ComputedDecorator = (_target, key, descriptor) => {
 				const state = getObservableState(this);
 
 				if (state)
-					notifyObservableKey(state, key, undefined);
+					notifyObservable(state, key, undefined);
 			};
 
 			for (const [state, keys] of result.dependencies) {

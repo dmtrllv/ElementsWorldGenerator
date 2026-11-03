@@ -2,8 +2,9 @@ import { fnv1a } from "fast-fnv1a";
 import { Param } from "./param";
 import alea from "alea";
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
-import { computed } from "../../reactive";
+import { computed, observable } from "../../reactive";
 
+@observable({ inherit: true })
 export class Scalar extends Param<ScalarState> {
 	@computed
 	private get noise2D(): NoiseFunction2D {

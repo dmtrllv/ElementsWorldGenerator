@@ -3,8 +3,9 @@ import { Param } from "./param";
 import alea from "alea";
 import { fnv1a } from "fast-fnv1a";
 import { Vector2 } from "three";
-import { computed } from "../../reactive";
+import { computed, observable } from "../../reactive";
 
+@observable({ inherit: true })
 export class VectorField extends Param<VectorFieldState> {
 	@computed
 	private get noise2DX():NoiseFunction2D {
