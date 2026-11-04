@@ -1,6 +1,6 @@
 import { MapData } from "./map-data";
 import { MapGenerator } from "./map-generator";
-import { ContinentalMap } from "./continental-map";
+import { OceanMap } from "./ocean-map";
 import { Region } from "../region";
 
 export class CoastMap extends MapGenerator<Float32Array> {
@@ -11,7 +11,7 @@ export class CoastMap extends MapGenerator<Float32Array> {
 
 		const width = Math.ceil(this.worldParams.size.x);
 		const height = Math.ceil(this.worldParams.size.z);
-		const maxDistance = this.params.transitionWitdth.state;
+		const maxDistance = this.params.transitionWidth.state;
 
 		if (!Number.isFinite(maxDistance) || maxDistance <= 0)
 			throw new RangeError("Coast transition width must be a positive finite number.");
@@ -34,44 +34,53 @@ export class CoastMap extends MapGenerator<Float32Array> {
 		const workHeight = workRegion.height;
 		const size = workWidth * workHeight;
 
-		const continental = this.generator.getMap(ContinentalMap).generate(sampleRegion);
+		const ocean = this.generator.getMap(OceanMap).generate(sampleRegion);
 		const distance = new Float32Array(size);
 		distance.fill(Infinity);
 
+		const isOcean = (x: number, z: number): boolean => ocean.get(x, z) >= 0.5;
 		const diagonal = Math.SQRT2;
 
-		// identify land/sea boundaries
+		// identify land cells adjacent to the ocean
 		for (let z = workRegion.z; z < workRegion.maxZ; z++) {
 			for (let x = workRegion.x; x < workRegion.maxX; x++) {
-				const index = (z - workRegion.z) * workWidth + (x - workRegion.x);
-				const land = continental.get(x, z) >= 0.5;
+				if (isOcean(x, z))
+					continue;
 
-				const left = x > 0 ? continental.get(x - 1, z) >= 0.5 : land;
-				const right = x < width - 1 ? continental.get(x + 1, z) >= 0.5 : land;
-				const top = z > 0 ? continental.get(x, z - 1) >= 0.5 : land;
-				const bottom = z < height - 1 ? continental.get(x, z + 1) >= 0.5 : land;
+				const left = x > 0 && isOcean(x - 1, z);
+				const right = x < width - 1 && isOcean(x + 1, z);
+				const top = z > 0 && isOcean(x, z - 1);
+				const bottom = z < height - 1 && isOcean(x, z + 1);
 
-				if (land !== left || land !== right || land !== top || land !== bottom)
+				if (left || right || top || bottom) {
+					const index = (z - workRegion.z) * workWidth + (x - workRegion.x);
 					distance[index] = 0;
+				}
 			}
 		}
 
 		// forward pass
 		for (let z = 0; z < workHeight; z++) {
 			for (let x = 0; x < workWidth; x++) {
+				const worldX = workRegion.x + x;
+				const worldZ = workRegion.z + z;
+
+				if (isOcean(worldX, worldZ))
+					continue;
+
 				const index = z * workWidth + x;
 				let value = distance[index]!;
 
-				if (x > 0)
+				if (x > 0 && !isOcean(worldX - 1, worldZ))
 					value = Math.min(value, distance[index - 1]! + 1);
 
-				if (z > 0)
+				if (z > 0 && !isOcean(worldX, worldZ - 1))
 					value = Math.min(value, distance[index - workWidth]! + 1);
 
-				if (x > 0 && z > 0)
+				if (x > 0 && z > 0 && !isOcean(worldX - 1, worldZ - 1))
 					value = Math.min(value, distance[index - workWidth - 1]! + diagonal);
 
-				if (x < workWidth - 1 && z > 0)
+				if (x < workWidth - 1 && z > 0 && !isOcean(worldX + 1, worldZ - 1))
 					value = Math.min(value, distance[index - workWidth + 1]! + diagonal);
 
 				distance[index] = value;
@@ -81,19 +90,25 @@ export class CoastMap extends MapGenerator<Float32Array> {
 		// backward pass
 		for (let z = workHeight - 1; z >= 0; z--) {
 			for (let x = workWidth - 1; x >= 0; x--) {
+				const worldX = workRegion.x + x;
+				const worldZ = workRegion.z + z;
+
+				if (isOcean(worldX, worldZ))
+					continue;
+
 				const index = z * workWidth + x;
 				let value = distance[index]!;
 
-				if (x < workWidth - 1)
+				if (x < workWidth - 1 && !isOcean(worldX + 1, worldZ))
 					value = Math.min(value, distance[index + 1]! + 1);
 
-				if (z < workHeight - 1)
+				if (z < workHeight - 1 && !isOcean(worldX, worldZ + 1))
 					value = Math.min(value, distance[index + workWidth]! + 1);
 
-				if (x < workWidth - 1 && z < workHeight - 1)
+				if (x < workWidth - 1 && z < workHeight - 1 && !isOcean(worldX + 1, worldZ + 1))
 					value = Math.min(value, distance[index + workWidth + 1]! + diagonal);
 
-				if (x > 0 && z < workHeight - 1)
+				if (x > 0 && z < workHeight - 1 && !isOcean(worldX - 1, worldZ + 1))
 					value = Math.min(value, distance[index + workWidth - 1]! + diagonal);
 
 				distance[index] = value;
@@ -105,10 +120,18 @@ export class CoastMap extends MapGenerator<Float32Array> {
 
 		for (let z = region.z; z < region.maxZ; z++) {
 			for (let x = region.x; x < region.maxX; x++) {
-				const workIndex = (z - workRegion.z) * workWidth + (x - workRegion.x);
 				const outputIndex = (z - region.z) * region.width + (x - region.x);
 
-				const normalized = Math.max(0, Math.min(1, distance[workIndex]! / maxDistance));
+				if (isOcean(x, z))
+					continue;
+
+				const workIndex = (z - workRegion.z) * workWidth + (x - workRegion.x);
+				const value = distance[workIndex]!;
+
+				if (!Number.isFinite(value))
+					continue;
+
+				const normalized = Math.max(0, Math.min(1, value / maxDistance));
 				buffer[outputIndex] = this.params.falloff.evaluate(1 - normalized);
 			}
 		}
