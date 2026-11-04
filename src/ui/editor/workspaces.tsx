@@ -1,14 +1,15 @@
 
 import { Editor } from "../../editor";
-import { RendererWorkspace, Workspace, WorkspaceLayout, WorkspaceManager, type SplitEdge, type WorkspaceType } from "../../editor/workspace";
+import { Workspace, WorkspaceLayout, WorkspaceManager, type SplitEdge, type WorkspaceType } from "../../editor/workspace";
+import { RendererWorkspace } from "../../editor/workspaces/renderer";
 import { RendererViewWorkspace } from "./workspaces/renderer";
 import React, { useMemo, useRef, useState, type CSSProperties } from "react";
 import { useObservable } from "../../reactive";
 import { useEvent } from "../hooks/event";
 import { MapPreview } from "./workspaces/map-preview";
+import { MapPreviewWorkspace } from "../../editor/workspaces/map-preview";
 
 import "./styles/workspace.scss";
-import { MapPreviewWorkspace } from "../../editor/workspaces/map-preview";
 
 type DropEdge = SplitEdge | "center";
 

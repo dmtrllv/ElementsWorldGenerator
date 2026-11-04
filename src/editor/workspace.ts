@@ -1,6 +1,7 @@
 import { observable } from "../reactive";
 import type { Editor } from "./editor";
 import { Module } from "./store";
+import { RendererWorkspace } from "./workspaces/renderer";
 
 @observable
 export class WorkspaceManager extends Module {
@@ -23,7 +24,7 @@ export class WorkspaceManager extends Module {
 
 	public constructor(editor: Editor) {
 		super(editor);
-		(this as any).open(RendererWorkspace, "Renderer");
+		this.open(RendererWorkspace, "Renderer");
 		this.layout.attach();
 	}
 
@@ -33,7 +34,7 @@ export class WorkspaceManager extends Module {
 				return workspace.layout?.focus(workspace);
 		}
 
-		const workspace = new (workspaceType as any)(this, null, this.nextId(), name, ...args);
+		const workspace = new workspaceType(this, null, this.nextId(), name, ...args);
 
 		this.workspaces.push(workspace);
 		this.layout.add(workspace);
@@ -81,12 +82,6 @@ export abstract class Workspace {
 	public close() {
 		if (this.isClosable)
 			this.workspace.close(this);
-	}
-}
-
-export class RendererWorkspace extends Workspace {
-	public constructor(workspace: WorkspaceManager, layout: WorkspaceLayout | null, id: number, name: string) {
-		super(workspace, layout, id, name, false, true);
 	}
 }
 

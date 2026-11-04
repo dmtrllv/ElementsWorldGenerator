@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { RendererWorkspace } from "../../../editor/workspace";
+import type { RendererWorkspace } from "../../../editor/workspaces/renderer";
 import { Editor } from "../../../editor";
 
 export const RendererViewWorkspace = (_: { workspace: RendererWorkspace }) => {
