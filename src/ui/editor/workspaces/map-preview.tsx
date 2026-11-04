@@ -2,7 +2,7 @@ import type { MapPreviewWorkspace } from "../../../editor/workspaces/map-preview
 
 import "./styles/map-preview.scss";
 
-export const MapPreview = ({ workspace }: { workspace: MapPreviewWorkspace }) => {
+export const MapPreview = ({  }: { workspace: MapPreviewWorkspace }) => {
 	
 	return (
 		<div className="map-preview">
