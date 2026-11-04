@@ -5,7 +5,7 @@ import { group, ParamGroup, subGroup } from "../param-group";
 
 @group({
 	name: "Geography",
-	description: ""
+	description: "Controls the large-scale geographical structure of the world, including continental landmasses, ocean regions, and coastal transitions."
 })
 export class GeographyParams extends ParamGroup<GeographyParams> {
 	@subGroup(ContinentalParams)

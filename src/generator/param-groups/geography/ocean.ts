@@ -3,12 +3,12 @@ import { group, param, ParamGroup } from "../param-group";
 
 @group({
 	name: "Ocean",
-	description: ""
+	description: "Controls the distribution and shape of ocean regions, including the formation of ocean basins and the transition from deep ocean to continental shelves."
 })
 export class OceanParams extends ParamGroup<OceanParams> {
 	@param(Scalar, {
 		name: "Distribution",
-		description: "",
+		description: "Determines the spatial distribution of ocean regions, controlling where oceans form and how their boundaries and shapes are defined.",
 		default: {
 			seedOffset: 0,
 			scale: 400,
@@ -22,7 +22,7 @@ export class OceanParams extends ParamGroup<OceanParams> {
 
 	@param(Scalar, {
 		name: "Shelf",
-		description: "",
+		description: "Controls the shape and extent of continental shelves, defining the transition from shallow coastal waters to deep ocean basins.",
 		default: {
 			seedOffset: 0,
 			scale: 400,

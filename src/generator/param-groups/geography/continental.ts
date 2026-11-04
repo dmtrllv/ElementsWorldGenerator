@@ -3,12 +3,12 @@ import { group, param, ParamGroup } from "../param-group";
 
 @group({
 	name: "Continental",
-	description: ""
+	description: "Controls the distribution and shape of continental landmasses, including their large-scale boundaries and geographical irregularities."
 })
 export class ContinentalParams extends ParamGroup<ContinentalParams> {
 	@param(Scalar, {
 		name: "Distribution",
-		description: "",
+		description: "Determines the spatial distribution of continental regions, defining the large-scale placement and extent of landmasses.",
 		default: {
 			seedOffset: 0,
 			scale: 400,
@@ -22,7 +22,7 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 
 	@param(Curve, {
 		name: "Shape",
-		description: "",
+		description: "Controls how the distribution values translate into continental regions, influencing their overall size, shape, and boundaries.",
 		default: {
 			interpolation: "monotone-cubic",
 			points: Curve.defaultPoints
@@ -32,7 +32,7 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 
 	@param(VectorField, {
 		name: "Warp",
-		description: "",
+		description: "Defines spatial distortion applied to continental distribution, introducing irregularities and variation into landmass boundaries.",
 		default: {
 			seedOffset: 0,
 			scale: 200,
@@ -46,14 +46,14 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 
 	@param(Float, {
 		name: "Warp Strength",
-		description: "",
+		description: "Controls the intensity of spatial distortion applied by the warp field.",
 		default: 40
 	})
 	public readonly warpStrength!: Float;
 
 	@param(Range, {
-		name: "normalization",
-		description: "",
+		name: "Normalization",
+		description: "Defines the output range used to normalize continental distribution values.",
 		default: [-1, 1]
 	})
 	public readonly normalization!: Range;
