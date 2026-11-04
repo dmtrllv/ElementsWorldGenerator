@@ -17,6 +17,10 @@ export class Editor {
 
 	private readonly stores: Map<ModuleType<any>, Module> = new Map();
 
+	public constructor(init?: (editor: Editor) => any) {
+		init?.(this);
+	}
+
 	public get<T extends Module>(type: ModuleType<T>): T {
 		if (!this.stores.has(type))
 			this.stores.set(type, new type(this));
@@ -26,8 +30,8 @@ export class Editor {
 
 const EditorCtx = createContext<Editor | null>(null);
 
-export const EditorContext = ({ children }: PropsWithChildren) => {
-	const editor = useRef(new Editor());
+export const EditorContext = ({ children, init }: PropsWithChildren<{ init?: (editor: Editor) => any }>) => {
+	const editor = useRef(new Editor(init));
 
 	return React.createElement(EditorCtx.Provider, { value: editor.current }, children);
 };

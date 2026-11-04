@@ -1,7 +1,6 @@
 import { observable } from "../reactive";
 import type { Editor } from "./editor";
 import { Module } from "./store";
-import { RendererWorkspace } from "./workspaces/renderer";
 
 @observable
 export class WorkspaceManager extends Module {
@@ -24,7 +23,6 @@ export class WorkspaceManager extends Module {
 
 	public constructor(editor: Editor) {
 		super(editor);
-		this.open(RendererWorkspace, "Renderer");
 		this.layout.attach();
 	}
 
