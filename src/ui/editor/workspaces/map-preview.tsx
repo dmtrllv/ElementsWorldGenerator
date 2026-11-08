@@ -19,9 +19,10 @@ export const MapPreview = ({ workspace }: { workspace: MapPreviewWorkspace }) =>
 	});
 
 	const update = (state: Partial<RenderState>) => setRenderState(s => ({ ...s, ...state }));
-
-	const generator = useObservable(activeProject.world.generator);
-
+	
+	const world = useObservable(activeProject.world);
+	const generator = useObservable(world.generator);
+	console.log("render");
 	const canvas = useRef<HTMLCanvasElement>(null);
 
 	useEffect(() => {

@@ -14,10 +14,10 @@ export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, val
 	const update = (v: string) => {
 		const val = clamp(parseFloat(v), props.min || -Infinity, props.max || Infinity);
 		set(val.toString());
-		
+
 		if (Number.isFinite(val) && !Number.isNaN(val)) {
 			slider.set(val);
-			onChange?.(value);
+			onChange?.(val);
 		}
 	};
 
@@ -26,7 +26,6 @@ export const NumberInput: InputComponent<number, NumberProps> = ({ onChange, val
 		if (prevX.current !== vx) {
 			prevX.current = vx;
 			update(vx);
-			onChange?.(value);
 		}
 
 	}, [value]);

@@ -12,7 +12,7 @@ export class Generator {
 
 	private readonly mapRegistry = new Map<string, MapData>();
 	private readonly passRegistry = new Map<PassType<any>, Pass>();
-	private readonly passMapper = new Map<MapDataType<any>, Pass>();
+	private readonly passMapper = new Map<MapDataType<any, any>, Pass>();
 
 	public constructor(worldParams: WorldParamsSnapshot) {
 		this.worldParams = worldParams;
@@ -20,7 +20,7 @@ export class Generator {
 		this.chunkArea = this.worldParams.chunkSize.x * this.worldParams.chunkSize.y;
 	}
 
-	private getPassFromMap(type: MapDataType<any>) {
+	private getPassFromMap(type: MapDataType<any, any>) {
 		if (this.passMapper.has(type))
 			return this.passMapper.get(type)!;
 
@@ -39,8 +39,8 @@ export class Generator {
 		return this.passRegistry.get(PassType)!;
 	}
 
-	public generateMap(type: MapDataType<any>, scope: GenerationScope, chunk?: Vector2) {
-		const createId = (type: MapDataType<any>) => {
+	public generateMap(type: MapDataType<any, any>, scope: GenerationScope, chunk?: Vector2) {
+		const createId = (type: MapDataType<any, any>) => {
 			let id = `${type.name}:${scope}`;
 			if (chunk) {
 				id += `:${chunk.x}:${chunk.y}`;

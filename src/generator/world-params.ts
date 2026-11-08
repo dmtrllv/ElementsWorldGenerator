@@ -1,5 +1,5 @@
 import { Vector2, Vector3 } from "three";
-import { observable, } from "../reactive";
+import { createObservable, observable, } from "../reactive";
 import { GeographyParams } from "./param-groups/geography/geography";
 import { ParamGroup, type ParamGroupProps, type ParamGroupType } from "./param-groups/param-group";
 import { TerrainParams } from "./param-groups/terrain/terrain";
@@ -42,8 +42,8 @@ export class WorldParams {
 
 	public constructor(seed: number, { size, chunkSize, geography, terrain }: WorldParamProps) {
 		this.seed = seed;
-		this.size = size;
-		this.chunkSize = chunkSize;
+		this.size = createObservable(size);
+		this.chunkSize = createObservable(chunkSize);
 		this.geography = GeographyParams.init(this, geography);
 		this.terrain = TerrainParams.init(this, terrain);
 	}

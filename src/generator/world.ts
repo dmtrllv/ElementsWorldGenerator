@@ -7,18 +7,16 @@ export class World {
 	public readonly worldParams: WorldParams;
 
 	@observable
-	private _generator: Generator;
-
-	public get generator(): Generator { return this._generator; };
+	public generator: Generator;
 	
 	private readonly unsubscribeWorldParams: Unsubscriber;
 
 	public constructor(seed: number, worldParamProps: WorldParamProps) {
 		this.worldParams = new WorldParams(seed, worldParamProps);
-		this._generator = createObservable(new Generator(this.worldParams.snapshot()));
+		this.generator = createObservable(new Generator(this.worldParams.snapshot()));
 		this.unsubscribeWorldParams = subscribeDeep(this.worldParams, () => {
 			console.log("update");
-			this._generator = new Generator(this.worldParams.snapshot());
+			this.generator = createObservable(new Generator(this.worldParams.snapshot()));
 		});
 	}
 
