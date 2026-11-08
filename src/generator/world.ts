@@ -6,6 +6,7 @@ import { WorldParams, type WorldParamProps } from "./world-params";
 export class World {
 	public readonly worldParams: WorldParams;
 
+	@observable
 	private _generator: Generator;
 
 	public get generator(): Generator { return this._generator; };
@@ -16,6 +17,7 @@ export class World {
 		this.worldParams = new WorldParams(seed, worldParamProps);
 		this._generator = createObservable(new Generator(this.worldParams.snapshot()));
 		this.unsubscribeWorldParams = subscribeDeep(this.worldParams, () => {
+			console.log("update");
 			this._generator = new Generator(this.worldParams.snapshot());
 		});
 	}

@@ -1,18 +1,18 @@
 export abstract class MapData<T extends TypedArray = Float32Array> {
-	private static readonly registry = new Map<MapDataType<any>, MapDataMeta<any>>();
+	private static readonly registry = new Map<MapDataType<any, any>, MapDataMeta<any>>();
 
-	public static readonly getMeta = <T extends MapDataType<any>>(type: T): MapDataMeta<any> => {
+	public static readonly getMeta = <T extends MapDataType<any, any>>(type: T): MapDataMeta<any> => {
 		const meta = this.registry.get(type);
 		if(!meta)
 			throw new Error(`No meta defined on ${type.name}!`);
 		return meta;
 	}
 
-	public static readonly register = <T extends MapDataType<any>>(meta: MapDataMeta<T>) => (target: T) => {
-		this.registry.set(target, meta);
+	public static readonly register = <T extends MapDataType<any, any>>(meta: MapDataMeta<T>) => (target: T) => {
+		this.registry.set(target, meta as any);
 	}
 
-	public static get types(): ReadonlyMap<MapDataType<any>, MapDataMeta<any>> {
+	public static get types(): ReadonlyMap<MapDataType<any, any>, MapDataMeta<any>> {
 		return this.registry;
 	}
 
@@ -21,9 +21,12 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 	public constructor(data: T) {
 		this.data = data;
 	}
+
+	public debug(_imageData: ImageData) {}
+	
 }
 
-export type MapDataMeta<T extends MapDataType<any>> = T extends MapDataType<infer U> ? U extends MapData<infer V> ? (V extends Float32Array ? {
+export type MapDataMeta<T extends MapDataType<any, any>> = T extends MapDataType<any, infer V> ? (V extends Float32Array ? {
 	readonly type?: TypedArrayCtor<V>;
 	readonly name: string;
 	readonly description: string;
@@ -31,11 +34,9 @@ export type MapDataMeta<T extends MapDataType<any>> = T extends MapDataType<infe
 	readonly type: TypedArrayCtor<V>;
 	readonly name: string;
 	readonly description: string;
-}) : never : never;
+}) : never;
 
-export type MapDataType<T extends MapData<any>> = new (data: InferMapDataDataType<T>) => T;
-
-type InferMapDataDataType<T extends MapData<any>> = T extends MapData<infer U> ? U : never;
+export type MapDataType<T extends MapData<Type>, Type extends TypedArray> = new (data: Type) => T;
 
 export type TypedArray =
 	| Int8Array

@@ -92,7 +92,7 @@ export class Generator {
 				this.worldParams.chunkSize.y
 			) : this.worldParams.region;
 
-			pass.generate(region);
+			pass.generate(region, scope);
 		}
 
 		return this.mapRegistry.get(id)!;

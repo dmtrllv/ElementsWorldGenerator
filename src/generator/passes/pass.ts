@@ -60,7 +60,7 @@ export abstract class Pass {
 		this.worldParams = worldParams;
 	}
 
-	public abstract generate(region: Region): void;
+	public abstract generate(region: Region, scope: GenerationScope): void;
 }
 
 export type PassMeta = {

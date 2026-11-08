@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { MapPreviewWorkspace } from "../../../editor/workspaces/map-preview";
 import { Editor, ProjectManager } from "../../../editor";
 import { useObservable } from "../../../reactive";
-import type { Generator, MapDataMeta, MapDataType } from "../../../generator";
+import { GenerationScope, Generator, type MapDataMeta, type MapDataType } from "../../../generator";
 import { NumberInput } from "../../components";
-import { Vector2 } from "three";
 
 import "./styles/map-preview.scss";
 
@@ -56,14 +55,21 @@ export const MapPreview = ({ workspace }: { workspace: MapPreviewWorkspace }) =>
 	);
 };
 
-const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDataType<any>, meta: MapDataMeta<any>) => {
+const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDataType<any, any>, meta: MapDataMeta<any>) => {
 	const ctx = canvas.getContext("2d");
 	if (!ctx)
 		throw new Error(`Could not get canvas context!`);
 
-	const map = generator.generateMap(mapType, "Local", new Vector2(0, 0));
+	const map = generator.generateMap(mapType, GenerationScope.Global);
 
-	console.log("render", map)
+	canvas.width = generator.worldParams.size.x;
+	canvas.height = generator.worldParams.size.z;
+
+	const imageData = ctx.createImageData(canvas.width, canvas.height);
+	
+	map.debug(imageData);
+
+	ctx.putImageData(imageData, 0, 0);
 };
 
 type RenderState = {

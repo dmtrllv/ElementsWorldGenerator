@@ -66,7 +66,7 @@ const PassDebug = ({ type, meta }: { type: PassType<any>, meta: PassMeta }) => {
 				<div>
 					<h5>Input Params:</h5>
 					{params.map(([key, param]) => {
-						const meta = ParamGroup.getMeta(param.type);
+						const meta = ParamGroup.getMeta(param.type as any);
 						return (
 							<div key={key}>{meta.name}</div>
 						)
