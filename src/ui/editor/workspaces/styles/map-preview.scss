@@ -1,3 +1,41 @@
 .map-preview {
-	
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+
+	.toolbar {
+		flex-basis: 28px;
+		height: 28px;
+		border-bottom: 1px solid var(--border-1);
+		background-color: var(--bg-1);
+		display: flex;
+
+		.input-field {
+			margin-top: 4px;
+			display: inline-block;
+			padding: 0px 8px;
+
+			&:not(:first-child) {
+				border-left: 1px solid var(--border-1);
+			}
+
+			.label {
+				float: left;
+				margin-top: 4px;
+				font-size: 12px;
+				padding-right: 10px;
+				padding-left: 0px;
+			}
+			input {
+				float: right;
+				height: 20px;
+				max-width: 50px;
+			}
+		}
+	}
+
+	.workspace {
+		flex: 1;
+	}
 }

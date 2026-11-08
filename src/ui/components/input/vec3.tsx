@@ -8,11 +8,11 @@ import "./styles/input.scss";
 export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name }) => {
 	const sx = useSlider(value.x, -Infinity, Infinity, "y", -1);
 	const sy = useSlider(value.y, -Infinity, Infinity, "y", -1);
-	const sz = useSlider(value.y, -Infinity, Infinity, "y", -1);
+	const sz = useSlider(value.z, -Infinity, Infinity, "y", -1);
 
 	const [x, setX] = useState(value.x.toString());
 	const [y, setY] = useState(value.y.toString());
-	const [z, setZ] = useState(value.y.toString());
+	const [z, setZ] = useState(value.z.toString());
 
 	const prevX = useRef(x);
 	const prevY = useRef(y);
@@ -22,7 +22,6 @@ export const Vector3Input: InputComponent<Vector3> = ({ onChange, value, name })
 		setX(v);
 		const val = parseFloat(v);
 		if (Number.isFinite(val) && !Number.isNaN(val)) {
-			console.log("update x", value, val);
 			sx.set(val);
 			value.x = val;
 			onChange?.(value);

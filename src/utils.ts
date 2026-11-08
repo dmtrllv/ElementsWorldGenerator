@@ -1,3 +1,5 @@
+import type { Vector2, Vector3 } from "three";
+
 export const clamp = (val: number, min: number, max: number) => val > max ? max : val < min ? min : val;
 
 export const rgb = (r: number, g: number, b: number) => [r, g, b] as [number, number, number];
@@ -11,11 +13,21 @@ export function last<T>(set: Set<T>): T | undefined;
 export function last<T>(set: Record<any, T>): T | undefined;
 export function last<T>(set: T[]): T | undefined;
 export function last<T>(obj: any): T | undefined {
-	if(obj instanceof Map || obj instanceof Set)
+	if (obj instanceof Map || obj instanceof Set)
 		return last(Array.from(obj.values()));
-	if(Array.isArray(obj))
+	if (Array.isArray(obj))
 		return obj.length ? obj[obj.length - 1] : undefined;
 	return last(Array.from(Object.values(obj))) as T;
 }
 
 export const exec = <T>(fn: () => T): T => fn();
+
+export type Immutable<T> =
+	T extends (...args: any) => any ? T :
+	T extends Vector2 ? Immutable<{ x: number, y: number }> :
+	T extends Vector3 ? Immutable<{ x: number, y: number, z: number }> :
+	T extends Map<infer K, infer U> ? ReadonlyMap<K, Immutable<U>> :
+	T extends Set<infer U> ? ReadonlySet<Immutable<U>> :
+	T extends Array<infer U> ? ReadonlyArray<Immutable<U>> :
+	T extends object ? T & { readonly [K in keyof T]: Immutable<T[K]> } :
+	Readonly<T>;

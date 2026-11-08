@@ -18,8 +18,12 @@ export abstract class ParamGroup<T extends ParamGroup<T>> {
 		return props;
 	}
 
+	public static getMeta<T extends typeof ParamGroup<any> | ParamGroupType<any>>(type: T): GroupMeta {
+		return (type as any)[META];
+	}
+
 	public static init<T extends typeof ParamGroup<any>>(this: T, worldParams: WorldParams, props: ParamGroupProps<InstanceType<T>>) {
-		const info = getGroupInfo(this);
+		const info = ParamGroup.getMeta(this);
 		const values: Record<any, any> = {};
 		for (const k in props) {
 			const val = props[k as keyof typeof props] as any;
@@ -60,14 +64,14 @@ export abstract class ParamGroup<T extends ParamGroup<T>> {
 		return c;
 	}
 
-	private readonly info: GroupInfo;
+	private readonly info: GroupMeta;
 
 	public get name() { return this.info.name; }
 	public get description() { return this.info.description; }
 
 	protected readonly worldParams: WorldParams;
 
-	public constructor(worldParams: WorldParams, info: GroupInfo) {
+	public constructor(worldParams: WorldParams, info: GroupMeta) {
 		this.worldParams = worldParams;
 		this.info = info;
 	}
@@ -85,7 +89,7 @@ export abstract class ParamGroup<T extends ParamGroup<T>> {
 	}
 }
 
-export type ParamGroupType<T extends ParamGroup<any>> = new (worldParams: WorldParams, info: GroupInfo) => T;
+export type ParamGroupType<T extends ParamGroup<any>> = new (worldParams: WorldParams, info: GroupMeta) => T;
 
 export type ParamGroupProps<T extends ParamGroup<T>> = {
 	[K in GroupKeys<T>]: T[K] extends ParamGroup<any> ? ParamGroupProps<T[K]> : never;
@@ -99,18 +103,14 @@ export type ParamGroupValues<T extends ParamGroup<T>> = {
 	[K in ParamKeys<T>]: T[K] extends Param<any> ? T[K] : never;
 };
 
-const INFO = Symbol("INFO");
+const META = Symbol("META");
 
-const getGroupInfo = (target: Function): GroupInfo | null => {
-	return (target as any)[INFO];
-}
-
-export const group = <T extends ParamGroup<T>>(info: GroupInfo) => (target: ParamGroupType<T>) => {
-	(target as any)[INFO] = info;
+export const group = <T extends ParamGroup<T>>(meta: GroupMeta) => (target: ParamGroupType<T>) => {
+	(target as any)[META] = meta;
 	return observable(target) as any;
 };
 
-export type GroupInfo = {
+export type GroupMeta = {
 	readonly name: string;
 	readonly description: string;
 };

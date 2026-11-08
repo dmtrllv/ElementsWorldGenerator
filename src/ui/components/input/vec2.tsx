@@ -19,7 +19,6 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name })
 		setX(v);
 		const val = parseFloat(v);
 		if (Number.isFinite(val) && !Number.isNaN(val)) {
-			console.log("update x", value, val);
 			sx.set(val);
 			value.x = val;
 			onChange?.(value);

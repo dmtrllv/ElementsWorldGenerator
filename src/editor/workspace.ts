@@ -28,7 +28,7 @@ export class WorkspaceManager extends Module {
 
 	public open<T extends WorkspaceType<any>>(workspaceType: T, name: string, ...args: WorkspaceArgs<T>) {
 		for (const workspace of this.workspaces) {
-			if ((workspace.constructor === workspaceType && workspace.isUnique) || workspace.name === name)
+			if (workspace.isUnique && workspace.constructor === workspaceType && workspace.name === name)
 				return workspace.layout?.focus(workspace);
 		}
 

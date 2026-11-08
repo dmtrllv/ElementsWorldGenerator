@@ -1,33 +1,27 @@
-import { observable } from "../reactive";
-import { GenerationSession } from "./generation-session";
+import { createObservable, observable, subscribeDeep, type Unsubscriber } from "../reactive";
+import { Generator } from "./generator";
 import { WorldParams, type WorldParamProps } from "./world-params";
 
 @observable
 export class World {
-    @observable
-    public readonly worldParams: WorldParams;
+	public readonly worldParams: WorldParams;
 
-    @observable
-    public generation: GenerationSession;
+	private _generator: Generator;
 
-    public constructor(seed: number, worldParamProps: WorldParamProps) {
-        this.worldParams = new WorldParams(seed, worldParamProps);
-        this.generation = new GenerationSession(this.worldParams);
-    }
+	public get generator(): Generator { return this._generator; };
+	
+	private readonly unsubscribeWorldParams: Unsubscriber;
 
-    public get generator() {
-        return this.generation.generator;
-    }
+	public constructor(seed: number, worldParamProps: WorldParamProps) {
+		this.worldParams = new WorldParams(seed, worldParamProps);
+		this._generator = createObservable(new Generator(this.worldParams.snapshot()));
+		this.unsubscribeWorldParams = subscribeDeep(this.worldParams, () => {
+			this._generator = new Generator(this.worldParams.snapshot());
+		});
+	}
 
-    public regenerate(): void {
-        const next = new GenerationSession(this.worldParams);
-        const previous = this.generation;
-
-        this.generation = next;
-        previous.dispose();
-    }
-
-    public dispose(): void {
-        this.generation.dispose();
-    }
+	public dispose() {
+		this.generator.dispose();
+		this.unsubscribeWorldParams();
+	}
 }

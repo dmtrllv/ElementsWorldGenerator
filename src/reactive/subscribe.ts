@@ -36,6 +36,67 @@ export const subscribe: Subscriber = ((observable: object, keyOrHandler: Propert
 	};
 }) as Subscriber;
 
+
+export const subscribeDeep: DeepSubscriber = ((observable: object, handler: SubscribeHandler<any>) => {
+	const rootState = getObservableState(observable);
+
+	if (!rootState)
+		throw new TypeError("Cannot subscribe to a value that is not observable.");
+
+	const subscriptions = new Map<object, Unsubscriber>();
+
+	let disposed = false;
+
+	const refresh = (): void => {
+		for (const unsubscribe of subscriptions.values())
+			unsubscribe();
+
+		subscriptions.clear();
+
+		const visited = new Set<object>();
+
+		const visit = (value: unknown): void => {
+			if (typeof value !== "object" || value === null)
+				return;
+
+			const state = getObservableState(value);
+
+			if (!state || visited.has(state.proxy))
+				return;
+
+			visited.add(state.proxy);
+
+			subscriptions.set(state.proxy, subscribe(state.proxy, () => {
+				handler(rootState.proxy);
+				refresh();
+			}));
+
+			for (const key of Reflect.ownKeys(state.proxy))
+				visit(Reflect.get(state.proxy, key));
+		};
+
+		visit(rootState.proxy);
+	};
+
+	refresh();
+
+	return () => {
+		if (disposed)
+			return;
+
+		disposed = true;
+
+		for (const unsubscribe of subscriptions.values())
+			unsubscribe();
+
+		subscriptions.clear();
+	};
+}) as DeepSubscriber;
+
+export interface DeepSubscriber {
+	<T extends object>(observable: T, handler: SubscribeHandler<T>): Unsubscriber;
+}
+
 export interface Subscriber {
 	<T extends object, K extends keyof T>(observable: T, key: K, handler: SubscribeHandlerWithKey<T[K], K>): Unsubscriber;
 	<T extends object>(observable: T, handler: SubscribeHandler<T>): Unsubscriber;
