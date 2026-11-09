@@ -1,8 +1,8 @@
-import type { Vector2, Vector3 } from "three";
+import type { Vector3 } from "three";
 import { MapData, type MapDataType } from "../maps";
 import type { ParamGroup, ParamGroupType } from "../param-groups";
 import type { Region } from "../region";
-import type { WorldParams, WorldParamsSnapshot } from "../world-params";
+import type { WorldParamsSnapshot } from "../world-params";
 import type { GenerationContext } from "../context";
 
 export abstract class Pass {
@@ -86,8 +86,8 @@ export const isMapDependency = (obj: PassDependency): obj is MapDependency => {
 
 export type PassType<T extends Pass> = new (worldParams: WorldParamsSnapshot) => T;
 
-export function dependency<T extends Pass, K extends keyof T>(type: ParamGroupType<any>): any;
-export function dependency<T extends Pass, K extends keyof T>(type: MapDataType<any, any>, scope?: GenerationScope, resolution?: number | ((params: WorldParamsSnapshot) => number)): any;
+export function dependency(type: ParamGroupType<any>): any;
+export function dependency(type: MapDataType<any, any>, scope?: GenerationScope, resolution?: number | ((params: WorldParamsSnapshot) => number)): any;
 export function dependency<T extends Pass, K extends keyof T>(...args: any[]) {
 	return (target: T, key: K) => {
 		Pass.registerDependency(target.constructor as any, key as any, args as any);

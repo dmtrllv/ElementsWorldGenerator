@@ -1,14 +1,13 @@
-
 import * as Three from "three";
 import { Scene } from "./scene";
 import { Controller } from "./controller";
 import { observable } from "../reactive";
 import { Module } from "../editor/store";
 import type { Editor } from "../editor";
-import type { World } from "../generator";
-
+import { Chunk, Region, type World } from "../generator";
 import { ElevationMap } from "../generator/maps/terrain";
-import { GenerationScope } from "../generator/passes/pass";
+
+type RenderMode = "heightmap" | "voxel";
 
 @observable
 export class Renderer extends Module {
@@ -22,19 +21,31 @@ export class Renderer extends Module {
 	private resizeObserver: ResizeObserver | null = null;
 	private previousFrameTime: number = 0;
 
-	private terrainMesh: Three.Mesh | null = null;
+	private readonly terrainMeshes = new Map<string, Three.Mesh>();
+	private readonly edgeMeshes = new Map<string, Three.LineSegments>();
 	private seaLevelMesh: Three.Mesh | null = null;
-	private edgeMesh: Three.LineSegments | null = null;
+
+	private world: World | null = null;
+	private renderMode: RenderMode = "heightmap";
+	private activeChunkIds = new Set<string>();
+
+	private readonly raycaster = new Three.Raycaster();
+	private readonly renderPlane = new Three.Plane(new Three.Vector3(0, 1, 0), 0);
+	private readonly renderDirection = new Three.Vector3();
+	private readonly renderIntersection = new Three.Vector3();
 
 	@observable
 	public showEdges: boolean = true;
+
+	@observable
+	public renderDistance: number = 500;
 
 	public constructor(editor: Editor) {
 		super(editor);
 
 		this.camera.position.set(50, 35, 50);
 		this.camera.near = 0.1;
-		this.camera.far = 1000000;
+		this.camera.far = 1_000_000;
 		this.camera.updateProjectionMatrix();
 
 		this.glRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -44,12 +55,13 @@ export class Renderer extends Module {
 
 	public toggleEdges() {
 		this.showEdges = !this.showEdges;
-		if(!this.edgeMesh)
-			return;
-		if(this.showEdges) {
-			this.scene.add(this.edgeMesh);
-		} else {
-			this.scene.remove(this.edgeMesh);
+
+		for (const mesh of this.edgeMeshes.values()) {
+			if (this.showEdges) {
+				this.scene.add(mesh);
+			} else {
+				this.scene.remove(mesh);
+			}
 		}
 	}
 
@@ -80,6 +92,7 @@ export class Renderer extends Module {
 			return;
 
 		this.controller.update(delta);
+		this.updateChunks();
 
 		this.glRenderer.setScissorTest(false);
 		this.glRenderer.setViewport(0, 0, this.glRenderer.domElement.width, this.glRenderer.domElement.height);
@@ -91,7 +104,7 @@ export class Renderer extends Module {
 
 	public dispose() {
 		this.glRenderer.setAnimationLoop(null);
-		this.disposeTerrainMesh();
+		this.disposeTerrainMeshes();
 
 		if (this.element)
 			this.controller?.dispose(this.element);
@@ -100,6 +113,7 @@ export class Renderer extends Module {
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
 		this.element = null;
+		this.world = null;
 
 		this.glRenderer.dispose();
 	}
@@ -136,60 +150,203 @@ export class Renderer extends Module {
 			mesh.material.dispose();
 	}
 
-	private disposeTerrainMesh() {
-		if (this.terrainMesh) {
-			this.disposeMesh(this.terrainMesh);
-			this.terrainMesh = null;
-		}
+	private disposeEdgeMesh(mesh: Three.LineSegments) {
+		this.scene.remove(mesh);
+		mesh.geometry.dispose();
+
+		if (Array.isArray(mesh.material))
+			mesh.material.forEach(material => material.dispose());
+		else
+			mesh.material.dispose();
+	}
+
+	private disposeTerrainMeshes() {
+		for (const mesh of this.terrainMeshes.values())
+			this.disposeMesh(mesh);
+
+		this.terrainMeshes.clear();
+
+		for (const mesh of this.edgeMeshes.values())
+			this.disposeEdgeMesh(mesh);
+
+		this.edgeMeshes.clear();
+		this.activeChunkIds.clear();
 
 		if (this.seaLevelMesh) {
 			this.disposeMesh(this.seaLevelMesh);
 			this.seaLevelMesh = null;
 		}
+	}
 
-		if(this.edgeMesh) {
-			this.scene.remove(this.edgeMesh);
-			this.edgeMesh.geometry.dispose();
+	private disposeChunk(id: string) {
+		const terrainMesh = this.terrainMeshes.get(id);
+
+		if (terrainMesh) {
+			this.disposeMesh(terrainMesh);
+			this.terrainMeshes.delete(id);
+		}
+
+		const edgeMesh = this.edgeMeshes.get(id);
+
+		if (edgeMesh) {
+			this.disposeEdgeMesh(edgeMesh);
+			this.edgeMeshes.delete(id);
 		}
 	}
 
-	public renderWorldHeightmap(world: World) {
-		const generator = world.generator;
-		const worldParams = generator.worldParams;
-		const elevationMap = generator.generateMap(ElevationMap, GenerationScope.Global);
-		const elevation = elevationMap.data;
+	private getRenderCenter(world: World) {
+		const worldParams = world.generator.worldParams;
+		const offset = worldParams.offset;
 
-		const width = worldParams.size.x;
-		const depth = worldParams.size.z;
+		let centerX = this.camera.position.x;
+		let centerZ = this.camera.position.z;
 
-		const seaLevel = worldParams.terrain.seaLevel.seaLevel.state;
+		if (this.controller?.cameraMode === "orbital") {
+			this.camera.getWorldDirection(this.renderDirection);
 
-		const positions = new Float32Array(width * depth * 3);
-		const indices: number[] = [];
+			this.raycaster.set(this.camera.position, this.renderDirection);
 
-		let minElevation = Infinity;
-		let maxElevation = -Infinity;
+			const intersection = this.raycaster.ray.intersectPlane(this.renderPlane, this.renderIntersection);
 
-		for (let z = 0; z < depth; z++) {
-			for (let x = 0; x < width; x++) {
-				const index = z * width + x;
-				const positionIndex = index * 3;
-				const elevationValue = elevation[index]!;
-
-				positions[positionIndex] = x - (width - 1) / 2;
-				positions[positionIndex + 1] = elevationValue;
-				positions[positionIndex + 2] = z - (depth - 1) / 2;
-
-				minElevation = Math.min(minElevation, elevationValue);
-				maxElevation = Math.max(maxElevation, elevationValue);
+			if (intersection) {
+				centerX = intersection.x;
+				centerZ = intersection.z;
 			}
 		}
 
-		for (let z = 0; z < depth - 1; z++) {
-			for (let x = 0; x < width - 1; x++) {
-				const a = z * width + x;
+		return new Three.Vector2(
+			centerX + offset.x,
+			centerZ + offset.y
+		);
+	}
+
+	private getChunksInRange(world: World) {
+		const center = this.getRenderCenter(world);
+		const distance = Number.isFinite(this.renderDistance) ? Math.max(1, this.renderDistance) : 500;
+
+		const region = new Region(
+			center.x - distance,
+			center.y - distance,
+			distance * 2,
+			distance * 2
+		);
+
+		return world.chunkManager.getChunks(region);
+	}
+
+	private createTerrainMesh(geometry: Three.BufferGeometry, key: string) {
+		const material = new Three.MeshStandardMaterial({
+			color: 0x899b76,
+			roughness: 1,
+			metalness: 0
+		});
+
+		const mesh = new Three.Mesh(geometry, material);
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
+
+		this.terrainMeshes.set(key, mesh);
+		this.scene.add(mesh);
+
+		const edgesGeometry = new Three.EdgesGeometry(geometry, 1);
+		const edgesMaterial = new Three.LineBasicMaterial({
+			color: 0x303830,
+			transparent: true,
+			opacity: 0.45
+		});
+
+		const edgesMesh = new Three.LineSegments(edgesGeometry, edgesMaterial);
+
+		this.edgeMeshes.set(key, edgesMesh);
+
+		if (this.showEdges)
+			this.scene.add(edgesMesh);
+	}
+
+	private createSeaLevelMesh(world: World) {
+		const worldParams = world.generator.worldParams;
+		const worldRegion = worldParams.region;
+		const seaLevel = worldParams.terrain.seaLevel.seaLevel.state;
+
+		const geometry = new Three.PlaneGeometry(worldRegion.width, worldRegion.height);
+		geometry.rotateX(-Math.PI / 2);
+
+		const material = new Three.MeshBasicMaterial({
+			color: 0x4a9bd6,
+			transparent: true,
+			opacity: 0.35,
+			depthWrite: false,
+			side: Three.DoubleSide
+		});
+
+		const mesh = new Three.Mesh(geometry, material);
+		mesh.position.set(worldParams.offset.x, seaLevel, worldParams.offset.y);
+		mesh.renderOrder = 1;
+
+		this.seaLevelMesh = mesh;
+		this.scene.add(mesh);
+	}
+
+	private updateChunks() {
+		if (!this.world)
+			return;
+
+		const chunks = this.getChunksInRange(this.world);
+		const nextChunkIds = new Set(chunks.map(chunk => `${chunk.x}:${chunk.z}`));
+
+		for (const id of this.activeChunkIds) {
+			if (!nextChunkIds.has(id))
+				this.disposeChunk(id);
+		}
+
+		for (const chunk of chunks) {
+			const id = `${chunk.x}:${chunk.z}`;
+
+			if (this.terrainMeshes.has(id))
+				continue;
+
+			this.renderChunk(this.world, chunk);
+		}
+
+		this.activeChunkIds = nextChunkIds;
+	}
+
+	private renderChunk(world: World, chunk: Chunk) {
+		const map = world.chunkManager.generateMap(ElevationMap, chunk);
+
+		if (this.renderMode === "heightmap") {
+			this.renderHeightmapChunk(world, chunk, map);
+		} else {
+			this.renderVoxelChunk(world, chunk, map);
+		}
+	}
+
+	private renderHeightmapChunk(world: World, chunk: Chunk, map: ElevationMap) {
+		const worldParams = world.generator.worldParams;
+		const samples = map.samples;
+		const resolution = samples.resolution;
+
+		const positions = new Float32Array(samples.width * samples.height * 3);
+		const indices: number[] = [];
+
+		for (let z = 0; z < samples.height; z++) {
+			for (let x = 0; x < samples.width; x++) {
+				const index = z * samples.width + x;
+				const positionIndex = index * 3;
+				const worldX = samples.x + x * resolution;
+				const worldZ = samples.z + z * resolution;
+
+				positions[positionIndex] = worldX - worldParams.offset.x;
+				positions[positionIndex + 1] = map.data[index]!;
+				positions[positionIndex + 2] = worldZ - worldParams.offset.y;
+			}
+		}
+
+		for (let z = 0; z < samples.height - 1; z++) {
+			for (let x = 0; x < samples.width - 1; x++) {
+				const a = z * samples.width + x;
 				const b = a + 1;
-				const c = a + width;
+				const c = a + samples.width;
 				const d = c + 1;
 
 				indices.push(a, c, b);
@@ -204,91 +361,42 @@ export class Renderer extends Module {
 		geometry.computeBoundingBox();
 		geometry.computeBoundingSphere();
 
-		const material = new Three.MeshStandardMaterial({
-			color: 0x899b76,
-			roughness: 1,
-			metalness: 0
-		});
-
-		const mesh = new Three.Mesh(geometry, material);
-		mesh.castShadow = true;
-		mesh.receiveShadow = true;
-
-		if (this.terrainMesh)
-			this.disposeMesh(this.terrainMesh);
-
-		this.terrainMesh = mesh;
-		this.scene.add(mesh);
-		
-		if(this.edgeMesh) {
-			this.scene.remove(this.edgeMesh);
-			this.edgeMesh.geometry.dispose();
-		}
-
-		const edgesGeometry = new Three.EdgesGeometry(geometry, 1);
-		const edgesMaterial = new Three.LineBasicMaterial({
-			color: 0x303830,
-			transparent: true,
-			opacity: 0.45
-		});
-
-		this.edgeMesh = new Three.LineSegments(edgesGeometry, edgesMaterial);
-		if(this.showEdges) {
-			this.scene.add(this.edgeMesh);
-		} 
-
-		const seaLevelGeometry = new Three.PlaneGeometry(width - 1, depth - 1);
-		seaLevelGeometry.rotateX(-Math.PI / 2);
-
-		const seaLevelMaterial = new Three.MeshBasicMaterial({
-			color: 0x4a9bd6,
-			transparent: true,
-			opacity: 0.35,
-			depthWrite: false,
-			side: Three.DoubleSide
-		});
-
-		const seaLevelMesh = new Three.Mesh(seaLevelGeometry, seaLevelMaterial);
-		seaLevelMesh.position.set(0, seaLevel, 0);
-		seaLevelMesh.renderOrder = 1;
-
-		if (this.seaLevelMesh)
-			this.disposeMesh(this.seaLevelMesh);
-
-		this.seaLevelMesh = seaLevelMesh;
-		this.scene.add(seaLevelMesh);
+		this.createTerrainMesh(geometry, `${chunk.x}:${chunk.z}`);
 	}
 
-
-	public renderVoxelWorld(world: World) {
-		const generator = world.generator;
-		const worldParams = generator.worldParams;
-		const elevationMap = generator.generateMap(ElevationMap, GenerationScope.Global);
-		const elevation = elevationMap.data;
-
-		const width = worldParams.size.x;
-		const depth = worldParams.size.z;
+	private renderVoxelChunk(world: World, chunk: Chunk, map: ElevationMap) {
+		const worldParams = world.generator.worldParams;
+		const samples = map.samples;
+		const resolution = samples.resolution;
 
 		const seaLevel = worldParams.terrain.seaLevel.seaLevel.state;
 		const oceanDepth = worldParams.terrain.elevation.oceanDepth.state;
 		const bottomY = Math.floor(seaLevel - oceanDepth);
 
-		const heights = new Int32Array(width * depth);
+		// Load neighbouring elevation maps so chunk borders have valid side heights.
+		const neighbourRegion = chunk.region.expand(resolution);
+		const neighbourChunks = world.chunkManager.getChunks(neighbourRegion);
+		const heights = new Map<string, number>();
 
-		let minElevation = Infinity;
-		let maxElevation = -Infinity;
+		for (const neighbour of neighbourChunks) {
+			const neighbourMap = neighbour.x === chunk.x && neighbour.z === chunk.z
+				? map
+				: world.chunkManager.generateMap(ElevationMap, neighbour);
 
-		for (let z = 0; z < depth; z++) {
-			for (let x = 0; x < width; x++) {
-				const index = z * width + x;
-				const height = Math.floor(elevation[index]!);
+			const neighbourSamples = neighbourMap.samples;
 
-				heights[index] = height;
+			for (let z = 0; z < neighbourSamples.height; z++) {
+				for (let x = 0; x < neighbourSamples.width; x++) {
+					const worldX = neighbourSamples.x + x * neighbourSamples.resolution;
+					const worldZ = neighbourSamples.z + z * neighbourSamples.resolution;
+					const index = z * neighbourSamples.width + x;
 
-				minElevation = Math.min(minElevation, height);
-				maxElevation = Math.max(maxElevation, height);
+					heights.set(`${worldX}:${worldZ}`, Math.floor(neighbourMap.data[index]!));
+				}
 			}
 		}
+
+		const getHeight = (x: number, z: number) => heights.get(`${x}:${z}`) ?? bottomY;
 
 		const positions: number[] = [];
 		const normals: number[] = [];
@@ -307,25 +415,21 @@ export class Renderer extends Module {
 				normals.push(nx, ny, nz);
 		};
 
-		const getHeight = (x: number, z: number) => {
-			if (x < 0 || x >= width || z < 0 || z >= depth)
-				return bottomY;
-
-			return heights[z * width + x]!;
-		};
-
-		for (let z = 0; z < depth; z++) {
-			for (let x = 0; x < width; x++) {
-				const index = z * width + x;
-				const height = heights[index]!;
+		for (let z = 0; z < samples.height; z++) {
+			for (let x = 0; x < samples.width; x++) {
+				const index = z * samples.width + x;
+				const height = Math.floor(map.data[index]!);
 
 				if (height <= bottomY)
 					continue;
 
-				const x0 = x - width / 2;
-				const x1 = x0 + 1;
-				const z0 = z - depth / 2;
-				const z1 = z0 + 1;
+				const worldX = samples.x + x * resolution;
+				const worldZ = samples.z + z * resolution;
+
+				const x0 = worldX - worldParams.offset.x;
+				const x1 = x0 + resolution;
+				const z0 = worldZ - worldParams.offset.y;
+				const z1 = z0 + resolution;
 
 				// Top face.
 				addFace(
@@ -337,7 +441,7 @@ export class Renderer extends Module {
 				);
 
 				// West face.
-				const westHeight = getHeight(x - 1, z);
+				const westHeight = getHeight(worldX - resolution, worldZ);
 
 				if (westHeight < height) {
 					addFace(
@@ -350,7 +454,7 @@ export class Renderer extends Module {
 				}
 
 				// East face.
-				const eastHeight = getHeight(x + 1, z);
+				const eastHeight = getHeight(worldX + resolution, worldZ);
 
 				if (eastHeight < height) {
 					addFace(
@@ -363,7 +467,7 @@ export class Renderer extends Module {
 				}
 
 				// North face.
-				const northHeight = getHeight(x, z - 1);
+				const northHeight = getHeight(worldX, worldZ - resolution);
 
 				if (northHeight < height) {
 					addFace(
@@ -376,7 +480,7 @@ export class Renderer extends Module {
 				}
 
 				// South face.
-				const southHeight = getHeight(x, z + 1);
+				const southHeight = getHeight(worldX, worldZ + resolution);
 
 				if (southHeight < height) {
 					addFace(
@@ -391,57 +495,29 @@ export class Renderer extends Module {
 		}
 
 		const geometry = new Three.BufferGeometry();
-
 		geometry.setAttribute("position", new Three.Float32BufferAttribute(positions, 3));
 		geometry.setAttribute("normal", new Three.Float32BufferAttribute(normals, 3));
 		geometry.computeBoundingBox();
 		geometry.computeBoundingSphere();
 
-		const material = new Three.MeshStandardMaterial({
-			color: 0x899b76,
-			roughness: 1,
-			metalness: 0
-		});
-
-		const mesh = new Three.Mesh(geometry, material);
-		mesh.castShadow = true;
-		mesh.receiveShadow = true;
-
-		this.disposeTerrainMesh();
-
-		this.terrainMesh = mesh;
-		this.scene.add(mesh);
-
-		const edgesGeometry = new Three.EdgesGeometry(geometry, 1);
-		const edgesMaterial = new Three.LineBasicMaterial({
-			color: 0x303830,
-			transparent: true,
-			opacity: 0.45
-		});
-
-		this.edgeMesh = new Three.LineSegments(edgesGeometry, edgesMaterial);
-		if(this.showEdges) {
-			this.scene.add(this.edgeMesh);
-		} 
-
-		// Sea level.
-		const seaLevelGeometry = new Three.PlaneGeometry(width, depth);
-		seaLevelGeometry.rotateX(-Math.PI / 2);
-
-		const seaLevelMaterial = new Three.MeshBasicMaterial({
-			color: 0x4a9bd6,
-			transparent: true,
-			opacity: 0.35,
-			depthWrite: false,
-			side: Three.DoubleSide
-		});
-
-		const seaLevelMesh = new Three.Mesh(seaLevelGeometry, seaLevelMaterial);
-		seaLevelMesh.position.set(0, seaLevel, 0);
-		seaLevelMesh.renderOrder = 1;
-
-		this.seaLevelMesh = seaLevelMesh;
-		this.scene.add(seaLevelMesh);
+		this.createTerrainMesh(geometry, `${chunk.x}:${chunk.z}`);
 	}
 
+	public renderWorldHeightmap(world: World) {
+		this.world = world;
+		this.renderMode = "heightmap";
+
+		this.disposeTerrainMeshes();
+		this.createSeaLevelMesh(world);
+		this.updateChunks();
+	}
+
+	public renderVoxelWorld(world: World) {
+		this.world = world;
+		this.renderMode = "voxel";
+
+		this.disposeTerrainMeshes();
+		this.createSeaLevelMesh(world);
+		this.updateChunks();
+	}
 }

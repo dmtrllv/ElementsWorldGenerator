@@ -1,6 +1,6 @@
 import { clamp } from "../../utils";
 import type { GenerationContext } from "../context";
-import { CoastMap, ContinentalDistributionMap, ContinentalMap, OceanMap, type SampleRegion } from "../maps";
+import { CoastMap, ContinentalDistributionMap, ContinentalMap, OceanMap } from "../maps";
 import { GeographyParams } from "../param-groups";
 import type { Region } from "../region";
 import { dependency, GenerationScope, output, Pass } from "./pass";
