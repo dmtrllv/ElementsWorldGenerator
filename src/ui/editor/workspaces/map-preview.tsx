@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import type { MapPreviewWorkspace } from "../../../editor/workspaces/map-preview";
 import { Editor, ProjectManager } from "../../../editor";
 import { useObservable } from "../../../reactive";
@@ -8,7 +8,7 @@ import { useEvent } from "../../hooks/event";
 
 import "./styles/map-preview.scss";
 
-export const MapPreview = ({ workspace }: { workspace: MapPreviewWorkspace }) => {
+export const MapPreview = ({ workspace, dropControls }: { workspace: MapPreviewWorkspace, dropControls: JSX.Element }) => {
 	const { activeProject } = Editor.useModule(ProjectManager);
 
 	const offset = useObservable(workspace.offset);
@@ -88,16 +88,17 @@ export const MapPreview = ({ workspace }: { workspace: MapPreviewWorkspace }) =>
 			</div>
 			<div className="workspace" onMouseDown={onMouseDown}>
 				<canvas ref={canvas} style={canvasStyle} />
+				{dropControls}
 			</div>
 		</div>
 	);
 };
 
-const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDataType<any, any>, meta: MapDataMeta<any>, worldParams: WorldParamsSnapshot) => {
+const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDataType<any, any>, _meta: MapDataMeta<any>, worldParams: WorldParamsSnapshot) => {
 	const ctx = canvas.getContext("2d");
 	if (!ctx)
 		throw new Error(`Could not get canvas context!`);
-	console.log("render")
+	
 	const map = generator.generateMap(mapType, GenerationScope.Global);
 
 	canvas.width = generator.worldParams.size.x;

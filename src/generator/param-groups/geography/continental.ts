@@ -62,4 +62,16 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 		default: [-1, 1]
 	})
 	public readonly normalization!: Range;
+
+	@param(Float, { 
+		name: "Land Coverage",
+		description: "Defines how much of the world will be covered by land",
+		default: 0.35,
+		options: {
+			step: 0.005,
+			min: 0.005,
+			max: 1,
+		}
+	})
+	public landCoverage!: Float;
 }

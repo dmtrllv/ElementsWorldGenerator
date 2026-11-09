@@ -38,6 +38,7 @@
 
 	.workspace {
 		flex: 1;
+		position: relative;
 		canvas {
 			z-index: 1;
 		}

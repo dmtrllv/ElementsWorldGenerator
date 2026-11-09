@@ -48,6 +48,7 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 
 	const layoutRef = useRef<HTMLDivElement>(null);
 	const panelRef = useRef<HTMLDivElement>(null);
+	const dropRef = useRef<HTMLDivElement>(null);
 
 	const style: CSSProperties = {
 		minWidth: 50,
@@ -96,10 +97,10 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 	});
 
 	const onPanelMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-		if (!workspaces.movingWorkspace || !panelRef.current)
+		if (!workspaces.movingWorkspace || !dropRef.current)
 			return;
 
-		const rect = panelRef.current.getBoundingClientRect();
+		const rect = dropRef.current.getBoundingClientRect();
 
 		const edges: Record<SplitEdge, number> = {
 			top: Math.abs(e.clientY - rect.top),
@@ -169,12 +170,25 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 				workspaces.movingWorkspace = workspace;
 		};
 
+		const dropControlls = (
+			<div className={`drop-controls ${closestEdge} ${showDropControls ? "show" : ""}`} ref={dropRef}>
+				<div className="left" />
+				<div className="top" />
+				<div className="right" />
+				<div className="bottom" />
+				<div className="center" />
+			</div>
+		);
+
 		return (
-			<div className="workspace-panel" style={style} ref={layoutRef}>
+			<div className={`workspace-panel`} style={style} ref={layoutRef}>
 				<div className="tabs">
 					{layout.children.map((workspace, i) => (
 						<div key={workspace.id} className={`tab ${layout.activeWorkspace === i ? "active" : ""}`} onClick={() => layout.activeWorkspace = i} onMouseDown={onMouseDown(workspace)}>
 							{workspace.name}
+							{workspace.isClosable && (
+								<span className="btn-close" onClick={() => workspace.close()}>x</span>
+							)}
 						</div>
 					))}
 				</div>
@@ -185,18 +199,9 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 							key={workspace.id}
 							className={`workspace-view ${layout.activeWorkspace === i ? "active" : ""}`}
 						>
-							<WorkspacePanel workspace={workspace} />
+							<WorkspacePanel dropControls={dropControlls} workspace={workspace} />
 						</div>
 					))}
-
-					<div className={`drop-controls ${closestEdge} ${showDropControls ? "show" : ""}`}>
-						<div className="left" />
-						<div className="top" />
-						<div className="right" />
-						<div className="bottom" />
-						<div className="center" />
-					</div>
-
 				</div>
 				{!isFirst && (
 					<div className={`slider ${slidingState.isSliding ? "active" : ""}`} onMouseDown={onStartSlide} />
@@ -224,9 +229,9 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 	return null;
 };
 
-const WorkspacePanel = ({ workspace }: { workspace: Workspace }) => {
+const WorkspacePanel = ({ workspace, dropControls }: { workspace: Workspace, dropControls: React.JSX.Element }) => {
 	workspace = useObservable(workspace);
-	
+
 	const Component = useMemo(() => WorkspaceComponents.get(workspace.constructor as WorkspaceType<any>), [workspace]);
 
 	if (!Component) {
@@ -234,15 +239,15 @@ const WorkspacePanel = ({ workspace }: { workspace: Workspace }) => {
 		return null;
 	}
 
-	return <Component workspace={workspace} />;
+	return <Component workspace={workspace} dropControls={dropControls} />;
 };
 
-const WorkspaceComponents: Map<WorkspaceType<any>, React.FC<{ workspace: any }>> = new Map();
+const WorkspaceComponents: Map<WorkspaceType<any>, React.FC<{ workspace: Workspace, dropControls: React.JSX.Element }>> = new Map();
 
-export const register = <T extends Workspace>(type: WorkspaceType<T>, component: React.FC<{ workspace: T }>) => {
+export const register = <T extends Workspace>(type: WorkspaceType<T>, component: React.FC<{ workspace: T, dropControls: React.JSX.Element }>) => {
 	if (WorkspaceComponents.has(type))
 		throw new Error(`Component for ${type.name} is already registered!`);
-	WorkspaceComponents.set(type, component);
+	WorkspaceComponents.set(type, component as any);
 };
 
 register(RendererWorkspace, RendererViewWorkspace);

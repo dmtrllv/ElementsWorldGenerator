@@ -1,3 +1,4 @@
+import { clamp } from "../../utils";
 import { CoastMap, ContinentalMap, OceanMap } from "../maps";
 import { GeographyParams } from "../param-groups";
 import type { Region } from "../region";
@@ -119,6 +120,59 @@ export class GeographyPass extends Pass {
 		return distances;
 	}
 
+	private readonly normalize = (value: number, min: number, max: number) => {
+		if (max <= min)
+			return value >= max ? 1 : 0;
+
+		return clamp((value - min) / (max - min), 0, 1);
+	};
+
+	private normalizeContinental(value: number, threshold: number): number {
+		if (value >= threshold) {
+			return 0.5 + 0.5 * this.normalize(value, threshold, 1);
+		}
+
+		return 0.5 * this.normalize(value, 0, threshold);
+	}
+
+	private calculateLandThreshold(region: Region) {
+		const continentalParams = this.params.continental;
+
+		const width = region.width;
+		const height = region.height;
+
+		const warpStrength = continentalParams.warpStrength.state;
+		const normalization = continentalParams.normalization;
+		const landCoverage = continentalParams.landCoverage.state;
+
+		const tresholds: number[] = new Array(width * height);
+		for (let z = 0; z < height; z++) {
+			for (let x = 0; x < width; x++) {
+				const index = z * width + x;
+
+				const worldX = region.x + x;
+				const worldZ = region.z + z;
+
+				const warp = continentalParams.warp.get(worldX, worldZ);
+
+				const warpedX = worldX + warp.x * warpStrength;
+				const warpedZ = worldZ + warp.y * warpStrength;
+
+				const continentalValue = continentalParams.distribution.get(warpedX, warpedZ);
+				const normalizedContinental = this.normalize(continentalValue, normalization.min, normalization.max);
+
+				const landValue = clamp(continentalParams.shape.evaluate(normalizedContinental), 0, 1);
+
+				tresholds[index] = landValue;
+			}
+		}
+
+		tresholds.sort();
+
+		const index = Math.floor((1 - landCoverage) * (tresholds.length - 1));
+		return tresholds[index]!;
+	}
+
 	public override generate(region: Region, _scope: GenerationScopeType): void {
 		const continentalOutput = this.continental.data;
 		const oceanOutput = this.ocean.data;
@@ -144,13 +198,7 @@ export class GeographyPass extends Pass {
 		const coastSeeds = new Uint8Array(size);
 		const oceanCoastSeeds = new Uint8Array(size);
 
-		const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-		const normalize = (value: number, min: number, max: number) => {
-			if (max <= min)
-				return value >= max ? 1 : 0;
-
-			return clamp((value - min) / (max - min), 0, 1);
-		};
+		const landThreshold = this.calculateLandThreshold(region);
 
 		// Generate continental and ocean classification.
 		for (let z = 0; z < height; z++) {
@@ -166,13 +214,14 @@ export class GeographyPass extends Pass {
 				const warpedZ = worldZ + warp.y * warpStrength;
 
 				const continentalValue = continentalParams.distribution.get(warpedX, warpedZ);
-				const normalizedContinental = normalize(continentalValue, normalization.min, normalization.max);
+				const normalizedContinental = this.normalize(continentalValue, normalization.min, normalization.max);
 
 				const landValue = clamp(continentalParams.shape.evaluate(normalizedContinental), 0, 1);
+				const normalizedLandValue = this.normalizeContinental(landValue, landThreshold);
 
-				continentalOutput[index] = landValue;
+				continentalOutput[index] = normalizedLandValue;
 
-				if (landValue >= 0.5) {
+				if (landValue >= landThreshold) {
 					oceanOutput[index] = 0;
 					oceanMask[index] = 0;
 					continue;
@@ -239,8 +288,8 @@ export class GeographyPass extends Pass {
 			const oceanValue = oceanParams.distribution.get(worldX, worldZ);
 			const shelfValue = oceanParams.shelf.get(worldX, worldZ);
 
-			const normalizedOcean = normalize(oceanValue, -1, 1);
-			const normalizedShelf = normalize(shelfValue, -1, 1);
+			const normalizedOcean = this.normalize(oceanValue, -1, 1);
+			const normalizedShelf = this.normalize(shelfValue, -1, 1);
 
 			const effectiveShelfWidth = Math.max(shelfWidth * (0.5 + normalizedShelf), 1);
 			const shelfProgress = clamp(oceanDistances[i]! / effectiveShelfWidth, 0, 1);

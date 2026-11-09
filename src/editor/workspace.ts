@@ -12,7 +12,7 @@ export class WorkspaceManager extends Module {
 
 	@observable
 	public readonly workspaces: Workspace[] = [
-		
+
 	];
 
 	@observable
@@ -173,16 +173,52 @@ export class WorkspaceLayout {
 	}
 
 	public add(workspace: Workspace) {
-		workspace.layout?.remove(workspace);
+		const source = workspace.layout;
+
+		if (source === this) {
+			this.focus(workspace);
+			return;
+		}
+
+		if (source)
+			source.detachWorkspace(workspace);
 
 		const panel = this.getFirstPanel();
 
 		panel.addWorkspace(workspace);
+
+		if (source)
+			source.normalize();
+
+		panel.focus(workspace);
+	}
+
+	public getLastWorkspace(): Workspace | null {
+		if (this.isWorkspace())
+			return this.children[this.activeWorkspace] ?? this.children[this.children.length - 1] ?? null;
+
+		for (let i = this.children.length - 1; i >= 0; i--) {
+			const child = this.children[i]!;
+
+			const workspace = child instanceof WorkspaceLayout ? child.getLastWorkspace() : child;
+
+			if (workspace)
+				return workspace;
+		}
+
+		return null;
 	}
 
 	private addWorkspace(workspace: Workspace) {
 		if (!this.isWorkspace())
 			throw new Error("Cannot add a workspace to a directional layout.");
+
+		const index = this.children.indexOf(workspace);
+
+		if (index !== -1) {
+			this.focus(workspace);
+			return;
+		}
 
 		this.children.push(workspace);
 		workspace.layout = this;
@@ -218,12 +254,16 @@ export class WorkspaceLayout {
 		if (index === -1)
 			return false;
 
+		const wasActive = this.activeWorkspace === index;
+
 		this.children.splice(index, 1);
 
-		if (this.activeWorkspace >= this.children.length)
-			this.activeWorkspace = Math.max(0, this.children.length - 1);
-		else if (this.activeWorkspace > index)
+		if (wasActive) {
+			const previous = this.getLastWorkspace();
+			this.activeWorkspace = previous ? this.children.indexOf(previous) : 0;
+		} else if (this.activeWorkspace > index) {
 			this.activeWorkspace--;
+		}
 
 		workspace.layout = null;
 
@@ -382,5 +422,7 @@ export class WorkspaceLayout {
 
 		if (source && source !== this)
 			source.normalize();
+
+		newPanel.focus(workspace);
 	}
 }

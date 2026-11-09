@@ -39,7 +39,7 @@ export const ParamInput = ({ param }: { param: any }) => {
 		return <ScalarInput scalar={param} />;
 
 	if (param instanceof Float)
-		return <NumberInput name={param.name} value={param.state} onChange={v => param.state = v} />;
+		return <NumberInput name={param.name} value={param.state} onChange={v => param.state = v} {...param.options} />;
 
 	if (param instanceof VectorField)
 		return <VectorFieldInput vectorField={param} />;

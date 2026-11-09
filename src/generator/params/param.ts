@@ -19,18 +19,19 @@ const cloneValue = <T>(value: T): T => {
 };
 
 @observable
-export abstract class Param<State extends {}> {
+export abstract class Param<State extends {}, Options extends {} = {}> {
 	protected readonly worldParams: WorldParams;
 
-	private readonly info: ParamInfo<State>;
+	private readonly info: ParamInfo<State, Options>;
 
 	public get name() { return this.info.name; }
 	public get description() { return this.info.description; }
+	public get options() { return this.info.options; }
 
 	@observable
 	public state: State;
 
-	public constructor(worldParams: WorldParams, info: ParamInfo<State>, state: State = info.default) {
+	public constructor(worldParams: WorldParams, info: ParamInfo<State, Options>, state: State = info.default) {
 		this.worldParams = worldParams;
 		this.info = info;
 		this.state = (state && typeof state === "object" ? createObservable(state) : state) as State;
@@ -48,12 +49,14 @@ export abstract class Param<State extends {}> {
 	}
 }1
 
-export type ParamInfo<T> = {
+export type ParamInfo<T, O> = {
 	readonly name: string;
 	readonly description: string;
 	readonly default: T;
+	readonly options?: O;
 }
 
 export type ParamState<T> = T extends Param<infer S> ? S : never;
+export type ParamOptions<T> = T extends Param<any, infer O> ? Partial<O> : never;
 
-export type ParamType<T extends Param<any>> = new (worldParams: WorldParams, info: ParamInfo<ParamState<T>>, state: ParamState<T>) => T;
+export type ParamType<T extends Param<any>> = new (worldParams: WorldParams, info: ParamInfo<ParamState<T>, ParamOptions<T>>, state: ParamState<T>) => T;

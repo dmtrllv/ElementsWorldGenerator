@@ -1,5 +1,5 @@
 import { observable, } from "../../reactive";
-import type { Param, ParamInfo, ParamState, ParamType } from "../params/param";
+import type { Param, ParamInfo, ParamOptions, ParamState, ParamType } from "../params/param";
 import type { WorldParams } from "../world-params";
 
 @observable
@@ -117,12 +117,12 @@ export type GroupMeta = {
 
 const PARAMS = Symbol("PARAMS");
 
-const getParamType = <T extends ParamGroup<T>>(target: ParamGroupType<T> | typeof ParamGroup, key: string): { type: ParamType<any>, info: ParamInfo<any> } | undefined => {
+const getParamType = <T extends ParamGroup<T>>(target: ParamGroupType<T> | typeof ParamGroup, key: string): { type: ParamType<any>, info: ParamInfo<any, any> } | undefined => {
 	const ctor = target as any;
 	return ctor[PARAMS]?.[key] as any;
 };
 
-export const param = <T extends ParamGroup<T>, K extends ParamKeys<T>>(type: T[K] extends Param<any> ? ParamType<T[K]> : never, info: ParamInfo<ParamState<T[K]>>) => (target: T, key: K) => {
+export const param = <T extends ParamGroup<T>, K extends ParamKeys<T>>(type: T[K] extends Param<any> ? ParamType<T[K]> : never, info: ParamInfo<ParamState<T[K]>, ParamOptions<T[K]>>) => (target: T, key: K) => {
 
 	const ctor = target.constructor as any;
 	if (!ctor[PARAMS])

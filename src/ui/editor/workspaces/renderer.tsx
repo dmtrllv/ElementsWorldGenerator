@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import type { RendererWorkspace } from "../../../editor/workspaces/renderer";
 import { Editor, ProjectManager } from "../../../editor";
 import { useObservable } from "../../../reactive";
 import type { Renderer } from "../../../renderer";
 
-export const RendererViewWorkspace = (_: { workspace: RendererWorkspace }) => {
+export const RendererViewWorkspace = ({dropControls}: { dropControls: JSX.Element, workspace: RendererWorkspace }) => {
 	const editor = Editor.useContext();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [renderer, setRenderer] = useState<Renderer | null>(null);
@@ -30,6 +30,7 @@ export const RendererViewWorkspace = (_: { workspace: RendererWorkspace }) => {
 		<>
 			<div className="renderer" ref={containerRef} />
 			{renderer && <CanvasRenderer renderer={renderer}  />}
+			{dropControls}
 		</>
 	);
 };
