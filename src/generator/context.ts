@@ -21,11 +21,33 @@ export class GenerationContext {
 		this.localRegion = scope === "Local" ? region : null;
 	}
 
+
 	public getSampleRegion(scope: GenerationScope = this.scope, resolution: number = this.resolution): SampleRegion {
+		return this.createSampleRegion(this.getRegion(scope), resolution);
+	}
+
+	public getSampleRegionFor(region: Region, resolution: number = this.resolution): SampleRegion {
 		if (!Number.isSafeInteger(resolution) || resolution < 1)
 			throw new RangeError("Resolution must be a positive safe integer.");
 
-		const region = this.getRegion(scope);
+		const clippedRegion = region.intersection(this.worldRegion);
+
+		if (!clippedRegion) {
+			return {
+				x: 0,
+				z: 0,
+				width: 0,
+				height: 0,
+				resolution
+			};
+		}
+
+		return this.createSampleRegion(clippedRegion, resolution);
+	}
+
+	private createSampleRegion(region: Region, resolution: number): SampleRegion {
+		if (!Number.isSafeInteger(resolution) || resolution < 1)
+			throw new RangeError("Resolution must be a positive safe integer.");
 
 		const minX = Math.ceil(region.x / resolution);
 		const minZ = Math.ceil(region.z / resolution);
@@ -40,6 +62,7 @@ export class GenerationContext {
 			resolution
 		};
 	}
+
 
 	public getIndex(x: number, z: number, scope: GenerationScope = this.scope, resolution: number = this.resolution): number {
 		const samples = this.getSampleRegion(scope, resolution);

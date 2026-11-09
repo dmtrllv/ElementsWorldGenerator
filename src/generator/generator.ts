@@ -3,8 +3,8 @@ import type { Vector2 } from "three";
 import { MapData, type MapDataType } from "./maps";
 import { GenerationScope, isMapDependency, Pass, type PassType } from "./passes/pass";
 import type { WorldParamsSnapshot } from "./world-params";
-import { Region } from "./region";
 import { GenerationContext } from "./context";
+import { Chunk } from "./chunk";
 
 export class Generator {
 	public readonly worldParams: WorldParamsSnapshot;
@@ -50,6 +50,9 @@ export class Generator {
 		if (!Number.isSafeInteger(resolution) || resolution < 1)
 			throw new RangeError("Resolution must be a positive safe integer.");
 
+		if (scope === GenerationScope.Local && !chunk)
+			throw new Error("Local map generation requires chunk coordinates.");
+
 		const mapChunk = scope === GenerationScope.Local ? chunk : undefined;
 		const id = this.createMapId(type, scope, resolution, mapChunk);
 
@@ -82,12 +85,7 @@ export class Generator {
 				}
 			}
 
-			const region = mapChunk ? new Region(
-				this.worldParams.offset.x + mapChunk.x * this.worldParams.chunkSize - this.worldParams.size.x / 2,
-				this.worldParams.offset.y + mapChunk.y * this.worldParams.chunkSize - this.worldParams.size.z / 2,
-				this.worldParams.chunkSize,
-				this.worldParams.chunkSize
-			) : this.worldParams.region;
+			const region = mapChunk ? new Chunk(mapChunk.x, mapChunk.y, this.worldParams).region : this.worldParams.region;
 
 			const context = new GenerationContext(region, this.worldParams.region, scope, resolution);
 			const samples = context.getSampleRegion();

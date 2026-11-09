@@ -1,4 +1,5 @@
 import { createObservable, observable, subscribeDeep, type Unsubscriber } from "../reactive";
+import { ChunkManager } from "./chunk-manager";
 import { Generator } from "./generator";
 import { WorldParams, type WorldParamProps } from "./world-params";
 
@@ -8,21 +9,32 @@ export class World {
 
 	@observable
 	public generator: Generator;
-	
+
+	@observable
+	public chunkManager: ChunkManager;
+
 	private readonly unsubscribeWorldParams: Unsubscriber;
 
 	public constructor(seed: number, worldParamProps: WorldParamProps) {
 		this.worldParams = new WorldParams(seed, worldParamProps);
-		
-		const world = createObservable(this);
 
-		this.generator = createObservable(new Generator(this.worldParams.snapshot()));
+		const world = createObservable(this);
+		const snapshot = this.worldParams.snapshot();
+
+		this.generator = createObservable(new Generator(snapshot));
+		this.chunkManager = new ChunkManager(this.generator);
+
 		this.unsubscribeWorldParams = subscribeDeep(this.worldParams, () => {
+			world.chunkManager.dispose();
+			world.generator.dispose();
+
 			world.generator = createObservable(new Generator(this.worldParams.snapshot()));
+			world.chunkManager = new ChunkManager(world.generator);
 		});
 	}
 
 	public dispose() {
+		this.chunkManager.dispose();
 		this.generator.dispose();
 		this.unsubscribeWorldParams();
 	}
