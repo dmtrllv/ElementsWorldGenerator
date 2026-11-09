@@ -1,4 +1,13 @@
+
 import type { WorldParamsSnapshot } from "../world-params";
+
+export type SampleRegion = {
+	readonly x: number;
+	readonly z: number;
+	readonly width: number;
+	readonly height: number;
+	readonly resolution: number;
+};
 
 export abstract class MapData<T extends TypedArray = Float32Array> {
 	private static readonly registry = new Map<MapDataType<any, any>, MapDataMeta<any>>();
@@ -19,14 +28,16 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 	}
 
 	public readonly data!: T;
+	public readonly samples: SampleRegion;
 
-	public constructor(data: T) {
+	public constructor(data: T, samples: SampleRegion) {
 		this.data = data;
+		this.samples = samples;
 	}
 
 	public debug(_imageData: ImageData, _worldParams: WorldParamsSnapshot) { }
-
 }
+
 
 export type MapDataMeta<T extends MapDataType<any, any>> = T extends MapDataType<any, infer V> ? (V extends Float32Array ? {
 	readonly type?: TypedArrayCtor<V>;
@@ -38,7 +49,7 @@ export type MapDataMeta<T extends MapDataType<any, any>> = T extends MapDataType
 	readonly description: string;
 }) : never;
 
-export type MapDataType<T extends MapData<Type>, Type extends TypedArray> = new (data: Type) => T;
+export type MapDataType<T extends MapData<Type>, Type extends TypedArray> = new (data: Type, samples: SampleRegion) => T;
 
 export type TypedArray =
 	| Int8Array

@@ -27,7 +27,8 @@ export abstract class Pass {
 		if (args[0].prototype instanceof MapData) {
 			this.meta.get(target)!.dependencies[key.toString()] = {
 				type: args[0],
-				scope: args[1] || undefined
+				scope: args[1] || undefined,
+				resolution: args[2] || undefined
 			} as any;
 		} else {
 			this.meta.get(target)!.dependencies[key.toString()] = {
@@ -76,6 +77,7 @@ export type PassDependency = {
 type MapDependency = {
 	readonly type: MapDataType<any, any>;
 	readonly scope?: GenerationScope;
+	readonly resolution?: number;
 };
 
 export const isMapDependency = (obj: PassDependency): obj is MapDependency => {
@@ -85,7 +87,7 @@ export const isMapDependency = (obj: PassDependency): obj is MapDependency => {
 export type PassType<T extends Pass> = new (worldParams: WorldParamsSnapshot) => T;
 
 export function dependency<T extends Pass, K extends keyof T>(type: ParamGroupType<any>): any;
-export function dependency<T extends Pass, K extends keyof T>(type: MapDataType<any, any>, scope?: GenerationScope): any;
+export function dependency<T extends Pass, K extends keyof T>(type: MapDataType<any, any>, scope?: GenerationScope, resolution?: number): any;
 export function dependency<T extends Pass, K extends keyof T>(...args: any[]) {
 	return (target: T, key: K) => {
 		Pass.registerDependency(target.constructor as any, key as any, args as any);
@@ -101,7 +103,7 @@ export type GenerationScope = (typeof GenerationScope)[keyof typeof GenerationSc
 
 type InferedDependencyArgs<T> =
 	T extends ParamGroup<any> ? [ParamGroupType<T>] :
-	T extends MapData<any> ? [MapDataType<T, any>] | [MapDataType<T, any>, GenerationScope] :
+	T extends MapData<any> ? [MapDataType<T, any>] | [MapDataType<T, any>, GenerationScope] | [MapDataType<T, any>, GenerationScope, number] :
 	never;
 
 export const output = <T extends Pass, K extends keyof T>(type: InferedMapType<T, K>) => (target: T, key: K) => {
