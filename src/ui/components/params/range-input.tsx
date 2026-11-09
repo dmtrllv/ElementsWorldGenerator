@@ -22,7 +22,6 @@ export const RangeInput = ({ range }: { range: Range }) => {
 		setX(value);
 		const val = parseFloat(value);
 		if (Number.isFinite(val) && !Number.isNaN(val)) {
-			console.log("update x", value, val);
 			sx.set(val);
 			state[0] = val;
 		}

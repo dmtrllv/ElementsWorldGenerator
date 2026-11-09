@@ -38,7 +38,7 @@ const Debug = () => {
 	);
 }
 
-const isMapDataType = (type: any): type is MapDataType<any> => {
+const isMapDataType = (type: any): type is MapDataType<any, any> => {
 	return type.prototype instanceof MapData;
 }
 
@@ -55,8 +55,9 @@ const PassDebug = ({ type, meta }: { type: PassType<any>, meta: PassMeta }) => {
 
 	const outputs = useMemo(() => Array.from(Object.entries(meta.outputs)), [meta.dependencies]);
 
-	const openMap = (type: MapDataType<any>) => (_: React.MouseEvent) => {
+	const openMap = (type: MapDataType<any, any>) => (_: React.MouseEvent) => {
 		const meta = MapData.getMeta(type);
+		
 		w.open(MapPreviewWorkspace, `${meta.name} Debug Map`, type);
 	};
 

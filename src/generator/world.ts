@@ -13,10 +13,12 @@ export class World {
 
 	public constructor(seed: number, worldParamProps: WorldParamProps) {
 		this.worldParams = new WorldParams(seed, worldParamProps);
+		
+		const world = createObservable(this);
+
 		this.generator = createObservable(new Generator(this.worldParams.snapshot()));
 		this.unsubscribeWorldParams = subscribeDeep(this.worldParams, () => {
-			console.log("update");
-			this.generator = createObservable(new Generator(this.worldParams.snapshot()));
+			world.generator = createObservable(new Generator(this.worldParams.snapshot()));
 		});
 	}
 

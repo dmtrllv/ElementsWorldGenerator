@@ -4,14 +4,16 @@ import { Editor, ProjectManager } from "../../../editor";
 import { useObservable } from "../../../reactive";
 import { GenerationScope, Generator, type MapDataMeta, type MapDataType } from "../../../generator";
 import { NumberInput } from "../../components";
+import { useEvent } from "../../hooks/event";
 
 import "./styles/map-preview.scss";
 
 export const MapPreview = ({ workspace }: { workspace: MapPreviewWorkspace }) => {
 	const { activeProject } = Editor.useModule(ProjectManager);
 
-	const [renderState, setRenderState] = useState({
-		offset: [0, 0],
+	const offset = useObservable(workspace.offset);
+
+	const [renderState, setRenderState] = useState<RenderState>({
 		chunkRadius: 1,
 		downPos: [0, 0],
 		downOffset: [0, 0],
@@ -19,30 +21,65 @@ export const MapPreview = ({ workspace }: { workspace: MapPreviewWorkspace }) =>
 	});
 
 	const update = (state: Partial<RenderState>) => setRenderState(s => ({ ...s, ...state }));
-	
+
 	const world = useObservable(activeProject.world);
 	const generator = useObservable(world.generator);
-	console.log("render");
+
 	const canvas = useRef<HTMLCanvasElement>(null);
 
+	const didRender = useRef(false);
+	const timeout = useRef<number | null>(null);
+
 	useEffect(() => {
-		if (canvas.current)
-			render(canvas.current, generator, workspace.type, workspace.meta);
+		if (canvas.current) {
+			const c = canvas.current;
+			if (!didRender.current) {
+				didRender.current = true;
+				render(c, generator, workspace.type, workspace.meta);
+			}
+
+			if (timeout.current !== null)
+				clearTimeout(timeout.current);
+
+			timeout.current = setTimeout(() => {
+				render(c, generator, workspace.type, workspace.meta);
+			}, 500);
+
+		}
 	}, [generator, renderState.chunkRadius]);
 
 	const canvasStyle: React.CSSProperties = {
 		position: "absolute",
-		left: `calc(50% + ${renderState.offset[0]}px)`,
-		top: `calc(50% + ${renderState.offset[1]}px)`,
+		left: `calc(50% + ${offset[0]}px)`,
+		top: `calc(50% + ${offset[1]}px)`,
 		transform: `translate(-50%, -50%)`,
 		border: `1px solid var(--border-1)`
 	};
 
 	const onMouseDown = (e: React.MouseEvent) => {
 		update({
-			
-		})
+			downOffset: [...offset] as [number, number],
+			downPos: [e.clientX, e.clientY],
+			isDown: true,
+		});
 	}
+
+	useEvent("mouseup", () => update({ isDown: false }));
+
+	useEvent("mousemove", (e) => {
+		if (!renderState.isDown)
+			return;
+
+		const { downOffset, downPos } = renderState;
+
+		const deltaX = e.clientX - downPos[0];
+		const deltaY = e.clientY - downPos[1];
+
+		workspace.offset = [
+			downOffset[0] + deltaX,
+			downOffset[1] + deltaY,
+		];
+	})
 
 	return (
 		<div className="map-preview">
@@ -67,14 +104,13 @@ const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDat
 	canvas.height = generator.worldParams.size.z;
 
 	const imageData = ctx.createImageData(canvas.width, canvas.height);
-	
+
 	map.debug(imageData);
 
 	ctx.putImageData(imageData, 0, 0);
 };
 
 type RenderState = {
-	offset: [number, number];
 	chunkRadius: number;
 	downPos: [number, number];
 	isDown: boolean;

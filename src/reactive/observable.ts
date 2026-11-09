@@ -48,7 +48,7 @@ const getClassMetadata = (target: Function): ClassMetadata | undefined => {
 	return prototype ? CLASS_METADATA.get(prototype) : undefined;
 };
 
-const makeObservable = <T extends object>(value: T, tracked: Iterable<PropertyKey>, trackNewProperties: boolean): T => {
+const makeObservable = <T extends object>(value: T, tracked: Iterable<PropertyKey>, trackNewProperties: boolean, constructor: any): T => {
 	const existing = getObservableState(value);
 
 	if (existing)
@@ -67,6 +67,8 @@ const makeObservable = <T extends object>(value: T, tracked: Iterable<PropertyKe
 
 	proxy = new Proxy(value, {
 		get(target, key, receiver) {
+			if(key === "constructor")
+				return constructor;
 			trackObservableRead(state, key);
 			return Reflect.get(target, key, receiver);
 		},
@@ -156,7 +158,7 @@ const decorateClass = <T extends Constructor>(target: T, config: ObservableConfi
 				return instance;
 			}
 
-			return makeObservable(instance, tracked, config.auto);
+			return makeObservable(instance, tracked, config.auto, decorated);
 		}
 	});
 
@@ -183,7 +185,7 @@ export const createObservable = <T extends object>(value: T): T => {
 	if (existing)
 		return existing.proxy as T;
 
-	return makeObservable(value, Reflect.ownKeys(value), true);
+	return makeObservable(value, Reflect.ownKeys(value), true, value.constructor);
 };
 
 export interface ObservableDecorator {

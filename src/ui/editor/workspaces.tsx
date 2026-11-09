@@ -224,13 +224,10 @@ const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: Work
 	return null;
 };
 
-const WorkspacePanel = ({ workspace: initialWorkspace }: { workspace: Workspace }) => {
-	const workspace = useObservable(initialWorkspace);
-
-	const Component = useMemo(
-		() => WorkspaceComponents.get(workspace.constructor as WorkspaceType<any>),
-		[workspace]
-	);
+const WorkspacePanel = ({ workspace }: { workspace: Workspace }) => {
+	workspace = useObservable(workspace);
+	
+	const Component = useMemo(() => WorkspaceComponents.get(workspace.constructor as WorkspaceType<any>), [workspace]);
 
 	if (!Component) {
 		console.warn(`Missing workspace component for ${workspace.constructor.name}!`);
@@ -242,10 +239,9 @@ const WorkspacePanel = ({ workspace: initialWorkspace }: { workspace: Workspace 
 
 const WorkspaceComponents: Map<WorkspaceType<any>, React.FC<{ workspace: any }>> = new Map();
 
-const register = <T extends Workspace>(type: WorkspaceType<T>, component: React.FC<{ workspace: T }>) => {
+export const register = <T extends Workspace>(type: WorkspaceType<T>, component: React.FC<{ workspace: T }>) => {
 	if (WorkspaceComponents.has(type))
 		throw new Error(`Component for ${type.name} is already registered!`);
-
 	WorkspaceComponents.set(type, component);
 };
 

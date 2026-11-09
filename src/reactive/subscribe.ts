@@ -3,8 +3,10 @@ import { getObservableState, type ObservableListener } from "./internal";
 export const subscribe: Subscriber = ((observable: object, keyOrHandler: PropertyKey | SubscribeHandler<any>, handler?: SubscribeHandlerWithKey<any, any>) => {
 	const state = getObservableState(observable);
 
-	if (!state)
-		throw new TypeError("Cannot subscribe to a value that is not observable.");
+	if (!state) {
+		console.warn("Cannot subscribe to a value that is not observable.");
+		return () => {};
+	}
 
 	if (typeof keyOrHandler === "function") {
 		const listener: ObservableListener = () => keyOrHandler(state.proxy);
@@ -14,8 +16,10 @@ export const subscribe: Subscriber = ((observable: object, keyOrHandler: Propert
 		return () => state.listeners.delete(listener);
 	}
 
-	if (typeof handler !== "function")
-		throw new TypeError("A property subscription requires a handler.");
+	if (typeof handler !== "function") {
+		console.warn("A property subscription requires a handler.");
+		return () => {};
+	}
 
 	let listeners = state.keyedListeners.get(keyOrHandler);
 
@@ -40,8 +44,10 @@ export const subscribe: Subscriber = ((observable: object, keyOrHandler: Propert
 export const subscribeDeep: DeepSubscriber = ((observable: object, handler: SubscribeHandler<any>) => {
 	const rootState = getObservableState(observable);
 
-	if (!rootState)
-		throw new TypeError("Cannot subscribe to a value that is not observable.");
+	if (!rootState) {
+		console.warn("Cannot subscribe to a value that is not observable.");
+		return () => {};
+	}
 
 	const subscriptions = new Map<object, Unsubscriber>();
 
