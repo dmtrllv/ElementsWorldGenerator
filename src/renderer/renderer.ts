@@ -1,3 +1,4 @@
+
 import * as Three from "three";
 import { Scene } from "./scene";
 import { Controller } from "./controller";
@@ -26,13 +27,15 @@ export class Renderer extends Module {
 
 	public constructor(editor: Editor) {
 		super(editor);
+
 		this.camera.position.set(50, 35, 50);
-		this.camera.far = 100000;
+		this.camera.near = 0.1;
+		this.camera.far = 1000000;
 		this.camera.updateProjectionMatrix();
+
 		this.glRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		this.glRenderer.shadowMap.enabled = true;
 		this.glRenderer.shadowMap.type = Three.PCFShadowMap;
-
 	}
 
 	public readonly initialize = (element: HTMLDivElement) => {
@@ -74,12 +77,16 @@ export class Renderer extends Module {
 	public dispose() {
 		this.glRenderer.setAnimationLoop(null);
 		this.disposeTerrainMesh();
+
 		if (this.element)
 			this.controller?.dispose(this.element);
+
 		this.controller = null;
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
 		this.element = null;
+
+		this.glRenderer.dispose();
 	}
 
 	private resize() {
@@ -104,17 +111,24 @@ export class Renderer extends Module {
 		this.controller?.render();
 	}
 
+	private disposeMesh(mesh: Three.Mesh) {
+		this.scene.remove(mesh);
+		mesh.geometry.dispose();
+
+		if (Array.isArray(mesh.material))
+			mesh.material.forEach(material => material.dispose());
+		else
+			mesh.material.dispose();
+	}
+
 	private disposeTerrainMesh() {
 		if (this.terrainMesh) {
-			this.scene.remove(this.terrainMesh);
-			this.terrainMesh.geometry.dispose();
-			(this.terrainMesh.material as any).dispose();
+			this.disposeMesh(this.terrainMesh);
 			this.terrainMesh = null;
 		}
+
 		if (this.seaLevelMesh) {
-			this.scene.remove(this.seaLevelMesh);
-			this.seaLevelMesh.geometry.dispose();
-			(this.seaLevelMesh.material as Three.Material).dispose();
+			this.disposeMesh(this.seaLevelMesh);
 			this.seaLevelMesh = null;
 		}
 	}
@@ -127,26 +141,27 @@ export class Renderer extends Module {
 
 		const width = worldParams.size.x;
 		const depth = worldParams.size.z;
-		const height = worldParams.size.y;
 
-		const elevationParams = worldParams.terrain.elevation;
-		const seaLevelParams = worldParams.terrain.seaLevel;
-
-		const minElevation = seaLevelParams.seaLevel.state - elevationParams.oceanDepth.state;
-		const maxElevation = seaLevelParams.seaLevel.state + elevationParams.landElevation.state + elevationParams.mountainHeight.state;
-		const elevationRange = maxElevation - minElevation;
+		const seaLevel = worldParams.terrain.seaLevel.seaLevel.state;
 
 		const positions = new Float32Array(width * depth * 3);
 		const indices: number[] = [];
+
+		let minElevation = Infinity;
+		let maxElevation = -Infinity;
 
 		for (let z = 0; z < depth; z++) {
 			for (let x = 0; x < width; x++) {
 				const index = z * width + x;
 				const positionIndex = index * 3;
+				const elevationValue = elevation[index]!;
 
-				positions[positionIndex] = -width / 2 + x;
-				positions[positionIndex + 1] = elevation[index]!;
-				positions[positionIndex + 2] = -depth / 2 + z;
+				positions[positionIndex] = x - (width - 1) / 2;
+				positions[positionIndex + 1] = elevationValue;
+				positions[positionIndex + 2] = z - (depth - 1) / 2;
+
+				minElevation = Math.min(minElevation, elevationValue);
+				maxElevation = Math.max(maxElevation, elevationValue);
 			}
 		}
 
@@ -166,6 +181,7 @@ export class Renderer extends Module {
 		geometry.setAttribute("position", new Three.BufferAttribute(positions, 3));
 		geometry.setIndex(indices);
 		geometry.computeVertexNormals();
+		geometry.computeBoundingBox();
 		geometry.computeBoundingSphere();
 
 		const material = new Three.MeshStandardMaterial({
@@ -178,21 +194,13 @@ export class Renderer extends Module {
 		mesh.castShadow = true;
 		mesh.receiveShadow = true;
 
-		if (this.terrainMesh) {
-			this.scene.remove(this.terrainMesh);
-			this.terrainMesh.geometry.dispose();
-
-			const oldMaterial = this.terrainMesh.material;
-			if (Array.isArray(oldMaterial))
-				oldMaterial.forEach(m => m.dispose());
-			else
-				oldMaterial.dispose();
-		}
+		if (this.terrainMesh)
+			this.disposeMesh(this.terrainMesh);
 
 		this.terrainMesh = mesh;
 		this.scene.add(mesh);
 
-		const seaLevelGeometry = new Three.PlaneGeometry(width, depth);
+		const seaLevelGeometry = new Three.PlaneGeometry(width - 1, depth - 1);
 		seaLevelGeometry.rotateX(-Math.PI / 2);
 
 		const seaLevelMaterial = new Three.MeshBasicMaterial({
@@ -204,21 +212,31 @@ export class Renderer extends Module {
 		});
 
 		const seaLevelMesh = new Three.Mesh(seaLevelGeometry, seaLevelMaterial);
-		seaLevelMesh.position.set(0, seaLevelParams.seaLevel.state, 0);
+		seaLevelMesh.position.set(0, seaLevel, 0);
 		seaLevelMesh.renderOrder = 1;
 
-		if (this.seaLevelMesh) {
-			this.scene.remove(this.seaLevelMesh);
-			this.seaLevelMesh.geometry.dispose();
-			(this.seaLevelMesh.material as Three.Material).dispose();
-		}
+		if (this.seaLevelMesh)
+			this.disposeMesh(this.seaLevelMesh);
 
 		this.seaLevelMesh = seaLevelMesh;
 		this.scene.add(seaLevelMesh);
 
-		const center = new Three.Vector3(0, height / 2, 0);
-		const maxDimension = Math.max(width, depth, height);
-		const distance = maxDimension / (2 * Math.tan(Three.MathUtils.degToRad(this.camera.fov / 2))) * 1.5;
+		const center = new Three.Vector3(0, (minElevation + maxElevation) / 2, 0);
+		const terrainWidth = width - 1;
+		const terrainDepth = depth - 1;
+		const terrainHeight = maxElevation - minElevation;
+
+		const boundingRadius = Math.sqrt(
+			terrainWidth * terrainWidth +
+			terrainDepth * terrainDepth +
+			terrainHeight * terrainHeight
+		) / 2;
+
+		const verticalFov = Three.MathUtils.degToRad(this.camera.fov);
+		const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * this.camera.aspect);
+		const limitingFov = Math.min(verticalFov, horizontalFov);
+
+		const distance = boundingRadius / Math.sin(limitingFov / 2) * 1.1;
 
 		this.controller?.focus(center, distance);
 	}

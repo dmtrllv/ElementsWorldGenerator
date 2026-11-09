@@ -1,3 +1,4 @@
+
 import { CoastMap, ContinentalMap } from "../maps";
 import { MountainParams } from "../param-groups/terrain/mountains";
 import type { Region } from "../region";
@@ -23,8 +24,10 @@ export class MountainPass extends Pass {
 		const output = this.mountainMap.data;
 
 		const { distribution, shape, warp, warpStrength, normalization, falloff } = this.params;
+		const warpStrengthValue = warpStrength.state;
 
 		const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+		const normalize = (value: number, min: number, max: number) => clamp((value - min) / (max - min), 0, 1);
 
 		for (let z = 0; z < region.height; z++) {
 			for (let x = 0; x < region.width; x++) {
@@ -39,22 +42,20 @@ export class MountainPass extends Pass {
 				const worldZ = region.z + z;
 
 				const offset = warp.get(worldX, worldZ);
-				const sampleX = worldX + offset.x * warpStrength.state;
-				const sampleZ = worldZ + offset.y * warpStrength.state;
+				const sampleX = worldX + offset.x * warpStrengthValue;
+				const sampleZ = worldZ + offset.y * warpStrengthValue;
 
 				const distributionValue = distribution.get(sampleX, sampleZ);
-				const clampedDistribution = (distributionValue - normalization.min) / (normalization.max - normalization.min);
-				const normalizedDistribution = clamp(clampedDistribution, 0, 1);
-
-				const mountainRegion = falloff.evaluate(normalizedDistribution);
+				const normalizedDistribution = normalize(distributionValue, normalization.min, normalization.max);
+				const mountainRegion = clamp(falloff.evaluate(normalizedDistribution), 0, 1);
 
 				const shapeValue = shape.get(sampleX, sampleZ);
-				const normalizedShape = (shapeValue + 1) * 0.5;
+				const normalizedShape = normalize(shapeValue, -1, 1);
 
 				const coastInfluence = clamp(coast[index]!, 0, 1);
 				const coastalFactor = 1 - coastInfluence;
 
-				output[index] = mountainRegion * normalizedShape * coastalFactor;
+				output[index] = clamp(mountainRegion * normalizedShape * coastalFactor, 0, 1);
 			}
 		}
 	}

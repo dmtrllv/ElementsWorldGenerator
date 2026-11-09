@@ -9,7 +9,7 @@ export class CoastParams extends ParamGroup<CoastParams> {
 	@param(Float, {
 		name: "Transition Width",
 		description: "Maximum distance inland over which coastal influence extends, measured from the ocean boundary.",
-		default: 5000
+		default: 48
 	})
 	public readonly transitionWidth!: Float;
 

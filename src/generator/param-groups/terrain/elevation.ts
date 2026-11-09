@@ -26,4 +26,11 @@ export class ElevationParams extends ParamGroup<ElevationParams> {
 		default: 3000
 	})
 	public readonly mountainHeight!: Float;
+
+	@param(Float, {
+		name: "Coastal Elevation",
+		description: "Fraction of normal land elevation retained at maximum coastal influence.",
+		default: 0.15
+	})
+	public readonly coastalElevation!: Float;
 }

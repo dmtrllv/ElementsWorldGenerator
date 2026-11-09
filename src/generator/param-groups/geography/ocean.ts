@@ -1,4 +1,4 @@
-import { Scalar } from "../../params";
+import { Float, Scalar } from "../../params";
 import { group, param, ParamGroup } from "../param-group";
 
 @group({
@@ -33,4 +33,11 @@ export class OceanParams extends ParamGroup<OceanParams> {
 		}
 	})
 	public readonly shelf!: Scalar;
+
+	@param(Float, {
+		name: "Shelf Width",
+		description: "Controls the distance from the coastline over which the ocean floor transitions from shallow water to deep ocean. Measured in map samples.",
+		default: 64
+	})
+	public readonly shelfWidth!: Float;
 }
