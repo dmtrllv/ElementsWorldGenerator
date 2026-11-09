@@ -24,6 +24,10 @@ export class Renderer extends Module {
 
 	private terrainMesh: Three.Mesh | null = null;
 	private seaLevelMesh: Three.Mesh | null = null;
+	private edgeMesh: Three.LineSegments | null = null;
+
+	@observable
+	public showEdges: boolean = true;
 
 	public constructor(editor: Editor) {
 		super(editor);
@@ -36,6 +40,17 @@ export class Renderer extends Module {
 		this.glRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		this.glRenderer.shadowMap.enabled = true;
 		this.glRenderer.shadowMap.type = Three.PCFShadowMap;
+	}
+
+	public toggleEdges() {
+		this.showEdges = !this.showEdges;
+		if(!this.edgeMesh)
+			return;
+		if(this.showEdges) {
+			this.scene.add(this.edgeMesh);
+		} else {
+			this.scene.remove(this.edgeMesh);
+		}
 	}
 
 	public readonly initialize = (element: HTMLDivElement) => {
@@ -131,6 +146,11 @@ export class Renderer extends Module {
 			this.disposeMesh(this.seaLevelMesh);
 			this.seaLevelMesh = null;
 		}
+
+		if(this.edgeMesh) {
+			this.scene.remove(this.edgeMesh);
+			this.edgeMesh.geometry.dispose();
+		}
 	}
 
 	public renderWorldHeightmap(world: World) {
@@ -199,6 +219,23 @@ export class Renderer extends Module {
 
 		this.terrainMesh = mesh;
 		this.scene.add(mesh);
+		
+		if(this.edgeMesh) {
+			this.scene.remove(this.edgeMesh);
+			this.edgeMesh.geometry.dispose();
+		}
+
+		const edgesGeometry = new Three.EdgesGeometry(geometry, 1);
+		const edgesMaterial = new Three.LineBasicMaterial({
+			color: 0x303830,
+			transparent: true,
+			opacity: 0.45
+		});
+
+		this.edgeMesh = new Three.LineSegments(edgesGeometry, edgesMaterial);
+		if(this.showEdges) {
+			this.scene.add(this.edgeMesh);
+		} 
 
 		const seaLevelGeometry = new Three.PlaneGeometry(width - 1, depth - 1);
 		seaLevelGeometry.rotateX(-Math.PI / 2);
@@ -374,6 +411,18 @@ export class Renderer extends Module {
 
 		this.terrainMesh = mesh;
 		this.scene.add(mesh);
+
+		const edgesGeometry = new Three.EdgesGeometry(geometry, 1);
+		const edgesMaterial = new Three.LineBasicMaterial({
+			color: 0x303830,
+			transparent: true,
+			opacity: 0.45
+		});
+
+		this.edgeMesh = new Three.LineSegments(edgesGeometry, edgesMaterial);
+		if(this.showEdges) {
+			this.scene.add(this.edgeMesh);
+		} 
 
 		// Sea level.
 		const seaLevelGeometry = new Three.PlaneGeometry(width, depth);

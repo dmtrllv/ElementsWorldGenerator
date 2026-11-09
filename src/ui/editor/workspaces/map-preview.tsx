@@ -97,7 +97,7 @@ const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDat
 	const ctx = canvas.getContext("2d");
 	if (!ctx)
 		throw new Error(`Could not get canvas context!`);
-
+	console.log("render")
 	const map = generator.generateMap(mapType, GenerationScope.Global);
 
 	canvas.width = generator.worldParams.size.x;
