@@ -8,50 +8,50 @@ import { group, param, ParamGroup } from "../param-group";
 export class MountainParams extends ParamGroup<MountainParams> {
 	@param(Scalar, {
 		name: "Distribution",
-		description: "Determines the spatial distribution and frequency of mountain regions.",
+		description: "Determines the spatial distribution and frequency of mountain regions. Scale is measured in metres.",
 		default: {
 			seedOffset: 0,
-			scale: 100000,
+			scale: 220,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 4,
+			octaves: 4
 		}
 	})
 	public readonly distribution!: Scalar;
 
 	@param(Scalar, {
 		name: "Shape",
-		description: "Controls the internal elevation variation of mountain regions.",
+		description: "Controls the internal elevation variation of mountain regions. Scale is measured in metres.",
 		default: {
 			seedOffset: 100,
-			scale: 12000,
+			scale: 32,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 5,
+			octaves: 5
 		}
 	})
 	public readonly shape!: Scalar;
 
 	@param(VectorField, {
 		name: "Warp",
-		description: "Distorts the noise coordinates to create irregular mountain formations.",
+		description: "Distorts the noise coordinates to create irregular mountain formations. Scale is measured in metres.",
 		default: {
 			seedOffset: 200,
-			scale: 30000,
+			scale: 80,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 3,
+			octaves: 3
 		}
 	})
 	public readonly warp!: VectorField;
 
 	@param(Float, {
 		name: "Warp Strength",
-		description: "Controls the amount of coordinate distortion.",
-		default: 15000
+		description: "Maximum coordinate displacement caused by the warp field, measured in metres.",
+		default: 24
 	})
 	public readonly warpStrength!: Float;
 
@@ -68,9 +68,9 @@ export class MountainParams extends ParamGroup<MountainParams> {
 		default: {
 			points: [
 				{ x: 0, y: 0 },
-				{ x: 0.35, y: 0 },
-				{ x: 0.55, y: 0.25 },
-				{ x: 0.75, y: 0.8 },
+				{ x: 0.45, y: 0 },
+				{ x: 0.6, y: 0.2 },
+				{ x: 0.8, y: 0.7 },
 				{ x: 1, y: 1 }
 			],
 			interpolation: "monotone-cubic"

@@ -3,41 +3,41 @@ import { group, param, ParamGroup } from "../param-group";
 
 @group({
 	name: "Ocean",
-	description: "Controls the distribution and shape of ocean regions, including the formation of ocean basins and the transition from deep ocean to continental shelves."
+	description: "Controls the distribution and shape of ocean regions, including ocean basins and continental shelves."
 })
 export class OceanParams extends ParamGroup<OceanParams> {
 	@param(Scalar, {
 		name: "Distribution",
-		description: "Determines the spatial distribution of ocean regions, controlling where oceans form and how their boundaries and shapes are defined.",
+		description: "Controls variation in ocean basin depth. Scale is measured in metres.",
 		default: {
 			seedOffset: 0,
-			scale: 100000,
+			scale: 600,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 4,
+			octaves: 4
 		}
 	})
 	public readonly distribution!: Scalar;
 
 	@param(Scalar, {
 		name: "Shelf",
-		description: "Controls the shape and extent of continental shelves, defining the transition from shallow coastal waters to deep ocean basins.",
+		description: "Controls local variation in continental shelf width. Scale is measured in metres.",
 		default: {
 			seedOffset: 100,
-			scale: 12000,
+			scale: 48,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 4,
+			octaves: 4
 		}
 	})
 	public readonly shelf!: Scalar;
 
 	@param(Float, {
 		name: "Shelf Width",
-		description: "Controls the distance from the coastline over which the ocean floor transitions from shallow water to deep ocean. Measured in map samples.",
-		default: 64
+		description: "Controls the distance from the coastline over which the ocean floor transitions from shallow water to deep ocean, measured in metres.",
+		default: 72
 	})
 	public readonly shelfWidth!: Float;
 }

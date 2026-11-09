@@ -1,4 +1,3 @@
-
 import { CoastMap, ContinentalMap, OceanMap } from "../maps";
 import { GeographyParams } from "../param-groups";
 import type { Region } from "../region";
@@ -44,15 +43,23 @@ export class GeographyPass extends Pass {
 
 			let s = 0;
 
-			do {
+			while (k >= 0) {
 				const p = v[k]!;
 				s = ((input[q]! + q * q) - (input[p]! + p * p)) / (2 * q - 2 * p);
 
-				if (s <= z[k]!)
-					k--;
-				else
+				if (s > z[k]!)
 					break;
-			} while (k >= 0);
+
+				k--;
+			}
+
+			if (k < 0) {
+				k = 0;
+				v[0] = q;
+				z[0] = -Infinity;
+				z[1] = Infinity;
+				continue;
+			}
 
 			k++;
 			v[k] = q;
@@ -128,7 +135,7 @@ export class GeographyPass extends Pass {
 		if (width !== this.worldSize.x || height !== this.worldSize.z)
 			throw new RangeError("GeographyPass requires a global region.");
 
-		const transitionWidth = coastParams.transitionWidth.state;
+		const transitionWidth = Math.max(coastParams.transitionWidth.state, 0);
 		const shelfWidth = Math.max(oceanParams.shelfWidth.state, 1);
 		const warpStrength = continentalParams.warpStrength.state;
 		const normalization = continentalParams.normalization;
@@ -138,9 +145,14 @@ export class GeographyPass extends Pass {
 		const oceanCoastSeeds = new Uint8Array(size);
 
 		const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-		const normalize = (value: number, min: number, max: number) => clamp((value - min) / (max - min), 0, 1);
+		const normalize = (value: number, min: number, max: number) => {
+			if (max <= min)
+				return value >= max ? 1 : 0;
 
-		// Generate continental and ocean maps.
+			return clamp((value - min) / (max - min), 0, 1);
+		};
+
+		// Generate continental and ocean classification.
 		for (let z = 0; z < height; z++) {
 			for (let x = 0; x < width; x++) {
 				const index = z * width + x;
@@ -156,7 +168,8 @@ export class GeographyPass extends Pass {
 				const continentalValue = continentalParams.distribution.get(warpedX, warpedZ);
 				const normalizedContinental = normalize(continentalValue, normalization.min, normalization.max);
 
-				const landValue = continentalParams.shape.evaluate(normalizedContinental);
+				const landValue = clamp(continentalParams.shape.evaluate(normalizedContinental), 0, 1);
+
 				continentalOutput[index] = landValue;
 
 				if (landValue >= 0.5) {
@@ -235,7 +248,7 @@ export class GeographyPass extends Pass {
 
 			const basinDepth = 0.5 + normalizedOcean * 0.5;
 
-			oceanOutput[i] = shelfFactor * basinDepth;
+			oceanOutput[i] = clamp(shelfFactor * basinDepth, 0, 1);
 		}
 
 		// Precompute the falloff curve.
@@ -243,7 +256,7 @@ export class GeographyPass extends Pass {
 		const falloffLookup = new Float32Array(lookupSize);
 
 		for (let i = 0; i < lookupSize; i++)
-			falloffLookup[i] = coastParams.falloff.evaluate(i / (lookupSize - 1));
+			falloffLookup[i] = clamp(coastParams.falloff.evaluate(i / (lookupSize - 1)), 0, 1);
 
 		// Generate coast map.
 		for (let i = 0; i < size; i++) {

@@ -1,4 +1,3 @@
-
 import type { Region } from "../region";
 import { dependency, GenerationScope, output, Pass } from "./pass";
 import { ElevationMap, MountainMap } from "../maps/terrain";
@@ -36,10 +35,10 @@ export class ElevationPass extends Pass {
 		const output = this.elevationMap.data;
 
 		const seaLevel = this.seaLevel.seaLevel.state;
-		const landElevation = this.params.landElevation.state;
-		const oceanDepth = this.params.oceanDepth.state;
-		const mountainHeight = this.params.mountainHeight.state;
-		const coastalElevation = this.params.coastalElevation.state;
+		const landElevation = Math.max(0, this.params.landElevation.state);
+		const oceanDepth = Math.max(0, this.params.oceanDepth.state);
+		const mountainHeight = Math.max(0, this.params.mountainHeight.state);
+		const coastalElevation = Math.max(0, Math.min(this.params.coastalElevation.state, 1));
 
 		const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 		const smoothstep = (value: number) => value * value * (3 - 2 * value);
@@ -48,20 +47,22 @@ export class ElevationPass extends Pass {
 			for (let x = 0; x < region.width; x++) {
 				const index = z * region.width + x;
 
-				const landFactor = clamp((continental[index]! - 0.5) * 2, 0, 1);
-				const oceanFactor = clamp((0.5 - continental[index]!) * 2, 0, 1);
+				const continentalValue = clamp(continental[index]!, 0, 1);
 
-				const elevationLand = smoothstep(landFactor);
-				const elevationOcean = smoothstep(oceanFactor) * clamp(ocean[index]!, 0, 1);
+				const landFactor = smoothstep(clamp((continentalValue - 0.5) * 2, 0, 1));
+				const oceanFactor = smoothstep(clamp((0.5 - continentalValue) * 2, 0, 1));
 
 				const coastInfluence = clamp(coast[index]!, 0, 1);
 				const coastalFactor = 1 - coastInfluence * (1 - coastalElevation);
 
+				const oceanDepthFactor = clamp(ocean[index]!, 0, 1);
+				const mountainInfluence = clamp(mountains[index]!, 0, 1);
+
 				let elevation = seaLevel;
 
-				elevation += landElevation * elevationLand * coastalFactor;
-				elevation -= oceanDepth * elevationOcean;
-				elevation += mountains[index]! * mountainHeight * elevationLand;
+				elevation += landElevation * landFactor * coastalFactor;
+				elevation -= oceanDepth * oceanFactor * oceanDepthFactor;
+				elevation += mountainHeight * landFactor * mountainInfluence;
 
 				output[index] = elevation;
 			}

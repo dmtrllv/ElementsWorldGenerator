@@ -1,5 +1,5 @@
 import { Vector2, Vector3 } from "three";
-import { createObservable, observable, } from "../reactive";
+import { createObservable, observable } from "../reactive";
 import { GeographyParams } from "./param-groups/geography/geography";
 import { ParamGroup, type ParamGroupProps, type ParamGroupType } from "./param-groups/param-group";
 import { TerrainParams } from "./param-groups/terrain/terrain";
@@ -10,7 +10,7 @@ import { Region } from "./region";
 export class WorldParams {
 	public static get defaultProps(): WorldParamProps {
 		return {
-			size: new Vector3(512, 128, 512),
+			size: new Vector3(512, 256, 512),
 			offset: new Vector2(0, 0),
 			chunkSize: new Vector2(32, 32),
 			geography: GeographyParams.getDefaultProps(),
@@ -70,14 +70,18 @@ export class WorldParams {
 		const walk = (group: object): Type | undefined => {
 			if (group instanceof type)
 				return group;
+
 			for (const k in group) {
 				const val = group[k as keyof typeof group] as any;
+
 				if (val && val instanceof ParamGroup) {
 					const g = walk(val);
+
 					if (g)
 						return g;
 				}
 			}
+
 			return undefined;
 		};
 
@@ -87,7 +91,7 @@ export class WorldParams {
 		});
 
 		if (!group)
-			throw new Error();
+			throw new Error(`Could not find parameter group ${type.name}!`);
 
 		this.groupRegistry.set(type, group);
 
@@ -104,4 +108,5 @@ export type WorldParamProps = {
 	geography: ParamGroupProps<GeographyParams>;
 	terrain: ParamGroupProps<TerrainParams>;
 }
+
 export type SeedChangeListener = (newSeed: number) => void;

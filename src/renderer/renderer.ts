@@ -238,6 +238,6 @@ export class Renderer extends Module {
 
 		const distance = boundingRadius / Math.sin(limitingFov / 2) * 1.1;
 
-		this.controller?.focus(center, distance);
+		//this.controller?.focus(center, distance);
 	}
 }

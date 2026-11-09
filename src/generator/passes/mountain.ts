@@ -1,4 +1,3 @@
-
 import { CoastMap, ContinentalMap } from "../maps";
 import { MountainParams } from "../param-groups/terrain/mountains";
 import type { Region } from "../region";
@@ -27,7 +26,12 @@ export class MountainPass extends Pass {
 		const warpStrengthValue = warpStrength.state;
 
 		const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-		const normalize = (value: number, min: number, max: number) => clamp((value - min) / (max - min), 0, 1);
+		const normalize = (value: number, min: number, max: number) => {
+			if (max <= min)
+				return value >= max ? 1 : 0;
+
+			return clamp((value - min) / (max - min), 0, 1);
+		};
 
 		for (let z = 0; z < region.height; z++) {
 			for (let x = 0; x < region.width; x++) {
@@ -51,11 +55,12 @@ export class MountainPass extends Pass {
 
 				const shapeValue = shape.get(sampleX, sampleZ);
 				const normalizedShape = normalize(shapeValue, -1, 1);
+				const mountainShape = Math.pow(normalizedShape, 1.5);
 
 				const coastInfluence = clamp(coast[index]!, 0, 1);
 				const coastalFactor = 1 - coastInfluence;
 
-				output[index] = clamp(mountainRegion * normalizedShape * coastalFactor, 0, 1);
+				output[index] = clamp(mountainRegion * mountainShape * coastalFactor, 0, 1);
 			}
 		}
 	}
