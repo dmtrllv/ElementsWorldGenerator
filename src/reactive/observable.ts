@@ -1,3 +1,4 @@
+
 import { getObservableState, notifyObservable, registerObservableState, trackObservableRead, type ObservableState } from "./internal";
 
 type Constructor<T extends object = object> = (new (...args: any[]) => T) | (abstract new (...args: any[]) => T);
@@ -48,11 +49,20 @@ const getClassMetadata = (target: Function): ClassMetadata | undefined => {
 	return prototype ? CLASS_METADATA.get(prototype) : undefined;
 };
 
-const makeObservable = <T extends object>(value: T, tracked: Iterable<PropertyKey>, trackNewProperties: boolean, constructor: any): T => {
+const makeObservable = <T extends object>(value: T, tracked: Iterable<PropertyKey>, observableProperties: Iterable<PropertyKey>, trackNewProperties: boolean, constructor: any): T => {
 	const existing = getObservableState(value);
 
 	if (existing)
 		return existing.proxy as T;
+
+	const properties = new Set(observableProperties);
+
+	for (const key of properties) {
+		const current = Reflect.get(value, key);
+
+		if (typeof current === "object" && current !== null)
+			Reflect.set(value, key, createObservable(current));
+	}
 
 	const state: ObservableState = {
 		proxy: value,
@@ -67,13 +77,17 @@ const makeObservable = <T extends object>(value: T, tracked: Iterable<PropertyKe
 
 	proxy = new Proxy(value, {
 		get(target, key, receiver) {
-			if(key === "constructor")
+			if (key === "constructor")
 				return constructor;
+
 			trackObservableRead(state, key);
 			return Reflect.get(target, key, receiver);
 		},
 		set(target, key, next, receiver) {
 			const previous = Reflect.get(target, key, receiver);
+
+			if (properties.has(key) && typeof next === "object" && next !== null)
+				next = createObservable(next);
 
 			setting++;
 			const success = Reflect.set(target, key, next, receiver);
@@ -94,6 +108,10 @@ const makeObservable = <T extends object>(value: T, tracked: Iterable<PropertyKe
 		},
 		defineProperty(target, key, descriptor) {
 			const previous = Reflect.get(target, key, proxy);
+
+			if (properties.has(key) && "value" in descriptor && typeof descriptor.value === "object" && descriptor.value !== null)
+				descriptor.value = createObservable(descriptor.value);
+
 			const success = Reflect.defineProperty(target, key, descriptor);
 
 			if (!success || setting > 0)
@@ -158,7 +176,9 @@ const decorateClass = <T extends Constructor>(target: T, config: ObservableConfi
 				return instance;
 			}
 
-			return makeObservable(instance, tracked, config.auto, decorated);
+			const observableProperties = getRegisteredProperties(prototype, config.inherit);
+
+			return makeObservable(instance, tracked, observableProperties, config.auto, decorated);
 		}
 	});
 
@@ -185,7 +205,7 @@ export const createObservable = <T extends object>(value: T): T => {
 	if (existing)
 		return existing.proxy as T;
 
-	return makeObservable(value, Reflect.ownKeys(value), true, value.constructor);
+	return makeObservable(value, Reflect.ownKeys(value), [], true, value.constructor);
 };
 
 export interface ObservableDecorator {
