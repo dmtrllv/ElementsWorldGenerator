@@ -68,7 +68,9 @@ export class Generator {
 					const depResolution = dep.resolution ?? resolution;
 					const depChunk = depScope === GenerationScope.Local ? mapChunk : undefined;
 
-					const map = this.generateMap(dep.type, depScope, depChunk, depResolution);
+					const res = typeof depResolution === "function" ? depResolution(this.worldParams) : depResolution;
+
+					const map = this.generateMap(dep.type, depScope, depChunk, res);
 
 					Object.assign(pass, {
 						[k]: map
@@ -81,10 +83,10 @@ export class Generator {
 			}
 
 			const region = mapChunk ? new Region(
-				this.worldParams.offset.x + mapChunk.x * this.worldParams.chunkSize.x - this.worldParams.size.x / 2,
-				this.worldParams.offset.y + mapChunk.y * this.worldParams.chunkSize.y - this.worldParams.size.z / 2,
-				this.worldParams.chunkSize.x,
-				this.worldParams.chunkSize.y
+				this.worldParams.offset.x + mapChunk.x * this.worldParams.chunkSize - this.worldParams.size.x / 2,
+				this.worldParams.offset.y + mapChunk.y * this.worldParams.chunkSize - this.worldParams.size.z / 2,
+				this.worldParams.chunkSize,
+				this.worldParams.chunkSize
 			) : this.worldParams.region;
 
 			const context = new GenerationContext(region, this.worldParams.region, scope, resolution);

@@ -12,7 +12,7 @@ export class WorldParams {
 		return {
 			size: new Vector3(512, 256, 512),
 			offset: new Vector2(0, 0),
-			chunkSize: new Vector2(32, 32),
+			chunkSize: 32,
 			geography: GeographyParams.getDefaultProps(),
 			terrain: TerrainParams.getDefaultProps()
 		}
@@ -25,7 +25,7 @@ export class WorldParams {
 	public size: Vector3;
 
 	@observable
-	public chunkSize: Vector2;
+	public chunkSize: number;
 
 	@observable
 	public offset: Vector2;
@@ -48,7 +48,7 @@ export class WorldParams {
 		this.seed = seed;
 		this.size = createObservable(size);
 		this.offset = createObservable(offset);
-		this.chunkSize = createObservable(chunkSize);
+		this.chunkSize = chunkSize;
 		this.geography = GeographyParams.init(this, geography);
 		this.terrain = TerrainParams.init(this, terrain);
 	}
@@ -57,7 +57,7 @@ export class WorldParams {
 		return new WorldParams(this.seed, {
 			size: this.size.clone(),
 			offset: this.offset.clone(),
-			chunkSize: this.chunkSize.clone(),
+			chunkSize: this.chunkSize,
 			geography: this.geography.toProps(),
 			terrain: this.terrain.toProps()
 		});
@@ -104,7 +104,7 @@ export type WorldParamsSnapshot = Immutable<WorldParams>;
 export type WorldParamProps = {
 	size: Vector3;
 	offset: Vector2;
-	chunkSize: Vector2;
+	chunkSize: number;
 	geography: ParamGroupProps<GeographyParams>;
 	terrain: ParamGroupProps<TerrainParams>;
 }
