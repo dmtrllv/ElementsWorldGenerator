@@ -1,8 +1,9 @@
 import { clamp } from "../../utils";
+import type { GenerationContext } from "../context";
 import { CoastMap, ContinentalMap, OceanMap } from "../maps";
 import { GeographyParams } from "../param-groups";
 import type { Region } from "../region";
-import { dependency, output, Pass, type GenerationScope as GenerationScopeType } from "./pass";
+import { dependency, output, Pass } from "./pass";
 
 export class GeographyPass extends Pass {
 	@dependency(GeographyParams)
@@ -173,7 +174,7 @@ export class GeographyPass extends Pass {
 		return tresholds[index]!;
 	}
 
-	public override generate(region: Region, _scope: GenerationScopeType): void {
+	public override generate(region: Region, _context: GenerationContext): void {
 		const continentalOutput = this.continental.data;
 		const oceanOutput = this.ocean.data;
 		const coastOutput = this.coast.data;

@@ -1,10 +1,11 @@
 
 import type { Region } from "../region";
-import { dependency, GenerationScope, output, Pass } from "./pass";
+import { dependency, output, Pass } from "./pass";
 import { ElevationMap, MountainMap } from "../maps/terrain";
 import { SeaLevelParams } from "../param-groups/terrain/sea";
 import { ElevationParams } from "../param-groups/terrain/elevation";
 import { CoastMap, ContinentalMap, OceanMap } from "../maps";
+import type { GenerationContext } from "../context";
 
 export class ElevationPass extends Pass {
 	@dependency(SeaLevelParams)
@@ -28,7 +29,7 @@ export class ElevationPass extends Pass {
 	@output(ElevationMap)
 	public readonly elevationMap!: ElevationMap;
 
-	public override generate(region: Region, _scope: GenerationScope): void {
+	public override generate(region: Region, _context: GenerationContext): void {
 		const continental = this.continentalMap.data;
 		const ocean = this.oceanMap.data;
 		const mountains = this.mountainMap.data;

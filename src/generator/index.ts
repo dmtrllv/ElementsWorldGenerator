@@ -6,3 +6,4 @@ export * from "./passes";
 export * from "./chunk";
 export * from "./chunk-manager";
 export * from "./maps";
+export * from "./context";

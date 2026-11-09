@@ -3,7 +3,7 @@ import { MapData, type MapDataType } from "../maps";
 import type { ParamGroup, ParamGroupType } from "../param-groups";
 import type { Region } from "../region";
 import type { WorldParamsSnapshot } from "../world-params";
-import type { ParamType } from "../params";
+import type { GenerationContext } from "../context";
 
 export abstract class Pass {
 	private static readonly meta: Map<PassType<any>, PassMeta> = new Map();
@@ -61,7 +61,7 @@ export abstract class Pass {
 		this.worldParams = worldParams;
 	}
 
-	public abstract generate(region: Region, scope: GenerationScope): void;
+	public abstract generate(region: Region, context: GenerationContext): void;
 }
 
 export type PassMeta = {
