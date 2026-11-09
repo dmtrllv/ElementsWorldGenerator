@@ -27,9 +27,9 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 			interpolation: "monotone-cubic",
 			points: [
 				{ x: 0, y: 0 },
-				{ x: 0.35, y: 0 },
-				{ x: 0.5, y: 0.5 },
-				{ x: 0.65, y: 1 },
+				{ x: 0.2, y: 0 },
+				{ x: 0.35, y: 0.5 },
+				{ x: 0.5, y: 1 },
 				{ x: 1, y: 1 }
 			]
 		}

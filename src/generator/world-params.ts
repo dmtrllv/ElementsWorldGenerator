@@ -11,6 +11,7 @@ export class WorldParams {
 	public static get defaultProps(): WorldParamProps {
 		return {
 			size: new Vector3(512, 128, 512),
+			offset: new Vector2(0, 0),
 			chunkSize: new Vector2(32, 32),
 			geography: GeographyParams.getDefaultProps(),
 			terrain: TerrainParams.getDefaultProps()
@@ -26,10 +27,13 @@ export class WorldParams {
 	@observable
 	public chunkSize: Vector2;
 
+	@observable
+	public offset: Vector2;
+
 	public get region() {
 		return new Region(
-			-this.size.x / 2,
-			-this.size.z / 2,
+			this.offset.x - this.size.x / 2,
+			this.offset.y - this.size.z / 2,
 			this.size.x,
 			this.size.z
 		);
@@ -40,9 +44,10 @@ export class WorldParams {
 
 	private readonly groupRegistry = new Map<ParamGroupType<any>, ParamGroup<any>>();
 
-	public constructor(seed: number, { size, chunkSize, geography, terrain }: WorldParamProps) {
+	public constructor(seed: number, { size, offset, chunkSize, geography, terrain }: WorldParamProps) {
 		this.seed = seed;
 		this.size = createObservable(size);
+		this.offset = createObservable(offset);
 		this.chunkSize = createObservable(chunkSize);
 		this.geography = GeographyParams.init(this, geography);
 		this.terrain = TerrainParams.init(this, terrain);
@@ -51,6 +56,7 @@ export class WorldParams {
 	public snapshot(): WorldParamsSnapshot {
 		return new WorldParams(this.seed, {
 			size: this.size.clone(),
+			offset: this.offset.clone(),
 			chunkSize: this.chunkSize.clone(),
 			geography: this.geography.toProps(),
 			terrain: this.terrain.toProps()
@@ -93,9 +99,9 @@ export type WorldParamsSnapshot = Immutable<WorldParams>;
 
 export type WorldParamProps = {
 	size: Vector3;
+	offset: Vector2;
 	chunkSize: Vector2;
 	geography: ParamGroupProps<GeographyParams>;
 	terrain: ParamGroupProps<TerrainParams>;
 }
-
 export type SeedChangeListener = (newSeed: number) => void;

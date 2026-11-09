@@ -22,6 +22,7 @@ const World = () => {
 				<NumberInput name="Seed" value={params.seed} onChange={v => params.seed = v} />
 				<Vector3Input name="Size" value={params.size} onChange={v => params.size = v} />
 				<Vector2Input name="Chunk size" value={params.chunkSize} onChange={v => params.chunkSize = v} />
+				<Vector2Input name="Offset" value={params.offset} onChange={v => params.offset = v} />
 			</DropdownPanel>
 			<GroupInput group={params.geography}/>
 			<GroupInput group={params.terrain} />

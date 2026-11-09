@@ -86,8 +86,8 @@ export class Generator {
 			}
 
 			const region = chunk ? new Region(
-				chunk.x * this.worldParams.chunkSize.x - this.worldParams.size.x / 2,
-				chunk.y * this.worldParams.chunkSize.y - this.worldParams.size.z / 2,
+				this.worldParams.offset.x + chunk.x * this.worldParams.chunkSize.x - this.worldParams.size.x / 2,
+				this.worldParams.offset.y + chunk.y * this.worldParams.chunkSize.y - this.worldParams.size.z / 2,
 				this.worldParams.chunkSize.x,
 				this.worldParams.chunkSize.y
 			) : this.worldParams.region;

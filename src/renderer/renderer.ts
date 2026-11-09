@@ -145,7 +145,7 @@ export class Renderer extends Module {
 				const positionIndex = index * 3;
 
 				positions[positionIndex] = -width / 2 + x;
-				positions[positionIndex + 1] = ((elevation[index]! - minElevation) / elevationRange) * height;
+				positions[positionIndex + 1] = elevation[index]!;
 				positions[positionIndex + 2] = -depth / 2 + z;
 			}
 		}
@@ -204,7 +204,7 @@ export class Renderer extends Module {
 		});
 
 		const seaLevelMesh = new Three.Mesh(seaLevelGeometry, seaLevelMaterial);
-		seaLevelMesh.position.set(0, ((seaLevelParams.seaLevel.state - minElevation) / elevationRange) * height, 0);
+		seaLevelMesh.position.set(0, seaLevelParams.seaLevel.state, 0);
 		seaLevelMesh.renderOrder = 1;
 
 		if (this.seaLevelMesh) {
