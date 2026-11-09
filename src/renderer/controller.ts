@@ -212,6 +212,18 @@ export class Controller {
 		window.removeEventListener("blur", this.onWindowBlur);
 		element.removeEventListener("pointerup", this.onViewHelperClick);
 	}
+
+	public focus(target: Vector3, distance: number) {
+		this.orbitControls.target.copy(target);
+		this.orbitControls.maxDistance = Math.max(2000, distance * 10);
+
+		this.renderer.camera.position.copy(target).add(
+			new Vector3(1, 0.8, 1).normalize().multiplyScalar(distance)
+		);
+
+		this.viewHelper.center.copy(target);
+		this.orbitControls.update();
+	}
 }
 
 export type CamerMode = "orbital" | "first-person";

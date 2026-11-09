@@ -41,13 +41,18 @@ export class ElevationPass extends Pass {
 			for (let x = 0; x < region.width; x++) {
 				const index = z * region.width + x;
 
-				const continentalFactor = clamp((continental[index]! - 0.5) * 2, 0, 1);
-				const oceanFactor = clamp(1 - continental[index]! * 2, 0, 1) * clamp(ocean[index]!, 0, 1);
+				const landFactor = clamp((continental[index]! - 0.5) * 2, 0, 1);
+				const oceanFactor = clamp((0.5 - continental[index]!) * 2, 0, 1);
+
+				const smoothstep = (value: number) => value * value * (3 - 2 * value);
+
+				const elevationLand = smoothstep(landFactor);
+				const elevationOcean = smoothstep(oceanFactor) * clamp(ocean[index]!, 0, 1);
 
 				let elevation = seaLevel;
-				elevation += landElevation * continentalFactor;
-				elevation -= oceanDepth * oceanFactor;
-				elevation += mountains[index]! * mountainHeight;
+				elevation += landElevation * elevationLand;
+				elevation -= oceanDepth * elevationOcean;
+				elevation += mountains[index]! * mountainHeight * elevationLand;
 
 				output[index] = elevation;
 			}
