@@ -1,3 +1,4 @@
+
 import type { Region } from "../region";
 import { dependency, GenerationScope, output, Pass } from "./pass";
 import { ElevationMap, MountainMap } from "../maps/terrain";
@@ -62,7 +63,10 @@ export class ElevationPass extends Pass {
 
 				elevation += landElevation * landFactor * coastalFactor;
 				elevation -= oceanDepth * oceanFactor * oceanDepthFactor;
-				elevation += mountainHeight * landFactor * mountainInfluence;
+
+				// MountainMap already handles continental boundaries and coastal suppression.
+				// Do not attenuate mountain height a second time here.
+				elevation += mountainHeight * mountainInfluence;
 
 				output[index] = elevation;
 			}

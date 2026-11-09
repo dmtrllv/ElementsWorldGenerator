@@ -18,7 +18,7 @@ export class Renderer extends Module {
 	public readonly camera = new Three.PerspectiveCamera();
 	public readonly glRenderer = new Three.WebGLRenderer({ antialias: true });
 
-	private controller: Controller | null = null;
+	public controller: Controller | null = null;
 	private resizeObserver: ResizeObserver | null = null;
 	private previousFrameTime: number = 0;
 
@@ -133,7 +133,7 @@ export class Renderer extends Module {
 		}
 	}
 
-	public renderWorld(world: World) {
+	public renderWorldHeightmap(world: World) {
 		const generator = world.generator;
 		const worldParams = generator.worldParams;
 		const elevationMap = generator.generateMap(ElevationMap, GenerationScope.Global);
@@ -220,24 +220,179 @@ export class Renderer extends Module {
 
 		this.seaLevelMesh = seaLevelMesh;
 		this.scene.add(seaLevelMesh);
-
-		const center = new Three.Vector3(0, (minElevation + maxElevation) / 2, 0);
-		const terrainWidth = width - 1;
-		const terrainDepth = depth - 1;
-		const terrainHeight = maxElevation - minElevation;
-
-		const boundingRadius = Math.sqrt(
-			terrainWidth * terrainWidth +
-			terrainDepth * terrainDepth +
-			terrainHeight * terrainHeight
-		) / 2;
-
-		const verticalFov = Three.MathUtils.degToRad(this.camera.fov);
-		const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * this.camera.aspect);
-		const limitingFov = Math.min(verticalFov, horizontalFov);
-
-		const distance = boundingRadius / Math.sin(limitingFov / 2) * 1.1;
-
-		//this.controller?.focus(center, distance);
 	}
+
+
+	public renderVoxelWorld(world: World) {
+		const generator = world.generator;
+		const worldParams = generator.worldParams;
+		const elevationMap = generator.generateMap(ElevationMap, GenerationScope.Global);
+		const elevation = elevationMap.data;
+
+		const width = worldParams.size.x;
+		const depth = worldParams.size.z;
+
+		const seaLevel = worldParams.terrain.seaLevel.seaLevel.state;
+		const oceanDepth = worldParams.terrain.elevation.oceanDepth.state;
+		const bottomY = Math.floor(seaLevel - oceanDepth);
+
+		const heights = new Int32Array(width * depth);
+
+		let minElevation = Infinity;
+		let maxElevation = -Infinity;
+
+		for (let z = 0; z < depth; z++) {
+			for (let x = 0; x < width; x++) {
+				const index = z * width + x;
+				const height = Math.floor(elevation[index]!);
+
+				heights[index] = height;
+
+				minElevation = Math.min(minElevation, height);
+				maxElevation = Math.max(maxElevation, height);
+			}
+		}
+
+		const positions: number[] = [];
+		const normals: number[] = [];
+
+		const addFace = (ax: number, ay: number, az: number, bx: number, by: number, bz: number, cx: number, cy: number, cz: number, dx: number, dy: number, dz: number, nx: number, ny: number, nz: number) => {
+			positions.push(
+				ax, ay, az,
+				bx, by, bz,
+				cx, cy, cz,
+				ax, ay, az,
+				cx, cy, cz,
+				dx, dy, dz
+			);
+
+			for (let i = 0; i < 6; i++)
+				normals.push(nx, ny, nz);
+		};
+
+		const getHeight = (x: number, z: number) => {
+			if (x < 0 || x >= width || z < 0 || z >= depth)
+				return bottomY;
+
+			return heights[z * width + x]!;
+		};
+
+		for (let z = 0; z < depth; z++) {
+			for (let x = 0; x < width; x++) {
+				const index = z * width + x;
+				const height = heights[index]!;
+
+				if (height <= bottomY)
+					continue;
+
+				const x0 = x - width / 2;
+				const x1 = x0 + 1;
+				const z0 = z - depth / 2;
+				const z1 = z0 + 1;
+
+				// Top face.
+				addFace(
+					x0, height, z0,
+					x0, height, z1,
+					x1, height, z1,
+					x1, height, z0,
+					0, 1, 0
+				);
+
+				// West face.
+				const westHeight = getHeight(x - 1, z);
+
+				if (westHeight < height) {
+					addFace(
+						x0, westHeight, z0,
+						x0, westHeight, z1,
+						x0, height, z1,
+						x0, height, z0,
+						-1, 0, 0
+					);
+				}
+
+				// East face.
+				const eastHeight = getHeight(x + 1, z);
+
+				if (eastHeight < height) {
+					addFace(
+						x1, eastHeight, z1,
+						x1, eastHeight, z0,
+						x1, height, z0,
+						x1, height, z1,
+						1, 0, 0
+					);
+				}
+
+				// North face.
+				const northHeight = getHeight(x, z - 1);
+
+				if (northHeight < height) {
+					addFace(
+						x1, northHeight, z0,
+						x0, northHeight, z0,
+						x0, height, z0,
+						x1, height, z0,
+						0, 0, -1
+					);
+				}
+
+				// South face.
+				const southHeight = getHeight(x, z + 1);
+
+				if (southHeight < height) {
+					addFace(
+						x0, southHeight, z1,
+						x1, southHeight, z1,
+						x1, height, z1,
+						x0, height, z1,
+						0, 0, 1
+					);
+				}
+			}
+		}
+
+		const geometry = new Three.BufferGeometry();
+
+		geometry.setAttribute("position", new Three.Float32BufferAttribute(positions, 3));
+		geometry.setAttribute("normal", new Three.Float32BufferAttribute(normals, 3));
+		geometry.computeBoundingBox();
+		geometry.computeBoundingSphere();
+
+		const material = new Three.MeshStandardMaterial({
+			color: 0x899b76,
+			roughness: 1,
+			metalness: 0
+		});
+
+		const mesh = new Three.Mesh(geometry, material);
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
+
+		this.disposeTerrainMesh();
+
+		this.terrainMesh = mesh;
+		this.scene.add(mesh);
+
+		// Sea level.
+		const seaLevelGeometry = new Three.PlaneGeometry(width, depth);
+		seaLevelGeometry.rotateX(-Math.PI / 2);
+
+		const seaLevelMaterial = new Three.MeshBasicMaterial({
+			color: 0x4a9bd6,
+			transparent: true,
+			opacity: 0.35,
+			depthWrite: false,
+			side: Three.DoubleSide
+		});
+
+		const seaLevelMesh = new Three.Mesh(seaLevelGeometry, seaLevelMaterial);
+		seaLevelMesh.position.set(0, seaLevel, 0);
+		seaLevelMesh.renderOrder = 1;
+
+		this.seaLevelMesh = seaLevelMesh;
+		this.scene.add(seaLevelMesh);
+	}
+
 }

@@ -9,7 +9,7 @@ export class SeaLevelParams extends ParamGroup<SeaLevelParams> {
 	@param(Float, {
 		name: "Sea Level",
 		description: "The elevation at which ocean water meets the terrain, measured in metres.",
-		default: 0
+		default: -0.3
 	})
 	public readonly seaLevel!: Float;
 }

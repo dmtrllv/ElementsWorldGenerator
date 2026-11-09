@@ -1,3 +1,4 @@
+
 import { Scalar, Curve, Float, VectorField, Range } from "../../params";
 import { group, param, ParamGroup } from "../param-group";
 
@@ -11,7 +12,7 @@ export class MountainParams extends ParamGroup<MountainParams> {
 		description: "Determines the spatial distribution and frequency of mountain regions. Scale is measured in metres.",
 		default: {
 			seedOffset: 0,
-			scale: 220,
+			scale: 1500,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
@@ -24,8 +25,8 @@ export class MountainParams extends ParamGroup<MountainParams> {
 		name: "Shape",
 		description: "Controls the internal elevation variation of mountain regions. Scale is measured in metres.",
 		default: {
-			seedOffset: 100,
-			scale: 32,
+			seedOffset: 200,
+			scale: 200,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
@@ -62,15 +63,23 @@ export class MountainParams extends ParamGroup<MountainParams> {
 	})
 	public readonly normalization!: Range;
 
+	@param(Float, {
+		name: "Edge Sharpness",
+		description: "Controls how sharply mountain regions transition into surrounding terrain. Higher values create narrower, sharper boundaries.",
+		default: 5
+	})
+	public readonly edgeSharpness!: Float;
+
 	@param(Curve, {
 		name: "Falloff",
-		description: "Controls the transition from mountain regions into surrounding terrain.",
+		description: "Controls the distribution threshold and transition into mountain regions.",
 		default: {
 			points: [
 				{ x: 0, y: 0 },
 				{ x: 0.45, y: 0 },
-				{ x: 0.6, y: 0.2 },
-				{ x: 0.8, y: 0.7 },
+				{ x: 0.55, y: 0.1 },
+				{ x: 0.65, y: 0.65 },
+				{ x: 0.75, y: 1 },
 				{ x: 1, y: 1 }
 			],
 			interpolation: "monotone-cubic"
