@@ -24,7 +24,7 @@ export const GroupInput = ({ group }: { group: ParamGroup<any> }) => {
 	);
 
 	return (
-		<DropdownPanel className="group-input" title={title}>
+		<DropdownPanel className="group-input" title={title} open={false}>
 			{Object.values(params).map(param => <ParamInput key={param.name} param={param} />)}
 			{Object.values(groups).map(group => <GroupInput key={group.name} group={group} />)}
 		</DropdownPanel>
