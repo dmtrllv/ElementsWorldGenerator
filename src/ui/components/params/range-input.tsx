@@ -6,7 +6,7 @@ import { useObservable } from "../../../reactive";
 
 import "./styles/range.scss";
 
-export const RangeInput = ({ range }: { range: Range }) => {
+export const RangeInput = ({ range, name }: { range: Range, name: string }) => {
 	const state = useObservable(range.state);
 
 	const sx = useSlider(state[0], -Infinity, Infinity, "y", -0.05);
@@ -70,7 +70,6 @@ export const RangeInput = ({ range }: { range: Range }) => {
 		
 		if (x.length === 0 || Number.isNaN(inputX) || !Number.isFinite(inputX)) {
 			setX("0");
-			//onChange?.(0);
 		} else {
 			setX(inputX.toString());
 		}
@@ -80,8 +79,6 @@ export const RangeInput = ({ range }: { range: Range }) => {
 		} else {
 			setY(inputY.toString())
 		}
-
-		//onChange?.(input);
 	};
 
 	return (
@@ -90,11 +87,11 @@ export const RangeInput = ({ range }: { range: Range }) => {
 			<div className="inputs">
 				<div className="input">
 					<div className="label min" onMouseDown={sx.onMouseDown}>min</div>
-					<input value={x} id={name + ".min"} name={name + ".min"} placeholder={name + ".min"} type="text" onChange={e => updateX(e.target.value)} onBlur={fixInput}/>
+					<input value={x} className={name + ".min"} name={name + ".min"} placeholder={name + ".min"} type="text" onChange={e => updateX(e.target.value)} onBlur={fixInput}/>
 				</div>
 				<div className="input" >
 					<div className="label max" onMouseDown={sy.onMouseDown}>max</div>
-					<input value={y} id={name + ".max"} name={name + ".max"} placeholder={name + ".max"} type="text" onChange={e => updateY(e.target.value)} onBlur={fixInput}/>
+					<input value={y} className={name + ".max"} name={name + ".max"} placeholder={name + ".max"} type="text" onChange={e => updateY(e.target.value)} onBlur={fixInput}/>
 				</div>
 			</div>
 		</div>

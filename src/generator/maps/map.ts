@@ -3,7 +3,7 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 
 	public static readonly getMeta = <T extends MapDataType<any, any>>(type: T): MapDataMeta<any> => {
 		const meta = this.registry.get(type);
-		if(!meta)
+		if (!meta)
 			throw new Error(`No meta defined on ${type.name}!`);
 		return meta;
 	}
@@ -22,8 +22,8 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 		this.data = data;
 	}
 
-	public debug(_imageData: ImageData) {}
-	
+	public debug(_imageData: ImageData) { }
+
 }
 
 export type MapDataMeta<T extends MapDataType<any, any>> = T extends MapDataType<any, infer V> ? (V extends Float32Array ? {
@@ -60,3 +60,18 @@ export type TypedArrayCtor<T extends TypedArray> =
 	T extends Float32Array ? Float32ArrayConstructor :
 	T extends Float64Array ? Float64ArrayConstructor :
 	never;
+
+export const renderFloat32 = (data: Float32Array, imageData: ImageData) => {
+	const pixels = imageData.data;
+
+	for (let i = 0; i < data.length; i++) {
+		const value = Math.max(0, Math.min(1, data[i]!));
+		const color = Math.round(value * 255);
+		const index = i * 4;
+
+		pixels[index] = color;
+		pixels[index + 1] = color;
+		pixels[index + 2] = color;
+		pixels[index + 3] = 255;
+	}
+}

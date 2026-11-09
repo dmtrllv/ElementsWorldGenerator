@@ -1,4 +1,4 @@
-import { MapData } from "./map";
+import { MapData, renderFloat32 } from "./map";
 
 @MapData.register({
 	name: "Continental",
@@ -27,20 +27,5 @@ export class OceanMap extends MapData {
 export class CoastMap extends MapData {
 	public override debug(imageData: ImageData): void {
 		renderFloat32(this.data, imageData);
-	}
-}
-
-const renderFloat32 = (data: Float32Array, imageData: ImageData) => {
-	const pixels = imageData.data;
-
-	for (let i = 0; i < data.length; i++) {
-		const value = Math.max(0, Math.min(1, data[i]!));
-		const color = Math.round(value * 255);
-		const index = i * 4;
-
-		pixels[index] = color;
-		pixels[index + 1] = color;
-		pixels[index + 2] = color;
-		pixels[index + 3] = 255;
 	}
 }

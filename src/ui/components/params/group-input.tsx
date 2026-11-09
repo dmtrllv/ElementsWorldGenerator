@@ -45,7 +45,7 @@ export const ParamInput = ({ param }: { param: any }) => {
 		return <VectorFieldInput vectorField={param} />;
 
 	if (param instanceof Range)
-		return <RangeInput range={param} />;
+		return <RangeInput name={param.name} range={param} />;
 
 	return null;
 };

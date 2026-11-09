@@ -11,11 +11,11 @@ export class OceanParams extends ParamGroup<OceanParams> {
 		description: "Determines the spatial distribution of ocean regions, controlling where oceans form and how their boundaries and shapes are defined.",
 		default: {
 			seedOffset: 0,
-			scale: 400,
+			scale: 100000,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 3,
+			octaves: 4,
 		}
 	})
 	public readonly distribution!: Scalar;
@@ -24,12 +24,12 @@ export class OceanParams extends ParamGroup<OceanParams> {
 		name: "Shelf",
 		description: "Controls the shape and extent of continental shelves, defining the transition from shallow coastal waters to deep ocean basins.",
 		default: {
-			seedOffset: 0,
-			scale: 400,
+			seedOffset: 100,
+			scale: 12000,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 3,
+			octaves: 4,
 		}
 	})
 	public readonly shelf!: Scalar;

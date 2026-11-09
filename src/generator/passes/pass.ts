@@ -3,11 +3,12 @@ import { MapData, type MapDataType } from "../maps";
 import type { ParamGroup, ParamGroupType } from "../param-groups";
 import type { Region } from "../region";
 import type { WorldParamsSnapshot } from "../world-params";
+import type { ParamType } from "../params";
 
 export abstract class Pass {
 	private static readonly meta: Map<PassType<any>, PassMeta> = new Map();
 
-	public static fromOutputType(type: MapDataType<any>) {
+	public static fromOutputType(type: MapDataType<any, any>) {
 		for (const [passType, meta] of this.meta) {
 			if (Object.values(meta.outputs).find(t => t === type))
 				return passType;
@@ -19,7 +20,7 @@ export abstract class Pass {
 		return this.meta;
 	}
 
-	public static registerDependency<T extends Pass, K extends keyof T>(target: PassType<T>, key: K, args: InferedDependencyArgs<T, K>) {
+	public static registerDependency<T extends Pass, K extends keyof T>(target: PassType<T>, key: K, args: InferedDependencyArgs<T[K]>) {
 		if (!this.meta.has(target))
 			this.meta.set(target, { dependencies: {}, outputs: {} });
 
@@ -35,7 +36,7 @@ export abstract class Pass {
 		}
 	}
 
-	public static registerOutputType<T extends Pass, K extends keyof T>(target: PassType<T>, key: K, type: MapDataType<any>) {
+	public static registerOutputType<T extends Pass, K extends keyof T>(target: PassType<T>, key: K, type: MapDataType<any, any>) {
 		if (!this.meta.has(target))
 			this.meta.set(target, { dependencies: {}, outputs: {} });
 
@@ -65,7 +66,7 @@ export abstract class Pass {
 
 export type PassMeta = {
 	readonly dependencies: Record<string, PassDependency>;
-	readonly outputs: Record<string, MapDataType<any>>;
+	readonly outputs: Record<string, MapDataType<any, any>>;
 };
 
 export type PassDependency = {
@@ -73,7 +74,7 @@ export type PassDependency = {
 } | MapDependency;
 
 type MapDependency = {
-	readonly type: MapDataType<any>;
+	readonly type: MapDataType<any, any>;
 	readonly scope?: GenerationScope;
 };
 
@@ -83,9 +84,13 @@ export const isMapDependency = (obj: PassDependency): obj is MapDependency => {
 
 export type PassType<T extends Pass> = new (worldParams: WorldParamsSnapshot) => T;
 
-export const dependency = <T extends Pass, K extends keyof T>(...args: InferedDependencyArgs<T, K>) => (target: T, key: K) => {
-	Pass.registerDependency(target.constructor as any, key, args);
-};
+export function dependency<T extends Pass, K extends keyof T>(type: ParamGroupType<any>): any;
+export function dependency<T extends Pass, K extends keyof T>(type: MapDataType<any, any>, scope?: GenerationScope): any;
+export function dependency<T extends Pass, K extends keyof T>(...args: any[]) {
+	return (target: T, key: K) => {
+		Pass.registerDependency(target.constructor as any, key as any, args as any);
+	};
+}
 
 export const GenerationScope = {
 	Global: "Global",
@@ -94,13 +99,13 @@ export const GenerationScope = {
 
 export type GenerationScope = (typeof GenerationScope)[keyof typeof GenerationScope];
 
-type InferedDependencyArgs<T, K extends keyof T> =
-	T[K] extends ParamGroup<any> ? [ParamGroupType<T[K]>] :
-	T[K] extends MapData<any> ? [MapDataType<T[K]>] | [MapDataType<T[K]>, GenerationScope] :
+type InferedDependencyArgs<T> =
+	T extends ParamGroup<any> ? [ParamGroupType<T>] :
+	T extends MapData<any> ? [MapDataType<T, any>] | [MapDataType<T, any>, GenerationScope] :
 	never;
 
 export const output = <T extends Pass, K extends keyof T>(type: InferedMapType<T, K>) => (target: T, key: K) => {
 	Pass.registerOutputType(target.constructor as any, key as never, type);
 };
 
-type InferedMapType<T, K extends keyof T> = T[K] extends MapData<any> ? MapDataType<T[K]> : never;
+type InferedMapType<T, K extends keyof T> = T[K] extends MapData<any> ? MapDataType<T[K], any> : never;

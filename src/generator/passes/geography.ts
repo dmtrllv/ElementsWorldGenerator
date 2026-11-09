@@ -112,7 +112,8 @@ export class GeographyPass extends Pass {
 		return distances;
 	}
 
-	public override generate(region: Region, scope: GenerationScopeType): void {
+
+	public override generate(region: Region, _scope: GenerationScopeType): void {
 		const continentalOutput = this.continental.data;
 		const oceanOutput = this.ocean.data;
 		const coastOutput = this.coast.data;
@@ -123,39 +124,28 @@ export class GeographyPass extends Pass {
 
 		const width = region.width;
 		const height = region.height;
+		const size = width * height;
 
-		const outputWidth = scope === GenerationScope.Global ? this.worldSize.x : this.chunkSize.x;
-		const outputHeight = scope === GenerationScope.Global ? this.worldSize.z : this.chunkSize.y;
+		const outputWidth = this.worldSize.x;
+		const outputHeight = this.worldSize.z;
 
 		if (width !== outputWidth || height !== outputHeight)
-			throw new RangeError(`Invalid ${scope} region dimensions.`);
+			throw new RangeError("GeographyPass requires a global region.");
 
 		const transitionWidth = coastParams.transitionWidth.state;
-		const halo = Math.ceil(Math.max(0, transitionWidth)) + 1;
-
-		const expandedRegion = region.expand(halo);
-		const expandedWidth = expandedRegion.width;
-		const expandedHeight = expandedRegion.height;
-		const expandedSize = expandedWidth * expandedHeight;
-
-		const continental = new Float32Array(expandedSize);
-		const ocean = new Float32Array(expandedSize);
-		const coastSeeds = new Uint8Array(expandedSize);
-
-		const landThreshold = 0.5;
 		const warpStrength = continentalParams.warpStrength.state;
 		const normalization = continentalParams.normalization;
 
 		const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 		const normalize = (value: number, min: number, max: number) => clamp((value - min) / (max - min), 0, 1);
 
-		// generate continental and ocean maps
-		for (let z = 0; z < expandedHeight; z++) {
-			for (let x = 0; x < expandedWidth; x++) {
-				const index = z * expandedWidth + x;
+		// Generate continental and ocean maps.
+		for (let z = 0; z < height; z++) {
+			for (let x = 0; x < width; x++) {
+				const index = z * width + x;
 
-				const worldX = expandedRegion.x + x;
-				const worldZ = expandedRegion.z + z;
+				const worldX = region.x + x;
+				const worldZ = region.z + z;
 
 				const warp = continentalParams.warp.get(worldX, worldZ);
 
@@ -166,10 +156,10 @@ export class GeographyPass extends Pass {
 				const normalizedContinental = normalize(continentalValue, normalization.min, normalization.max);
 
 				const landValue = continentalParams.shape.evaluate(normalizedContinental);
-				continental[index] = landValue;
+				continentalOutput[index] = landValue;
 
-				if (landValue >= landThreshold) {
-					ocean[index] = 0;
+				if (landValue >= 0.5) {
+					oceanOutput[index] = 0;
 					continue;
 				}
 
@@ -179,16 +169,18 @@ export class GeographyPass extends Pass {
 				const normalizedOcean = normalize(oceanValue, -1, 1);
 				const normalizedShelf = normalize(shelfValue, -1, 1);
 
-				ocean[index] = Math.max(0.001, normalizedOcean * normalizedShelf);
+				oceanOutput[index] = Math.max(0.001, normalizedOcean * normalizedShelf);
 			}
 		}
 
-		// find land cells next to the ocean
-		for (let z = 0; z < expandedHeight; z++) {
-			for (let x = 0; x < expandedWidth; x++) {
-				const index = z * expandedWidth + x;
+		// Find land cells adjacent to the ocean.
+		const coastSeeds = new Uint8Array(size);
 
-				if (ocean[index]! > 0)
+		for (let z = 0; z < height; z++) {
+			for (let x = 0; x < width; x++) {
+				const index = z * width + x;
+
+				if (oceanOutput[index]! > 0)
 					continue;
 
 				let adjacentToOcean = false;
@@ -201,10 +193,10 @@ export class GeographyPass extends Pass {
 						const nx = x + dx;
 						const nz = z + dz;
 
-						if (nx < 0 || nx >= expandedWidth || nz < 0 || nz >= expandedHeight)
+						if (nx < 0 || nx >= width || nz < 0 || nz >= height)
 							continue;
 
-						if (ocean[nz * expandedWidth + nx]! > 0) {
+						if (oceanOutput[nz * width + nx]! > 0) {
 							adjacentToOcean = true;
 							break;
 						}
@@ -216,32 +208,39 @@ export class GeographyPass extends Pass {
 			}
 		}
 
-		const distances = this.distanceTransform(coastSeeds, expandedWidth, expandedHeight);
+		// Calculate distance to the nearest coastline.
+		const distances = this.distanceTransform(coastSeeds, width, height);
 
-		// copy the requested region into the output maps
-		for (let z = 0; z < height; z++) {
-			for (let x = 0; x < width; x++) {
-				const sourceIndex = (z + halo) * expandedWidth + x + halo;
-				const targetIndex = z * width + x;
+		// Precompute the falloff curve.
+		const lookupSize = 1024;
+		const falloffLookup = new Float32Array(lookupSize);
 
-				continentalOutput[targetIndex] = continental[sourceIndex]!;
-				oceanOutput[targetIndex] = ocean[sourceIndex]!;
+		for (let i = 0; i < lookupSize; i++)
+			falloffLookup[i] = coastParams.falloff.evaluate(i / (lookupSize - 1));
 
-				if (ocean[sourceIndex]! > 0 || transitionWidth <= 0) {
-					coastOutput[targetIndex] = 0;
-					continue;
-				}
-
-				const distance = distances[sourceIndex]!;
-
-				if (distance >= transitionWidth) {
-					coastOutput[targetIndex] = 0;
-					continue;
-				}
-
-				const normalizedDistance = 1 - distance / transitionWidth;
-				coastOutput[targetIndex] = coastParams.falloff.evaluate(normalizedDistance);
+		// Generate coast map.
+		for (let i = 0; i < size; i++) {
+			if (oceanOutput[i]! > 0 || transitionWidth <= 0) {
+				coastOutput[i] = 0;
+				continue;
 			}
+
+			const distance = distances[i]!;
+
+			if (distance >= transitionWidth) {
+				coastOutput[i] = 0;
+				continue;
+			}
+
+			const normalizedDistance = 1 - distance / transitionWidth;
+			const lookupIndex = normalizedDistance * (lookupSize - 1);
+
+			const lower = Math.floor(lookupIndex);
+			const upper = Math.min(lower + 1, lookupSize - 1);
+			const t = lookupIndex - lower;
+
+			coastOutput[i] = falloffLookup[lower]! * (1 - t) + falloffLookup[upper]! * t;
 		}
 	}
+
 }

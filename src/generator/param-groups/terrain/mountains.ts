@@ -11,7 +11,7 @@ export class MountainParams extends ParamGroup<MountainParams> {
 		description: "Determines the spatial distribution and frequency of mountain regions.",
 		default: {
 			seedOffset: 0,
-			scale: 0.0005,
+			scale: 100000,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
@@ -25,7 +25,7 @@ export class MountainParams extends ParamGroup<MountainParams> {
 		description: "Controls the internal elevation variation of mountain regions.",
 		default: {
 			seedOffset: 100,
-			scale: 0.002,
+			scale: 12000,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
@@ -39,7 +39,7 @@ export class MountainParams extends ParamGroup<MountainParams> {
 		description: "Distorts the noise coordinates to create irregular mountain formations.",
 		default: {
 			seedOffset: 200,
-			scale: 0.001,
+			scale: 30000,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
@@ -51,14 +51,14 @@ export class MountainParams extends ParamGroup<MountainParams> {
 	@param(Float, {
 		name: "Warp Strength",
 		description: "Controls the amount of coordinate distortion.",
-		default: 500
+		default: 15000
 	})
 	public readonly warpStrength!: Float;
 
 	@param(Range, {
 		name: "Normalization",
-		description: "Defines the output range of mountain elevation.",
-		default: [0, 1]
+		description: "Defines the input range used to normalize mountain distribution.",
+		default: [-1, 1]
 	})
 	public readonly normalization!: Range;
 
@@ -66,7 +66,13 @@ export class MountainParams extends ParamGroup<MountainParams> {
 		name: "Falloff",
 		description: "Controls the transition from mountain regions into surrounding terrain.",
 		default: {
-			points: Curve.defaultPoints,
+			points: [
+				{ x: 0, y: 0 },
+				{ x: 0.35, y: 0 },
+				{ x: 0.55, y: 0.25 },
+				{ x: 0.75, y: 0.8 },
+				{ x: 1, y: 1 }
+			],
 			interpolation: "monotone-cubic"
 		}
 	})

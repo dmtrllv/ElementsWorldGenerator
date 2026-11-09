@@ -11,7 +11,7 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 		description: "Determines the spatial distribution of continental regions, defining the large-scale placement and extent of landmasses.",
 		default: {
 			seedOffset: 0,
-			scale: 400,
+			scale: 250000,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
@@ -25,7 +25,13 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 		description: "Controls how the distribution values translate into continental regions, influencing their overall size, shape, and boundaries.",
 		default: {
 			interpolation: "monotone-cubic",
-			points: Curve.defaultPoints
+			points: [
+				{ x: 0, y: 0 },
+				{ x: 0.35, y: 0 },
+				{ x: 0.5, y: 0.5 },
+				{ x: 0.65, y: 1 },
+				{ x: 1, y: 1 }
+			]
 		}
 	})
 	public readonly shape!: Curve;
@@ -34,8 +40,8 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 		name: "Warp",
 		description: "Defines spatial distortion applied to continental distribution, introducing irregularities and variation into landmass boundaries.",
 		default: {
-			seedOffset: 0,
-			scale: 200,
+			seedOffset: 100,
+			scale: 100000,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
@@ -47,7 +53,7 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 	@param(Float, {
 		name: "Warp Strength",
 		description: "Controls the intensity of spatial distortion applied by the warp field.",
-		default: 40
+		default: 3000000
 	})
 	public readonly warpStrength!: Float;
 
