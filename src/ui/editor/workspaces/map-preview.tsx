@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { MapPreviewWorkspace } from "../../../editor/workspaces/map-preview";
 import { Editor, ProjectManager } from "../../../editor";
 import { useObservable } from "../../../reactive";
-import { GenerationScope, Generator, type MapDataMeta, type MapDataType } from "../../../generator";
+import { GenerationScope, Generator, type MapDataMeta, type MapDataType, type WorldParamsSnapshot } from "../../../generator";
 import { NumberInput } from "../../components";
 import { useEvent } from "../../hooks/event";
 
@@ -35,14 +35,14 @@ export const MapPreview = ({ workspace }: { workspace: MapPreviewWorkspace }) =>
 			const c = canvas.current;
 			if (!didRender.current) {
 				didRender.current = true;
-				render(c, generator, workspace.type, workspace.meta);
+				render(c, generator, workspace.type, workspace.meta, generator.worldParams);
 			}
 
 			if (timeout.current !== null)
 				clearTimeout(timeout.current);
 
 			timeout.current = setTimeout(() => {
-				render(c, generator, workspace.type, workspace.meta);
+				render(c, generator, workspace.type, workspace.meta, generator.worldParams);
 			}, 500);
 
 		}
@@ -93,7 +93,7 @@ export const MapPreview = ({ workspace }: { workspace: MapPreviewWorkspace }) =>
 	);
 };
 
-const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDataType<any, any>, meta: MapDataMeta<any>) => {
+const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDataType<any, any>, meta: MapDataMeta<any>, worldParams: WorldParamsSnapshot) => {
 	const ctx = canvas.getContext("2d");
 	if (!ctx)
 		throw new Error(`Could not get canvas context!`);
@@ -105,7 +105,7 @@ const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDat
 
 	const imageData = ctx.createImageData(canvas.width, canvas.height);
 
-	map.debug(imageData);
+	map.debug(imageData, worldParams);
 
 	ctx.putImageData(imageData, 0, 0);
 };

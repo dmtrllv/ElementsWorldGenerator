@@ -1,3 +1,5 @@
+import type { WorldParamsSnapshot } from "../world-params";
+
 export abstract class MapData<T extends TypedArray = Float32Array> {
 	private static readonly registry = new Map<MapDataType<any, any>, MapDataMeta<any>>();
 
@@ -22,7 +24,7 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 		this.data = data;
 	}
 
-	public debug(_imageData: ImageData) { }
+	public debug(_imageData: ImageData, _worldParams: WorldParamsSnapshot) { }
 
 }
 
@@ -61,11 +63,11 @@ export type TypedArrayCtor<T extends TypedArray> =
 	T extends Float64Array ? Float64ArrayConstructor :
 	never;
 
-export const renderFloat32 = (data: Float32Array, imageData: ImageData) => {
+export const renderFloat32 = (data: Float32Array, imageData: ImageData, normalizer: (val: number) => number = n => Math.max(0, Math.min(1, n!))) => {
 	const pixels = imageData.data;
 
 	for (let i = 0; i < data.length; i++) {
-		const value = Math.max(0, Math.min(1, data[i]!));
+		const value = normalizer(data[i]!);
 		const color = Math.round(value * 255);
 		const index = i * 4;
 
