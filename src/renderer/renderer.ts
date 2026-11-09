@@ -4,6 +4,7 @@ import { Controller } from "./controller";
 import { observable } from "../reactive";
 import { Module } from "../editor/store";
 import type { Editor } from "../editor";
+import type { World } from "../generator";
 
 @observable
 export class Renderer extends Module {
@@ -92,5 +93,9 @@ export class Renderer extends Module {
 		this.glRenderer.render(this.scene, this.camera);
 
 		this.controller?.render();
+	}
+
+	public renderWorld(world: World) {
+		
 	}
 }
