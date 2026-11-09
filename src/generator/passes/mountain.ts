@@ -2,7 +2,7 @@
 import { CoastMap, ContinentalMap } from "../maps";
 import { MountainParams } from "../param-groups/terrain/mountains";
 import type { Region } from "../region";
-import { dependency, GenerationScope, output, Pass } from "./pass";
+import { dependency, output, Pass } from "./pass";
 import { MountainMap } from "../maps/terrain";
 import type { GenerationContext } from "../context";
 
@@ -19,10 +19,12 @@ export class MountainPass extends Pass {
 	@output(MountainMap)
 	public readonly mountainMap!: MountainMap;
 
-	public override generate(region: Region, context: GenerationContext): void {
+	public override generate(_region: Region, context: GenerationContext): void {
 		const continental = this.continental.data;
 		const coast = this.coast.data;
 		const output = this.mountainMap.data;
+
+		const samples = this.mountainMap.samples;
 
 		const { distribution, shape, warp, warpStrength, normalization, falloff, edgeSharpness } = this.params;
 
@@ -37,15 +39,16 @@ export class MountainPass extends Pass {
 			return clamp((value - min) / (max - min), 0, 1);
 		};
 
-		for (let z = 0; z < region.height; z++) {
-			for (let x = 0; x < region.width; x++) {
-				const worldX = region.x + x;
-				const worldZ = region.z + z;
+		for (let z = 0; z < samples.height; z++) {
+			for (let x = 0; x < samples.width; x++) {
+				const worldX = samples.x + x * samples.resolution;
+				const worldZ = samples.z + z * samples.resolution;
 
-				const index = context.getIndex(worldX, worldZ);
-				const globalIndex = context.getIndex(worldX, worldZ, GenerationScope.Global);
+				const index = z * samples.width + x;
+				const continentalIndex = context.getMapIndex(worldX, worldZ, this.continental);
+				const coastIndex = context.getMapIndex(worldX, worldZ, this.coast);
 
-				if (continental[index]! < 0.5) {
+				if (continental[continentalIndex]! < 0.5) {
 					output[index] = 0;
 					continue;
 				}
@@ -64,7 +67,7 @@ export class MountainPass extends Pass {
 				const normalizedShape = normalize(shapeValue, -1, 1);
 				const mountainShape = Math.pow(normalizedShape, 1.5);
 
-				const coastInfluence = clamp(coast[index]!, 0, 1);
+				const coastInfluence = clamp(coast[coastIndex]!, 0, 1);
 				const coastalFactor = 1 - coastInfluence;
 
 				output[index] = clamp(sharpenedRegion * mountainShape * coastalFactor, 0, 1);

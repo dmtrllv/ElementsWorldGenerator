@@ -4,6 +4,7 @@ import { CoastMap, ContinentalMap, OceanMap } from "../maps";
 import { GeographyParams } from "../param-groups";
 import type { Region } from "../region";
 import { dependency, output, Pass } from "./pass";
+import type { SampleRegion } from "../maps/map";
 
 export class GeographyPass extends Pass {
 	@dependency(GeographyParams)
@@ -136,23 +137,24 @@ export class GeographyPass extends Pass {
 		return 0.5 * this.normalize(value, 0, threshold);
 	}
 
-	private calculateLandThreshold(region: Region) {
+	private calculateLandThreshold(samples: SampleRegion) {
 		const continentalParams = this.params.continental;
 
-		const width = region.width;
-		const height = region.height;
+		const width = samples.width;
+		const height = samples.height;
 
 		const warpStrength = continentalParams.warpStrength.state;
 		const normalization = continentalParams.normalization;
 		const landCoverage = continentalParams.landCoverage.state;
 
-		const tresholds: number[] = new Array(width * height);
+		const thresholds: number[] = new Array(width * height);
+
 		for (let z = 0; z < height; z++) {
 			for (let x = 0; x < width; x++) {
 				const index = z * width + x;
 
-				const worldX = region.x + x;
-				const worldZ = region.z + z;
+				const worldX = samples.x + x * samples.resolution;
+				const worldZ = samples.z + z * samples.resolution;
 
 				const warp = continentalParams.warp.get(worldX, worldZ);
 
@@ -162,19 +164,17 @@ export class GeographyPass extends Pass {
 				const continentalValue = continentalParams.distribution.get(warpedX, warpedZ);
 				const normalizedContinental = this.normalize(continentalValue, normalization.min, normalization.max);
 
-				const landValue = clamp(continentalParams.shape.evaluate(normalizedContinental), 0, 1);
-
-				tresholds[index] = landValue;
+				thresholds[index] = clamp(continentalParams.shape.evaluate(normalizedContinental), 0, 1);
 			}
 		}
 
-		tresholds.sort();
+		thresholds.sort((a, b) => a - b);
 
-		const index = Math.floor((1 - landCoverage) * (tresholds.length - 1));
-		return tresholds[index]!;
+		const index = Math.floor((1 - landCoverage) * (thresholds.length - 1));
+		return thresholds[index]!;
 	}
 
-	public override generate(region: Region, _context: GenerationContext): void {
+	public override generate(region: Region, context: GenerationContext): void {
 		const continentalOutput = this.continental.data;
 		const oceanOutput = this.ocean.data;
 		const coastOutput = this.coast.data;
@@ -183,11 +183,12 @@ export class GeographyPass extends Pass {
 		const oceanParams = this.params.oceanParams;
 		const coastParams = this.params.coastParams;
 
-		const width = region.width;
-		const height = region.height;
+		const samples = context.getSampleRegion();
+		const width = samples.width;
+		const height = samples.height;
 		const size = width * height;
 
-		if (width !== this.worldSize.x || height !== this.worldSize.z)
+		if (region.width !== this.worldSize.x || region.height !== this.worldSize.z)
 			throw new RangeError("GeographyPass requires a global region.");
 
 		const transitionWidth = Math.max(coastParams.transitionWidth.state, 0);
@@ -199,15 +200,15 @@ export class GeographyPass extends Pass {
 		const coastSeeds = new Uint8Array(size);
 		const oceanCoastSeeds = new Uint8Array(size);
 
-		const landThreshold = this.calculateLandThreshold(region);
+		const landThreshold = this.calculateLandThreshold(samples);
 
 		// Generate continental and ocean classification.
 		for (let z = 0; z < height; z++) {
 			for (let x = 0; x < width; x++) {
 				const index = z * width + x;
 
-				const worldX = region.x + x;
-				const worldZ = region.z + z;
+				const worldX = samples.x + x * samples.resolution;
+				const worldZ = samples.z + z * samples.resolution;
 
 				const warp = continentalParams.warp.get(worldX, worldZ);
 
@@ -283,8 +284,8 @@ export class GeographyPass extends Pass {
 			const x = i % width;
 			const z = Math.floor(i / width);
 
-			const worldX = region.x + x;
-			const worldZ = region.z + z;
+			const worldX = samples.x + x * samples.resolution;
+			const worldZ = samples.z + z * samples.resolution;
 
 			const oceanValue = oceanParams.distribution.get(worldX, worldZ);
 			const shelfValue = oceanParams.shelf.get(worldX, worldZ);
@@ -293,7 +294,8 @@ export class GeographyPass extends Pass {
 			const normalizedShelf = this.normalize(shelfValue, -1, 1);
 
 			const effectiveShelfWidth = Math.max(shelfWidth * (0.5 + normalizedShelf), 1);
-			const shelfProgress = clamp(oceanDistances[i]! / effectiveShelfWidth, 0, 1);
+			const oceanDistance = oceanDistances[i]! * samples.resolution;
+			const shelfProgress = clamp(oceanDistance / effectiveShelfWidth, 0, 1);
 			const shelfFactor = shelfProgress * shelfProgress * (3 - 2 * shelfProgress);
 
 			const basinDepth = 0.5 + normalizedOcean * 0.5;
@@ -315,7 +317,7 @@ export class GeographyPass extends Pass {
 				continue;
 			}
 
-			const distance = distances[i]!;
+			const distance = distances[i]! * samples.resolution;
 
 			if (distance >= transitionWidth) {
 				coastOutput[i] = 0;
