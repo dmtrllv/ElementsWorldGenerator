@@ -1,3 +1,4 @@
+
 import { Vector2 } from "three";
 import { benchmark, clamp } from "../../utils";
 import type { GenerationContext } from "../context";
@@ -8,6 +9,9 @@ import { dependency, output, Pass } from "./pass";
 
 const HISTOGRAM_BIN_COUNT = 65536;
 const HISTOGRAM_BIN_SCALE = HISTOGRAM_BIN_COUNT;
+
+const SAMPLE_SIZE = 4096;
+const SAMPLE_RESOLUTION = 16;
 
 export const sampleContinentalDistribution = (params: GeographyParams["continental"], worldX: number, worldZ: number, warpTarget = new Vector2()): number => {
 	const warpStrength = params.warpStrength.state;
@@ -35,34 +39,28 @@ export class ContinentalDistributionPass extends Pass {
 	public threshold!: ContinentalThresholdMap;
 
 	@benchmark
-	public override generate(_region: Region, context: GenerationContext): void {
-		const samples = context.getSampleRegion();
+	public override generate(_region: Region, _context: GenerationContext): void {
 		const params = this.params.continental;
 		const landCoverage = params.landCoverage.state;
 
 		if (!Number.isFinite(landCoverage) || landCoverage < 0 || landCoverage > 1)
 			throw new RangeError("Land coverage must be between 0 and 1.");
 
-		const width = samples.width;
-		const height = samples.height;
+		const width = SAMPLE_SIZE / SAMPLE_RESOLUTION;
+		const height = SAMPLE_SIZE / SAMPLE_RESOLUTION;
 		const sampleCount = width * height;
-
-		if (sampleCount === 0)
-			throw new Error("Cannot calculate land threshold from an empty distribution.");
 
 		const histogram = new Uint32Array(HISTOGRAM_BIN_COUNT);
 		const warpTarget = new Vector2();
 
-		const startX = samples.x;
-		const startZ = samples.z;
-		const resolution = samples.resolution;
+		const startX = -SAMPLE_SIZE / 2;
+		const startZ = -SAMPLE_SIZE / 2;
 
-		let worldZ = startZ;
+		for (let z = 0; z < height; z++) {
+			const worldZ = startZ + z * SAMPLE_RESOLUTION;
 
-		for (let z = 0; z < height; z++, worldZ += resolution) {
-			let worldX = startX;
-
-			for (let x = 0; x < width; x++, worldX += resolution) {
+			for (let x = 0; x < width; x++) {
+				const worldX = startX + x * SAMPLE_RESOLUTION;
 				const value = sampleContinentalDistribution(params, worldX, worldZ, warpTarget);
 				const bin = Math.min(HISTOGRAM_BIN_COUNT - 1, (value * HISTOGRAM_BIN_SCALE) | 0);
 

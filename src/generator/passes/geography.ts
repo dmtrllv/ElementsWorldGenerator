@@ -19,7 +19,7 @@ export class GeographyPass extends Pass {
 	@output(CoastMap)
 	public coast!: CoastMap;
 
-	@dependency(ContinentalThresholdMap, GenerationScope.Global, worldParams => worldParams.chunkSize / 2)
+	@dependency(ContinentalThresholdMap, GenerationScope.Global, 1)
 	public threshold!: ContinentalThresholdMap;
 
 
