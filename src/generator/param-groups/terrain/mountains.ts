@@ -1,4 +1,3 @@
-
 import { Scalar, Curve, Float, VectorField, Range } from "../../params";
 import { group, param, ParamGroup } from "../param-group";
 

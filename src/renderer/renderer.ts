@@ -221,8 +221,11 @@ export class Renderer extends Module {
 	}
 
 	private getChunksInRange(world: World) {
+		const worldParams = world.generator.worldParams;
+		const worldRegion = worldParams.region;
+		const maxDistance = Math.min(worldRegion.width, worldRegion.height) / 2;
+		const distance = Math.min(Number.isFinite(this.renderDistance) ? Math.max(1, this.renderDistance) : 500, maxDistance - Number.EPSILON);
 		const center = this.getRenderCenter(world);
-		const distance = Number.isFinite(this.renderDistance) ? Math.max(1, this.renderDistance) : 500;
 
 		const region = new Region(
 			center.x - distance,
@@ -231,7 +234,60 @@ export class Renderer extends Module {
 			distance * 2
 		);
 
-		return world.chunkManager.getChunks(region);
+		const minPeriodX = Math.floor((region.x - worldRegion.x) / worldRegion.width);
+		const minPeriodZ = Math.floor((region.z - worldRegion.z) / worldRegion.height);
+		const maxPeriodX = Math.ceil((region.maxX - worldRegion.x) / worldRegion.width) - 1;
+		const maxPeriodZ = Math.ceil((region.maxZ - worldRegion.z) / worldRegion.height) - 1;
+
+		const chunks: { chunk: Chunk; offsetX: number; offsetZ: number }[] = [];
+
+		for (let periodZ = minPeriodZ; periodZ <= maxPeriodZ; periodZ++) {
+			for (let periodX = minPeriodX; periodX <= maxPeriodX; periodX++) {
+				const periodRegion = new Region(
+					worldRegion.x + periodX * worldRegion.width,
+					worldRegion.z + periodZ * worldRegion.height,
+					worldRegion.width,
+					worldRegion.height
+				);
+
+				const intersection = region.intersection(periodRegion);
+
+				if (!intersection)
+					continue;
+
+				const canonicalRegion = new Region(
+					intersection.x - periodX * worldRegion.width,
+					intersection.z - periodZ * worldRegion.height,
+					intersection.width,
+					intersection.height
+				);
+
+				for (const chunk of world.chunkManager.getChunks(canonicalRegion)) {
+					chunks.push({
+						chunk,
+						offsetX: periodX * worldRegion.width,
+						offsetZ: periodZ * worldRegion.height
+					});
+				}
+			}
+		}
+
+		return chunks;
+	}
+
+	private positionChunk(id: string, offsetX: number, offsetZ: number) {
+		const terrainMesh = this.terrainMeshes.get(id);
+		const edgeMesh = this.edgeMeshes.get(id);
+
+		if (terrainMesh) {
+			terrainMesh.position.x = offsetX;
+			terrainMesh.position.z = offsetZ;
+		}
+
+		if (edgeMesh) {
+			edgeMesh.position.x = offsetX;
+			edgeMesh.position.z = offsetZ;
+		}
 	}
 
 	private createTerrainMesh(geometry: Three.BufferGeometry, key: string) {
@@ -265,10 +321,9 @@ export class Renderer extends Module {
 
 	private createSeaLevelMesh(world: World) {
 		const worldParams = world.generator.worldParams;
-		const worldRegion = worldParams.region;
 		const seaLevel = worldParams.terrain.seaLevel.seaLevel.state;
 
-		const geometry = new Three.PlaneGeometry(worldRegion.width, worldRegion.height);
+		const geometry = new Three.PlaneGeometry(1, 1);
 		geometry.rotateX(-Math.PI / 2);
 
 		const material = new Three.MeshBasicMaterial({
@@ -280,34 +335,52 @@ export class Renderer extends Module {
 		});
 
 		const mesh = new Three.Mesh(geometry, material);
-		mesh.position.set(worldParams.offset.x, seaLevel, worldParams.offset.y);
+		mesh.position.set(0, seaLevel, 0);
 		mesh.renderOrder = 1;
 
 		this.seaLevelMesh = mesh;
 		this.scene.add(mesh);
 	}
 
+	private updateSeaLevelMesh(world: World) {
+		if (!this.seaLevelMesh)
+			return;
+
+		const worldParams = world.generator.worldParams;
+		const center = this.getRenderCenter(world);
+		const distance = Number.isFinite(this.renderDistance) ? Math.max(1, this.renderDistance) : 500;
+		const size = (distance + worldParams.chunkSize) * 2;
+
+		this.seaLevelMesh.position.set(
+			center.x - worldParams.offset.x,
+			worldParams.terrain.seaLevel.seaLevel.state,
+			center.y - worldParams.offset.y
+		);
+
+		this.seaLevelMesh.scale.set(size, 1, size);
+	}
+
 	private updateChunks() {
 		if (!this.world)
 			return;
 
+		this.updateSeaLevelMesh(this.world);
 
 		const chunks = this.getChunksInRange(this.world);
-
-		const nextChunkIds = new Set(chunks.map(chunk => `${chunk.x}:${chunk.z}`));
+		const nextChunkIds = new Set(chunks.map(({ chunk }) => `${chunk.x}:${chunk.z}`));
 
 		for (const id of this.activeChunkIds) {
 			if (!nextChunkIds.has(id))
 				this.disposeChunk(id);
 		}
 
-		for (const chunk of chunks) {
+		for (const { chunk, offsetX, offsetZ } of chunks) {
 			const id = `${chunk.x}:${chunk.z}`;
 
-			if (this.terrainMeshes.has(id))
-				continue;
+			if (!this.terrainMeshes.has(id))
+				this.renderChunk(this.world, chunk);
 
-			this.renderChunk(this.world, chunk);
+			this.positionChunk(id, offsetX, offsetZ);
 		}
 
 		this.activeChunkIds = nextChunkIds;

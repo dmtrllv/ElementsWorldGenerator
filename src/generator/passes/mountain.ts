@@ -1,4 +1,3 @@
-
 import { CoastMap, ContinentalMap } from "../maps";
 import { MountainParams } from "../param-groups/terrain/mountains";
 import type { Region } from "../region";

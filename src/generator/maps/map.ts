@@ -1,4 +1,3 @@
-
 import type { WorldParamsSnapshot } from "../world-params";
 
 export type SampleRegion = {

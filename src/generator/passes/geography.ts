@@ -1,4 +1,3 @@
-
 import { benchmark, clamp } from "../../utils";
 import type { GenerationContext } from "../context";
 import { CoastMap, ContinentalMap, ContinentalThresholdMap, OceanMap } from "../maps";

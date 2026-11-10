@@ -1,4 +1,3 @@
-
 import { getObservableState, notifyObservable, registerObservableState, trackObservableRead, type ObservableState } from "./internal";
 
 type Constructor<T extends object = object> = (new (...args: any[]) => T) | (abstract new (...args: any[]) => T);

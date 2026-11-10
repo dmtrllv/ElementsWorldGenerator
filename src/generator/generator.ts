@@ -1,4 +1,3 @@
-
 import type { Vector2 } from "three";
 import { MapData, type MapDataType } from "./maps";
 import { GenerationScope, isMapDependency, Pass, type PassType } from "./passes/pass";
