@@ -12,6 +12,46 @@ export class MountainMap extends MapData {
 }
 
 @MapData.register({
+	name: "Hill",
+	description: "Defines the hill distribution across the world.",
+})
+export class HillMap extends MapData {
+	public override debug(imageData: ImageData): void {
+		renderFloat32(this.data, imageData);
+	}
+}
+
+@MapData.register({
+	name: "Plains",
+	description: "Defines the plains distribution across the world.",
+})
+export class PlainsMap extends MapData {
+	public override debug(imageData: ImageData): void {
+		renderFloat32(this.data, imageData);
+	}
+}
+
+@MapData.register({
+	name: "Plateau",
+	description: "Defines the plateau distribution across the world.",
+})
+export class PlateauMap extends MapData {
+	public override debug(imageData: ImageData): void {
+		renderFloat32(this.data, imageData);
+	}
+}
+
+@MapData.register({
+	name: "Valley",
+	description: "Defines the valley distribution across the world.",
+})
+export class ValleyMap extends MapData {
+	public override debug(imageData: ImageData): void {
+		renderFloat32(this.data, imageData);
+	}
+}
+
+@MapData.register({
 	name: "Elevation",
 	description: "Defines the elevation across the world.",
 })
