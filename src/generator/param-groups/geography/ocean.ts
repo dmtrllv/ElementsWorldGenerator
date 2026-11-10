@@ -15,7 +15,8 @@ export class OceanParams extends ParamGroup<OceanParams> {
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 4
+			octaves: 4,
+			relativeScale: false,
 		}
 	})
 	public readonly distribution!: Scalar;
@@ -29,7 +30,8 @@ export class OceanParams extends ParamGroup<OceanParams> {
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 4
+			octaves: 4,
+			relativeScale: false,
 		}
 	})
 	public readonly shelf!: Scalar;

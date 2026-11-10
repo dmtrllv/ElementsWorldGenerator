@@ -19,8 +19,11 @@ export class Scalar extends Param<ScalarState> {
 		const angleX = (x / width) * Math.PI * 2;
 		const angleY = (y / height) * Math.PI * 2;
 
-		const radiusX = width / (Math.PI * 2 * this.state.scale);
-		const radiusY = height / (Math.PI * 2 * this.state.scale);
+		const scaleX = this.state.relativeScale ? this.state.scale * width : this.state.scale;
+		const scaleY = this.state.relativeScale ? this.state.scale * height : this.state.scale;
+
+		const radiusX = width / (Math.PI * 2 * scaleX);
+		const radiusY = height / (Math.PI * 2 * scaleY);
 
 		const noise4D = this.noise4D;
 
@@ -55,4 +58,5 @@ export type ScalarState = {
 	persistence: number;
 	lacunarity: number;
 	octaves: number;
+	relativeScale: boolean;
 };

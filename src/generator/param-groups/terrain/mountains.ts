@@ -16,7 +16,8 @@ export class MountainParams extends ParamGroup<MountainParams> {
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 4
+			octaves: 4,
+			relativeScale: false,
 		}
 	})
 	public readonly distribution!: Scalar;
@@ -30,7 +31,8 @@ export class MountainParams extends ParamGroup<MountainParams> {
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 5
+			octaves: 5,
+			relativeScale: false,
 		}
 	})
 	public readonly shape!: Scalar;
@@ -44,7 +46,8 @@ export class MountainParams extends ParamGroup<MountainParams> {
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 3
+			octaves: 3,
+			relativeScale: false,
 		}
 	})
 	public readonly warp!: VectorField;

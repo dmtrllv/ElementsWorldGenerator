@@ -15,7 +15,8 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 3
+			octaves: 3,
+			relativeScale: false,
 		}
 	})
 	public readonly distribution!: Scalar;
@@ -44,7 +45,8 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
-			octaves: 3
+			octaves: 3,
+			relativeScale: false,
 		}
 	})
 	public readonly warp!: VectorField;
