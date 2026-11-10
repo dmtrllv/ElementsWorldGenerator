@@ -19,6 +19,7 @@ export class SharedOutputs {
 	public constructor(buffer: SharedArrayBuffer, taskCapacity: number, maxOutputs: number) {
 		this.taskCapacity = taskCapacity;
 		this.maxOutputs = maxOutputs;
+
 		const count = taskCapacity * maxOutputs;
 		const stateBytes = count * Int32Array.BYTES_PER_ELEMENT;
 		const valueOffset = Math.ceil(stateBytes / Float64Array.BYTES_PER_ELEMENT) * Float64Array.BYTES_PER_ELEMENT;
@@ -82,6 +83,10 @@ export class SharedOutputs {
 				resolution: this.values[base + 8]!
 			}
 		};
+	}
+
+	public reset(): void {
+		this.states.fill(0);
 	}
 
 	public get buffer(): SharedArrayBuffer {

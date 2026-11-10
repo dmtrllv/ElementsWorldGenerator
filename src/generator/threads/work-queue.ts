@@ -30,6 +30,9 @@ export class SharedWorkQueue {
 	}
 
 	public push(task: number): boolean {
+		if (!Number.isSafeInteger(task) || task < 1)
+			throw new RangeError("Task ID must be a positive safe integer.");
+
 		this.lock();
 
 		try {
@@ -94,6 +97,18 @@ export class SharedWorkQueue {
 		}
 	}
 
+	public clear(): void {
+		this.lock();
+
+		try {
+			const tail = Atomics.load(this.control, 2);
+
+			Atomics.store(this.control, 1, tail);
+		} finally {
+			this.unlock();
+		}
+	}
+
 	public get size(): number {
 		const head = Atomics.load(this.control, 1);
 		const tail = Atomics.load(this.control, 2);
@@ -101,12 +116,12 @@ export class SharedWorkQueue {
 		return (tail - head) >>> 0;
 	}
 
-	private lock() {
+	private lock(): void {
 		while (Atomics.compareExchange(this.control, 0, 0, 1) !== 0)
 			Atomics.wait(this.control, 0, 1);
 	}
 
-	private unlock() {
+	private unlock(): void {
 		Atomics.store(this.control, 0, 0);
 		Atomics.notify(this.control, 0, 1);
 	}

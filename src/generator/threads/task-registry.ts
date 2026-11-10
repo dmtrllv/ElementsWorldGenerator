@@ -36,7 +36,7 @@ export class TaskRegistry {
 	private readonly taskCapacity: number;
 	private readonly continuationCapacity: number;
 
-	public static create(taskCapacity: number = 65536, continuationCapacity: number = 262144) {
+	public static create(taskCapacity: number = 262144, continuationCapacity: number = 1048576): TaskRegistry {
 		if (!Number.isSafeInteger(taskCapacity) || taskCapacity < 2)
 			throw new RangeError("Task capacity must be at least 2.");
 
@@ -64,12 +64,6 @@ export class TaskRegistry {
 		this.table = new Int32Array(buffer, HEADER_SIZE * 4, this.tableCapacity);
 		this.tasks = new Int32Array(buffer, (HEADER_SIZE + this.tableCapacity) * 4, taskCapacity * TASK_SIZE);
 		this.continuations = new Int32Array(buffer, (HEADER_SIZE + this.tableCapacity + taskCapacity * TASK_SIZE) * 4, continuationCapacity * CONTINUATION_SIZE);
-
-		if (Atomics.load(this.control, 3) === 0)
-			Atomics.store(this.control, 3, taskCapacity);
-
-		if (Atomics.load(this.control, 4) === 0)
-			Atomics.store(this.control, 4, continuationCapacity);
 	}
 
 	public get buffer(): SharedArrayBuffer {
@@ -98,9 +92,9 @@ export class TaskRegistry {
 					const offset = (taskId - 1) * TASK_SIZE;
 
 					this.writeKey(offset, key);
-					this.tasks[offset] = TaskState.Registering;
 					this.tasks[offset + 9] = workerId;
 
+					Atomics.store(this.tasks, offset, TaskState.Registering);
 					this.table[index] = taskId;
 					Atomics.store(this.control, 1, taskId);
 
@@ -119,14 +113,52 @@ export class TaskRegistry {
 		}
 	}
 
+	public find(key: TaskKey): number | null {
+		this.validateKey(key);
+		this.lock();
+
+		try {
+			let index = this.hash(key) & (this.tableCapacity - 1);
+
+			for (let i = 0; i < this.tableCapacity; i++) {
+				const id = this.table[index]!;
+
+				if (id === 0)
+					return null;
+
+				if (this.matches((id - 1) * TASK_SIZE, key))
+					return id;
+
+				index = (index + 1) & (this.tableCapacity - 1);
+			}
+
+			return null;
+		} finally {
+			this.unlock();
+		}
+	}
+
+	public getKey(id: number): TaskKey {
+		const offset = this.getTaskOffset(id);
+
+		return {
+			generation: this.tasks[offset + 1]!,
+			pass: this.tasks[offset + 2]!,
+			scope: this.tasks[offset + 3]! as 0 | 1,
+			resolution: this.tasks[offset + 4]!,
+			chunkX: this.tasks[offset + 5]!,
+			chunkZ: this.tasks[offset + 6]!
+		};
+	}
+
 	public addDependency(parentId: number, prerequisiteId: number): "added" | "complete" | "failed" {
 		this.lock();
 
 		try {
 			const parentOffset = this.getTaskOffset(parentId);
 			const prerequisiteOffset = this.getTaskOffset(prerequisiteId);
-			const parentState = this.tasks[parentOffset]!;
-			const prerequisiteState = this.tasks[prerequisiteOffset]!;
+			const parentState = Atomics.load(this.tasks, parentOffset);
+			const prerequisiteState = Atomics.load(this.tasks, prerequisiteOffset);
 
 			if (parentState !== TaskState.Registering)
 				throw new Error("Dependencies can only be added while a task is registering.");
@@ -134,9 +166,8 @@ export class TaskRegistry {
 			if (parentId === prerequisiteId)
 				throw new Error("A task cannot depend on itself.");
 
-			if (prerequisiteState === TaskState.Failed) {
+			if (prerequisiteState === TaskState.Failed)
 				return "failed";
-			}
 
 			if (prerequisiteState === TaskState.Complete)
 				return "complete";
@@ -179,16 +210,14 @@ export class TaskRegistry {
 		try {
 			const offset = this.getTaskOffset(id);
 
-			if (this.tasks[offset] !== TaskState.Registering)
+			if (Atomics.load(this.tasks, offset) !== TaskState.Registering)
 				throw new Error("Only registering tasks can be sealed.");
 
-			if (this.tasks[offset + 7] === 0) {
-				this.tasks[offset] = TaskState.Queued;
-				return true;
-			}
+			const ready = this.tasks[offset + 7] === 0;
 
-			this.tasks[offset] = TaskState.Waiting;
-			return false;
+			Atomics.store(this.tasks, offset, ready ? TaskState.Queued : TaskState.Waiting);
+
+			return ready;
 		} finally {
 			this.unlock();
 		}
@@ -200,10 +229,11 @@ export class TaskRegistry {
 		try {
 			const offset = this.getTaskOffset(id);
 
-			if (this.tasks[offset] !== TaskState.Queued)
+			if (Atomics.load(this.tasks, offset) !== TaskState.Queued)
 				return false;
 
-			this.tasks[offset] = TaskState.Running;
+			Atomics.store(this.tasks, offset, TaskState.Running);
+
 			return true;
 		} finally {
 			this.unlock();
@@ -216,10 +246,11 @@ export class TaskRegistry {
 		try {
 			const offset = this.getTaskOffset(id);
 
-			if (this.tasks[offset] !== TaskState.Running)
+			if (Atomics.load(this.tasks, offset) !== TaskState.Running)
 				throw new Error("Only running tasks can complete.");
 
-			this.tasks[offset] = TaskState.Complete;
+			Atomics.store(this.tasks, offset, TaskState.Complete);
+			Atomics.notify(this.tasks, offset);
 
 			const ready: number[] = [];
 			let continuationId = this.tasks[offset + 8]!;
@@ -228,7 +259,7 @@ export class TaskRegistry {
 				const continuationOffset = (continuationId - 1) * CONTINUATION_SIZE;
 				const parentId = this.continuations[continuationOffset]!;
 				const parentOffset = this.getTaskOffset(parentId);
-				const parentState = this.tasks[parentOffset]!;
+				const parentState = Atomics.load(this.tasks, parentOffset);
 
 				if (parentState === TaskState.Registering || parentState === TaskState.Waiting) {
 					const dependencies = this.tasks[parentOffset + 7]! - 1;
@@ -239,7 +270,7 @@ export class TaskRegistry {
 					this.tasks[parentOffset + 7] = dependencies;
 
 					if (dependencies === 0 && parentState === TaskState.Waiting) {
-						this.tasks[parentOffset] = TaskState.Queued;
+						Atomics.store(this.tasks, parentOffset, TaskState.Queued);
 						ready.push(parentId);
 					}
 				}
@@ -263,12 +294,13 @@ export class TaskRegistry {
 			while (pending.length > 0) {
 				const taskId = pending.pop()!;
 				const offset = this.getTaskOffset(taskId);
-				const state = this.tasks[offset]!;
+				const state = Atomics.load(this.tasks, offset);
 
 				if (state === TaskState.Complete || state === TaskState.Failed)
 					continue;
 
-				this.tasks[offset] = TaskState.Failed;
+				Atomics.store(this.tasks, offset, TaskState.Failed);
+				Atomics.notify(this.tasks, offset);
 				failed.push(taskId);
 
 				let continuationId = this.tasks[offset + 8]!;
@@ -290,8 +322,46 @@ export class TaskRegistry {
 		return Atomics.load(this.tasks, this.getTaskOffset(id));
 	}
 
-	public getOwner(id: number): number {
-		return Atomics.load(this.tasks, this.getTaskOffset(id) + 9);
+	public async waitForCompletion(id: number): Promise<void> {
+		const offset = this.getTaskOffset(id);
+
+		while (true) {
+			const state = Atomics.load(this.tasks, offset);
+
+			if (state === TaskState.Complete)
+				return;
+
+			if (state === TaskState.Failed)
+				throw new Error(`Task ${id} failed.`);
+
+			const waiter = Atomics.waitAsync(this.tasks, offset, state);
+
+			if (waiter.async)
+				await waiter.value;
+		}
+	}
+
+	public isIdle(): boolean {
+		const count = Atomics.load(this.control, 1);
+
+		for (let i = 0; i < count; i++) {
+			const state = Atomics.load(this.tasks, i * TASK_SIZE);
+
+			if (state !== TaskState.Complete && state !== TaskState.Failed)
+				return false;
+		}
+
+		return true;
+	}
+
+	public reset(): void {
+		this.table.fill(0);
+		this.tasks.fill(0);
+		this.continuations.fill(0);
+
+		Atomics.store(this.control, 1, 0);
+		Atomics.store(this.control, 2, 0);
+		Atomics.store(this.control, 0, 0);
 	}
 
 	private writeKey(offset: number, key: TaskKey): void {

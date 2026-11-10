@@ -1,8 +1,8 @@
 import { Vector2 } from "three";
-import { Chunk } from "./chunk";
 import type { Generator } from "./generator";
 import { GenerationScope } from "./passes/pass";
 import { Region } from "./region";
+import { Chunk } from "./chunk";
 
 export class ChunkManager {
 	private readonly chunks = new Map<string, Chunk>();
@@ -62,7 +62,11 @@ export class ChunkManager {
 		return this.generator.generate(type, GenerationScope.Local, new Vector2(chunk.x, chunk.z), resolution);
 	}
 
-	public dispose() {
+	public generateMaps(type: any, chunks: readonly Chunk[], resolution: number = 1) {
+		return this.generator.generateMany(type, GenerationScope.Local, chunks.map(chunk => new Vector2(chunk.x, chunk.z)), resolution);
+	}
+
+	public dispose(): void {
 		this.chunks.clear();
 	}
 }

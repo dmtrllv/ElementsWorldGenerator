@@ -5,14 +5,22 @@ export class WorkScheduler {
 	private readonly overflow: number[] = [];
 
 	private readonly workerId: number;
+	private readonly wakeup: Int32Array;
+
+	private overflowHead = 0;
 	private stealIndex: number;
 
-	public constructor(workerId: number, buffers: SharedArrayBuffer[]) {
+	public constructor(workerId: number, buffers: SharedArrayBuffer[], wakeup: SharedArrayBuffer) {
 		if (!Number.isSafeInteger(workerId) || workerId < 0 || workerId >= buffers.length)
 			throw new RangeError("Invalid worker ID.");
 
+		if (wakeup.byteLength !== Int32Array.BYTES_PER_ELEMENT)
+			throw new RangeError("Invalid scheduler wake-up buffer.");
+
 		this.workerId = workerId;
 		this.stealIndex = (workerId + 1) % buffers.length;
+		this.wakeup = new Int32Array(wakeup);
+
 		this.queues = buffers.map(buffer => {
 			const capacity = buffer.byteLength / Int32Array.BYTES_PER_ELEMENT - 3;
 			return new SharedWorkQueue(buffer, capacity);
@@ -20,20 +28,36 @@ export class WorkScheduler {
 	}
 
 	public enqueue(task: number): void {
-		if (!Number.isSafeInteger(task) || task < 0)
-			throw new RangeError("Task ID must be a non-negative safe integer.");
+		this.enqueueMany([task]);
+	}
 
-		if (this.queues[this.workerId]!.push(task))
+	public enqueueMany(tasks: readonly number[]): void {
+		if (tasks.length === 0)
 			return;
 
-		for (let i = 1; i < this.queues.length; i++) {
-			const index = (this.workerId + i) % this.queues.length;
+		for (const task of tasks) {
+			if (!Number.isSafeInteger(task) || task < 1)
+				throw new RangeError("Task ID must be a positive safe integer.");
 
-			if (this.queues[index]!.push(task))
-				return;
+			if (this.queues[this.workerId]!.push(task))
+				continue;
+
+			let queued = false;
+
+			for (let i = 1; i < this.queues.length; i++) {
+				const index = (this.workerId + i) % this.queues.length;
+
+				if (this.queues[index]!.push(task)) {
+					queued = true;
+					break;
+				}
+			}
+
+			if (!queued)
+				this.overflow.push(task);
 		}
 
-		this.overflow.push(task);
+		this.wake();
 	}
 
 	public next(): number {
@@ -58,16 +82,48 @@ export class WorkScheduler {
 			}
 		}
 
-		return this.overflow.shift() ?? -1;
+		return this.takeOverflow();
 	}
 
-	public get pendingOverflow(): number {
-		return this.overflow.length;
+	public get sequence(): number {
+		return Atomics.load(this.wakeup, 0);
+	}
+
+	public wake(): void {
+		Atomics.add(this.wakeup, 0, 1);
+		Atomics.notify(this.wakeup, 0);
+	}
+
+	public async waitForChange(sequence: number): Promise<void> {
+		if (typeof Atomics.waitAsync === "function") {
+			const waiter = Atomics.waitAsync(this.wakeup, 0, sequence);
+
+			if (waiter.async)
+				await waiter.value;
+
+			return;
+		}
+
+		await new Promise<void>(resolve => setTimeout(resolve, 8));
+	}
+
+	private takeOverflow(): number {
+		if (this.overflowHead >= this.overflow.length)
+			return -1;
+
+		const task = this.overflow[this.overflowHead++]!;
+
+		if (this.overflowHead === this.overflow.length) {
+			this.overflow.length = 0;
+			this.overflowHead = 0;
+		}
+
+		return task;
 	}
 
 	private flushOverflow(): void {
-		while (this.overflow.length > 0) {
-			const task = this.overflow[0]!;
+		while (this.overflowHead < this.overflow.length) {
+			const task = this.overflow[this.overflowHead]!;
 			let queued = this.queues[this.workerId]!.push(task);
 
 			for (let i = 1; !queued && i < this.queues.length; i++) {
@@ -78,7 +134,10 @@ export class WorkScheduler {
 			if (!queued)
 				return;
 
-			this.overflow.shift();
+			this.overflowHead++;
 		}
+
+		this.overflow.length = 0;
+		this.overflowHead = 0;
 	}
 }

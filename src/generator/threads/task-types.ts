@@ -1,5 +1,5 @@
 import { MapData, type MapDataType } from "../maps";
-import { Pass, type PassType } from "../passes";
+import { Pass, type PassType, isMapDependency } from "../passes";
 
 export class TaskTypes {
 	private readonly passes: readonly PassType<any>[];
@@ -21,6 +21,7 @@ export class TaskTypes {
 
 		this.validateNames(this.passes);
 		this.validateNames(this.maps);
+		this.validateDependencies();
 	}
 
 	public getPassId(type: PassType<any>): number {
@@ -59,14 +60,55 @@ export class TaskTypes {
 		return type;
 	}
 
+	public getOutputs(pass: PassType<any>): readonly MapDataType<any, any>[] {
+		return Object.values(Pass.getMeta().get(pass)?.outputs ?? {});
+	}
+
 	public getOutputIndex(pass: PassType<any>, map: MapDataType<any, any>): number {
-		const outputs = Object.values(Pass.getMeta().get(pass)?.outputs ?? {});
-		const index = outputs.indexOf(map);
+		const index = this.getOutputs(pass).indexOf(map);
 
 		if (index < 0)
 			throw new Error(`Pass ${pass.name} does not produce map ${map.name}.`);
 
 		return index;
+	}
+
+	private validateDependencies(): void {
+		const visiting = new Set<PassType<any>>();
+		const visited = new Set<PassType<any>>();
+
+		const visit = (pass: PassType<any>) => {
+			if (visiting.has(pass))
+				throw new Error(`Pass dependency cycle detected at ${pass.name}.`);
+
+			if (visited.has(pass))
+				return;
+
+			visiting.add(pass);
+
+			const meta = Pass.getMeta().get(pass);
+
+			if (!meta)
+				throw new Error(`Missing pass metadata for ${pass.name}.`);
+
+			for (const dependency of Object.values(meta.dependencies)) {
+				if (!isMapDependency(dependency))
+					continue;
+
+				const dependencyPass = Pass.fromOutputType(dependency.type);
+
+				if (!dependencyPass)
+					throw new Error(`No pass produces dependency map ${dependency.type.name}.`);
+
+				visit(dependencyPass);
+			}
+
+			visiting.delete(pass);
+			visited.add(pass);
+		};
+
+		for (const pass of this.passes)
+			visit(pass);
 	}
 
 	private validateNames(types: readonly { name: string }[]): void {

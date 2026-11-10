@@ -19,7 +19,7 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 	}
 
 	public static fromName(name: string) {
-		for(const [type, meta] of this.registry) {
+		for(const [type] of this.registry) {
 			if(type.name === name)
 				return type;
 		}
