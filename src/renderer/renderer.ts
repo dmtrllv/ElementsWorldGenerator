@@ -38,7 +38,7 @@ export class Renderer extends Module {
 	public showEdges: boolean = true;
 
 	@observable
-	public renderDistance: number = 500;
+	public renderDistance: number = 200;
 
 	public constructor(editor: Editor) {
 		super(editor);
@@ -178,6 +178,7 @@ export class Renderer extends Module {
 		}
 	}
 
+	// @ts-ignore
 	private disposeChunk(id: string) {
 		const terrainMesh = this.terrainMeshes.get(id);
 
@@ -296,10 +297,10 @@ export class Renderer extends Module {
 
 		const nextChunkIds = new Set(chunks.map(chunk => `${chunk.x}:${chunk.z}`));
 
-		for (const id of this.activeChunkIds) {
-			if (!nextChunkIds.has(id))
-				this.disposeChunk(id);
-		}
+		//for (const id of this.activeChunkIds) {
+		//	if (!nextChunkIds.has(id))
+		//		this.disposeChunk(id);
+		//}
 
 		for (const chunk of chunks) {
 			const id = `${chunk.x}:${chunk.z}`;

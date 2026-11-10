@@ -1,4 +1,3 @@
-import { Vector2 } from "three";
 import { benchmark, benchmarkBlock, clamp } from "../../utils";
 import type { GenerationContext } from "../context";
 import { CoastMap, ContinentalDistributionMap, ContinentalMap, OceanMap } from "../maps";
@@ -33,104 +32,62 @@ export class GeographyPass extends Pass {
 	private readonly tileChunks = 8;
 	private readonly tiles = new Map<string, GeographyTile>();
 
-	private distanceTransform1D(input: Float64Array, output: Float64Array, length: number, v: Int32Array, z: Float64Array): void {
-		let first = -1;
 
-		for (let i = 0; i < length; i++) {
-			if (Number.isFinite(input[i]!)) {
-				first = i;
-				break;
+	private chamferDistance(seeds: Uint8Array, width: number, height: number): Float32Array {
+		const distances = new Float32Array(width * height);
+		const diagonal = Math.SQRT2;
+
+		distances.fill(Infinity);
+
+		for (let i = 0; i < seeds.length; i++) {
+			if (seeds[i] === 1)
+				distances[i] = 0;
+		}
+
+		// Forward pass.
+		for (let z = 0; z < height; z++) {
+			for (let x = 0; x < width; x++) {
+				const index = z * width + x;
+				let distance = distances[index]!;
+
+				if (x > 0)
+					distance = Math.min(distance, distances[index - 1]! + 1);
+
+				if (z > 0) {
+					distance = Math.min(distance, distances[index - width]! + 1);
+
+					if (x > 0)
+						distance = Math.min(distance, distances[index - width - 1]! + diagonal);
+
+					if (x < width - 1)
+						distance = Math.min(distance, distances[index - width + 1]! + diagonal);
+				}
+
+				distances[index] = distance;
 			}
 		}
 
-		if (first === -1) {
-			output.fill(Infinity, 0, length);
-			return;
-		}
+		// Backward pass.
+		for (let z = height - 1; z >= 0; z--) {
+			for (let x = width - 1; x >= 0; x--) {
+				const index = z * width + x;
+				let distance = distances[index]!;
 
-		let k = 0;
+				if (x < width - 1)
+					distance = Math.min(distance, distances[index + 1]! + 1);
 
-		v[0] = first;
-		z[0] = -Infinity;
-		z[1] = Infinity;
+				if (z < height - 1) {
+					distance = Math.min(distance, distances[index + width]! + 1);
 
-		for (let q = first + 1; q < length; q++) {
-			if (!Number.isFinite(input[q]!))
-				continue;
+					if (x > 0)
+						distance = Math.min(distance, distances[index + width - 1]! + diagonal);
 
-			let s = 0;
+					if (x < width - 1)
+						distance = Math.min(distance, distances[index + width + 1]! + diagonal);
+				}
 
-			while (k >= 0) {
-				const p = v[k]!;
-				s = ((input[q]! + q * q) - (input[p]! + p * p)) / (2 * q - 2 * p);
-
-				if (s > z[k]!)
-					break;
-
-				k--;
+				distances[index] = distance;
 			}
-
-			if (k < 0) {
-				k = 0;
-				v[0] = q;
-				z[0] = -Infinity;
-				z[1] = Infinity;
-				continue;
-			}
-
-			k++;
-			v[k] = q;
-			z[k] = s;
-			z[k + 1] = Infinity;
-		}
-
-		let envelope = 0;
-
-		for (let q = 0; q < length; q++) {
-			while (z[envelope + 1]! < q)
-				envelope++;
-
-			const p = v[envelope]!;
-			const delta = q - p;
-
-			output[q] = delta * delta + input[p]!;
-		}
-	}
-
-	private distanceTransform(seeds: Uint8Array, width: number, height: number): Float64Array {
-		const size = width * height;
-
-		const distances = new Float64Array(size);
-		const temporary = new Float64Array(size);
-
-		const length = Math.max(width, height);
-
-		const input = new Float64Array(length);
-		const output = new Float64Array(length);
-
-		const v = new Int32Array(length);
-		const z = new Float64Array(length + 1);
-
-		for (let y = 0; y < height; y++) {
-			const offset = y * width;
-
-			for (let x = 0; x < width; x++)
-				input[x] = seeds[offset + x] === 1 ? 0 : Infinity;
-
-			this.distanceTransform1D(input, output, width, v, z);
-
-			for (let x = 0; x < width; x++)
-				temporary[offset + x] = output[x]!;
-		}
-
-		for (let x = 0; x < width; x++) {
-			for (let y = 0; y < height; y++)
-				input[y] = temporary[y * width + x]!;
-
-			this.distanceTransform1D(input, output, height, v, z);
-
-			for (let y = 0; y < height; y++)
-				distances[y * width + x] = Math.sqrt(output[y]!);
 		}
 
 		return distances;
@@ -149,6 +106,26 @@ export class GeographyPass extends Pass {
 		}
 
 		return 0.5 * this.normalize(value, 0, threshold);
+	}
+
+	private sampleBilinear(data: Float32Array, width: number, height: number, x: number, z: number): number {
+		const x0 = clamp(Math.floor(x), 0, width - 1);
+		const z0 = clamp(Math.floor(z), 0, height - 1);
+		const x1 = Math.min(x0 + 1, width - 1);
+		const z1 = Math.min(z0 + 1, height - 1);
+
+		const tx = clamp(x - x0, 0, 1);
+		const tz = clamp(z - z0, 0, 1);
+
+		const topLeft = data[z0 * width + x0]!;
+		const topRight = data[z0 * width + x1]!;
+		const bottomLeft = data[z1 * width + x0]!;
+		const bottomRight = data[z1 * width + x1]!;
+
+		const top = topLeft * (1 - tx) + topRight * tx;
+		const bottom = bottomLeft * (1 - tx) + bottomRight * tx;
+
+		return top * (1 - tz) + bottom * tz;
 	}
 
 	private getTileRegion(region: Region, context: GenerationContext): { region: Region; key: string } {
@@ -170,23 +147,22 @@ export class GeographyPass extends Pass {
 
 	@benchmark
 	private generateTile(region: Region, context: GenerationContext): GeographyTile {
-		const continentalParams = this.params.continental;
 		const oceanParams = this.params.oceanParams;
 		const coastParams = this.params.coastParams;
 
 		const transitionWidth = Math.max(coastParams.transitionWidth.state, 0);
 		const shelfWidth = Math.max(oceanParams.shelfWidth.state, 1);
-		const warpStrength = continentalParams.warpStrength.state;
-		const normalization = continentalParams.normalization;
 
-		const expansion = Math.ceil(Math.max(transitionWidth, shelfWidth * 1.5) / context.resolution) * context.resolution + context.resolution;
+		const coarseResolution = this.distribution.samples.resolution;
+		const expansion = Math.ceil(Math.max(transitionWidth, shelfWidth * 1.5) / coarseResolution) * coarseResolution + coarseResolution * 2;
+
 		const workingRegion = region.expand(expansion);
 
 		const samples = context.getSampleRegionFor(region);
-		const workingSamples = context.getSampleRegionFor(workingRegion);
+		const coarseSamples = context.getSampleRegionFor(workingRegion, coarseResolution);
 
-		const width = workingSamples.width;
-		const height = workingSamples.height;
+		const width = coarseSamples.width;
+		const height = coarseSamples.height;
 		const size = width * height;
 
 		const continentalValues = new Float32Array(size);
@@ -194,43 +170,35 @@ export class GeographyPass extends Pass {
 		const coastValues = new Float32Array(size);
 
 		const oceanMask = new Uint8Array(size);
-		const coastSeeds = new Uint8Array(size);
-		const oceanCoastSeeds = new Uint8Array(size);
+		const coastlineSeeds = new Uint8Array(size);
+
+		const distributionSamples = this.distribution.samples;
+		const distributionWidth = distributionSamples.width;
+		const distributionOffsetX = Math.round((coarseSamples.x - distributionSamples.x) / coarseResolution);
+		const distributionOffsetZ = Math.round((coarseSamples.z - distributionSamples.z) / coarseResolution);
 
 		const landThreshold = this.distribution.landThreshold;
 
-		const warp = new Vector2();
-
-		// Generate continental and ocean classification.
-		benchmarkBlock("Generate continental and ocean classification", () => {
+		// Classify land and ocean using the cached low-resolution distribution map.
+		benchmarkBlock("Generate coarse continental classification", () => {
 			for (let z = 0; z < height; z++) {
+				const sourceOffset = (distributionOffsetZ + z) * distributionWidth + distributionOffsetX;
+				const targetOffset = z * width;
+
 				for (let x = 0; x < width; x++) {
-					const index = z * width + x;
+					const index = targetOffset + x;
+					const value = this.distribution.data[sourceOffset + x]!;
 
-					const worldX = workingSamples.x + x * workingSamples.resolution;
-					const worldZ = workingSamples.z + z * workingSamples.resolution;
+					continentalValues[index] = this.normalizeContinental(value, landThreshold);
 
-					continentalParams.warp.getInto(worldX, worldZ, warp);
-
-					const warpedX = worldX + warp.x * warpStrength;
-					const warpedZ = worldZ + warp.y * warpStrength;
-
-					const continentalValue = continentalParams.distribution.get(warpedX, warpedZ);
-					const normalizedContinental = this.normalize(continentalValue, normalization.min, normalization.max);
-
-					const landValue = clamp(continentalParams.shape.evaluate(normalizedContinental), 0, 1);
-					const normalizedLandValue = this.normalizeContinental(landValue, landThreshold);
-
-					continentalValues[index] = normalizedLandValue;
-
-					if (landValue < landThreshold)
+					if (value < landThreshold)
 						oceanMask[index] = 1;
 				}
 			}
 		});
 
-		benchmarkBlock("Find land and ocean cells adjacent to the coastline.", () => {
-			// Find land and ocean cells adjacent to the coastline.
+		// Find coarse land and ocean cells adjacent to the coastline.
+		benchmarkBlock("Find coarse coastline", () => {
 			for (let z = 0; z < height; z++) {
 				for (let x = 0; x < width; x++) {
 					const index = z * width + x;
@@ -260,21 +228,17 @@ export class GeographyPass extends Pass {
 					}
 
 					if (adjacentToOpposite) {
-						if (isOcean)
-							oceanCoastSeeds[index] = 1;
-						else
-							coastSeeds[index] = 1;
+						coastlineSeeds[index] = 1;
 					}
 				}
 			}
 		});
 
-		// Calculate distance to the nearest coastline on both sides.
-		const distances = this.distanceTransform(coastSeeds, width, height);
-		const oceanDistances = this.distanceTransform(oceanCoastSeeds, width, height);
+		// Calculate approximate coastline distances at coarse resolution.
+		const coastlineDistances = this.chamferDistance(coastlineSeeds, width, height);
 
-		// Generate ocean floor depth.
-		benchmarkBlock("ocean floor", () => {
+		// Generate ocean floor noise only at coarse resolution.
+		benchmarkBlock("Generate coarse ocean floor", () => {
 			for (let i = 0; i < size; i++) {
 				if (oceanMask[i] === 0)
 					continue;
@@ -282,8 +246,8 @@ export class GeographyPass extends Pass {
 				const x = i % width;
 				const z = Math.floor(i / width);
 
-				const worldX = workingSamples.x + x * workingSamples.resolution;
-				const worldZ = workingSamples.z + z * workingSamples.resolution;
+				const worldX = coarseSamples.x + x * coarseResolution;
+				const worldZ = coarseSamples.z + z * coarseResolution;
 
 				const oceanValue = oceanParams.distribution.get(worldX, worldZ);
 				const shelfValue = oceanParams.shelf.get(worldX, worldZ);
@@ -291,8 +255,8 @@ export class GeographyPass extends Pass {
 				const normalizedOcean = this.normalize(oceanValue, -1, 1);
 				const normalizedShelf = this.normalize(shelfValue, -1, 1);
 
-				const effectiveShelfWidth = Math.max(shelfWidth * (0.5 + normalizedShelf), 1);
-				const oceanDistance = oceanDistances[i]! * workingSamples.resolution;
+				const effectiveShelfWidth = Math.max(shelfWidth * (0.5 + normalizedShelf), coarseResolution);
+				const oceanDistance = coastlineDistances[i]! * coarseResolution;
 				const shelfProgress = clamp(oceanDistance / effectiveShelfWidth, 0, 1);
 				const shelfFactor = shelfProgress * shelfProgress * (3 - 2 * shelfProgress);
 
@@ -302,22 +266,20 @@ export class GeographyPass extends Pass {
 			}
 		});
 
-
 		// Precompute the falloff curve.
 		const lookupSize = 1024;
 		const falloffLookup = new Float32Array(lookupSize);
-		benchmarkBlock("falloffLookup", () => {
-			for (let i = 0; i < lookupSize; i++)
-				falloffLookup[i] = clamp(coastParams.falloff.evaluate(i / (lookupSize - 1)), 0, 1);
-		});
 
-		// Generate coast map.
-		benchmarkBlock("Generate coast", () => {
+		for (let i = 0; i < lookupSize; i++)
+			falloffLookup[i] = clamp(coastParams.falloff.evaluate(i / (lookupSize - 1)), 0, 1);
+
+		// Generate the approximate coast transition at coarse resolution.
+		benchmarkBlock("Generate coarse coast", () => {
 			for (let i = 0; i < size; i++) {
 				if (oceanMask[i] === 1 || transitionWidth <= 0)
 					continue;
 
-				const distance = distances[i]! * workingSamples.resolution;
+				const distance = coastlineDistances[i]! * coarseResolution;
 
 				if (distance >= transitionWidth)
 					continue;
@@ -333,7 +295,6 @@ export class GeographyPass extends Pass {
 			}
 		});
 
-
 		const tileWidth = samples.width;
 		const tileHeight = samples.height;
 
@@ -341,20 +302,23 @@ export class GeographyPass extends Pass {
 		const tileOcean = new Float32Array(tileWidth * tileHeight);
 		const tileCoast = new Float32Array(tileWidth * tileHeight);
 
-		// Copy the tile interior from the expanded working region.
-		benchmarkBlock("copy tile interior", () => {
-			const offsetX = Math.round((samples.x - workingSamples.x) / workingSamples.resolution);
-			const offsetZ = Math.round((samples.z - workingSamples.z) / workingSamples.resolution);
-
+		// Interpolate the coarse maps into the full-resolution tile.
+		benchmarkBlock("Interpolate geography tile", () => {
 			for (let z = 0; z < tileHeight; z++) {
-				const sourceOffset = (offsetZ + z) * width + offsetX;
-				const targetOffset = z * tileWidth;
+				const worldZ = samples.z + z * samples.resolution;
+				const coarseZ = (worldZ - coarseSamples.z) / coarseResolution;
 
-				tileContinental.set(continentalValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
-				tileOcean.set(oceanValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
-				tileCoast.set(coastValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
+				for (let x = 0; x < tileWidth; x++) {
+					const worldX = samples.x + x * samples.resolution;
+					const coarseX = (worldX - coarseSamples.x) / coarseResolution;
+					const index = z * tileWidth + x;
+
+					tileContinental[index] = this.sampleBilinear(continentalValues, width, height, coarseX, coarseZ);
+					tileOcean[index] = this.sampleBilinear(oceanValues, width, height, coarseX, coarseZ);
+					tileCoast[index] = this.sampleBilinear(coastValues, width, height, coarseX, coarseZ);
+				}
 			}
-		})
+		});
 
 		return {
 			samples,
