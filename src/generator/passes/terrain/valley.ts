@@ -27,9 +27,15 @@ export class ValleyPass extends Pass {
 
 		const samples = this.valleyMap.samples;
 
-		const { distribution, shape, warp, warpStrength } = this.params;
+		const { distribution, shape, warp, warpStrength, depth, width, floorWidth, profile } = this.params;
 
 		const warpStrengthValue = warpStrength.state;
+		const widthValue = Math.max(width.state, 1);
+		const floorWidthValue = clamp(floorWidth.state, 0, 1);
+		const depthValue = Math.max(depth.state, 0);
+
+		const gradientStep = Math.max(1, Math.min(widthValue * 0.1, samples.resolution));
+		const halfWidth = widthValue * 0.5;
 
 		for (let z = 0; z < samples.height; z++) {
 			for (let x = 0; x < samples.width; x++) {
@@ -50,15 +56,46 @@ export class ValleyPass extends Pass {
 				const sampleZ = worldZ + offset.y * warpStrengthValue;
 
 				const distributionValue = distribution.get(sampleX, sampleZ);
-				const shapeValue = shape.get(sampleX, sampleZ);
 
-				const valleyRegion = clamp((distributionValue + 1) * 0.5, 0, 1);
-				const valleyShape = clamp((shapeValue + 1) * 0.5, 0, 1);
+				const gradientX = (
+					distribution.get(sampleX + gradientStep, sampleZ) -
+					distribution.get(sampleX - gradientStep, sampleZ)
+				) / (gradientStep * 2);
+
+				const gradientZ = (
+					distribution.get(sampleX, sampleZ + gradientStep) -
+					distribution.get(sampleX, sampleZ - gradientStep)
+				) / (gradientStep * 2);
+
+				const gradientLength = Math.sqrt(gradientX * gradientX + gradientZ * gradientZ);
+
+				if (gradientLength < 0.000001) {
+					output[index] = 0;
+					continue;
+				}
+
+				const distance = Math.abs(distributionValue) / gradientLength;
+				const normalizedDistance = clamp(distance / halfWidth, 0, 1);
+
+				let profilePosition = 0;
+
+				if (floorWidthValue < 1) {
+					profilePosition = clamp(
+						(normalizedDistance - floorWidthValue) / (1 - floorWidthValue),
+						0,
+						1
+					);
+				}
+
+				const valleyProfile = clamp(profile.evaluate(profilePosition), 0, 1);
+
+				const shapeValue = shape.get(sampleX, sampleZ);
+				const shapeFactor = clamp((shapeValue + 1) * 0.5, 0, 1);
 
 				const coastInfluence = clamp(coast[coastIndex]!, 0, 1);
 				const coastalFactor = 1 - coastInfluence;
 
-				output[index] = clamp(valleyRegion * valleyShape * coastalFactor, 0, 1);
+				output[index] = clamp(valleyProfile * shapeFactor * coastalFactor, 0, 1);
 			}
 		}
 	}
