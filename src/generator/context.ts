@@ -7,7 +7,7 @@ export class GenerationContext {
 	public readonly scope: GenerationScope;
 	public readonly resolution: number;
 
-	private readonly worldRegion: Region;
+	public readonly worldRegion: Region;
 	private readonly localRegion: Region | null;
 
 	public constructor(region: Region, worldRegion: Region, scope: GenerationScope, resolution: number = 1) {

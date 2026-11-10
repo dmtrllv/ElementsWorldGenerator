@@ -287,11 +287,13 @@ export class Renderer extends Module {
 		this.scene.add(mesh);
 	}
 
-	private updateChunks() {
+	private updateChunks(init: boolean = false) {
 		if (!this.world)
 			return;
 
+
 		const chunks = this.getChunksInRange(this.world);
+
 		const nextChunkIds = new Set(chunks.map(chunk => `${chunk.x}:${chunk.z}`));
 
 		for (const id of this.activeChunkIds) {
@@ -305,20 +307,27 @@ export class Renderer extends Module {
 			if (this.terrainMeshes.has(id))
 				continue;
 
-			this.renderChunk(this.world, chunk);
+			this.renderChunk(this.world, chunk, init);
 		}
 
 		this.activeChunkIds = nextChunkIds;
 	}
 
-	private renderChunk(world: World, chunk: Chunk) {
+	private renderChunk(world: World, chunk: Chunk, init: boolean = false) {
+		if (init)
+			console.time("gen");
 		const map = world.chunkManager.generateMap(ElevationMap, chunk);
-
+		if (init) {
+			console.timeEnd("gen");
+			console.time("render");
+		}
 		if (this.renderMode === "heightmap") {
 			this.renderHeightmapChunk(world, chunk, map);
 		} else {
 			this.renderVoxelChunk(world, chunk, map);
 		}
+		if (init)
+			console.timeEnd("render");
 	}
 
 	private renderHeightmapChunk(world: World, chunk: Chunk, map: ElevationMap) {
@@ -509,7 +518,7 @@ export class Renderer extends Module {
 
 		this.disposeTerrainMeshes();
 		this.createSeaLevelMesh(world);
-		this.updateChunks();
+		this.updateChunks(true);
 	}
 
 	public renderVoxelWorld(world: World) {
@@ -518,6 +527,6 @@ export class Renderer extends Module {
 
 		this.disposeTerrainMeshes();
 		this.createSeaLevelMesh(world);
-		this.updateChunks();
+		this.updateChunks(true);
 	}
 }

@@ -19,7 +19,12 @@ export class VectorField extends Param<VectorFieldState> {
 		return createNoise4D(alea(seed));
 	}
 
+
 	public get(x: number, y: number): Vector2 {
+		return this.getInto(x, y, new Vector2());
+	}
+
+	public getInto(x: number, y: number, target: Vector2): Vector2 {
 		const width = this.worldParams.size.x;
 		const height = this.worldParams.size.z;
 
@@ -28,6 +33,9 @@ export class VectorField extends Param<VectorFieldState> {
 
 		const radiusX = width / (Math.PI * 2 * this.state.scale);
 		const radiusY = height / (Math.PI * 2 * this.state.scale);
+
+		const noise4DX = this.noise4DX;
+		const noise4DY = this.noise4DY;
 
 		let amplitude = 1;
 		let frequency = 1;
@@ -42,19 +50,20 @@ export class VectorField extends Param<VectorFieldState> {
 			const nz = Math.cos(angleY) * radiusY * frequency;
 			const nw = Math.sin(angleY) * radiusY * frequency;
 
-			totalX += this.noise4DX(nx, ny, nz, nw) * amplitude;
-			totalY += this.noise4DY(nx, ny, nz, nw) * amplitude;
+			totalX += noise4DX(nx, ny, nz, nw) * amplitude;
+			totalY += noise4DY(nx, ny, nz, nw) * amplitude;
 			maxAmplitude += amplitude;
 
 			amplitude *= this.state.persistence;
 			frequency *= this.state.lacunarity;
 		}
 
-		return new Vector2(
+		return target.set(
 			(totalX / maxAmplitude) * this.state.strength,
 			(totalY / maxAmplitude) * this.state.strength
 		);
 	}
+
 }
 
 export type VectorFieldState = {

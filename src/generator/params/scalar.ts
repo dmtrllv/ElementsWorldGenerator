@@ -22,6 +22,8 @@ export class Scalar extends Param<ScalarState> {
 		const radiusX = width / (Math.PI * 2 * this.state.scale);
 		const radiusY = height / (Math.PI * 2 * this.state.scale);
 
+		const noise4D = this.noise4D;
+
 		let amplitude = 1;
 		let frequency = 1;
 
@@ -29,7 +31,7 @@ export class Scalar extends Param<ScalarState> {
 		let maxAmplitude = 0;
 
 		for (let i = 0; i < this.state.octaves; i++) {
-			total += this.noise4D(
+			total += noise4D(
 				Math.cos(angleX) * radiusX * frequency,
 				Math.sin(angleX) * radiusX * frequency,
 				Math.cos(angleY) * radiusY * frequency,

@@ -1,9 +1,18 @@
+import { Vector2 } from "three";
 import { clamp } from "../../utils";
 import type { GenerationContext } from "../context";
 import { CoastMap, ContinentalDistributionMap, ContinentalMap, OceanMap } from "../maps";
+import type { SampleRegion } from "../maps/map";
 import { GeographyParams } from "../param-groups";
-import type { Region } from "../region";
+import { Region } from "../region";
 import { dependency, GenerationScope, output, Pass } from "./pass";
+
+type GeographyTile = {
+	samples: SampleRegion;
+	continental: Float32Array;
+	ocean: Float32Array;
+	coast: Float32Array;
+};
 
 export class GeographyPass extends Pass {
 	@dependency(GeographyParams)
@@ -20,6 +29,9 @@ export class GeographyPass extends Pass {
 
 	@dependency(ContinentalDistributionMap, GenerationScope.Global, worldParams => worldParams.chunkSize / 2)
 	public distribution!: ContinentalDistributionMap;
+
+	private readonly tileChunks = 64;
+	private readonly tiles = new Map<string, GeographyTile>();
 
 	private distanceTransform1D(input: Float64Array, output: Float64Array, length: number, v: Int32Array, z: Float64Array): void {
 		let first = -1;
@@ -139,15 +151,24 @@ export class GeographyPass extends Pass {
 		return 0.5 * this.normalize(value, 0, threshold);
 	}
 
+	private getTileRegion(region: Region, context: GenerationContext): { region: Region; key: string } {
+		const tileSize = this.chunkSize * this.tileChunks;
 
-	public override generate(region: Region, context: GenerationContext): void {
-		const continentalOutput = this.continental.data;
-		const oceanOutput = this.ocean.data;
-		const coastOutput = this.coast.data;
+		const tileX = Math.floor((region.x - context.worldRegion.x) / tileSize);
+		const tileZ = Math.floor((region.z - context.worldRegion.z) / tileSize);
 
-		const outputSamples = context.getSampleRegion();
-		const outputWidth = outputSamples.width;
+		return {
+			region: new Region(
+				context.worldRegion.x + tileX * tileSize,
+				context.worldRegion.z + tileZ * tileSize,
+				tileSize,
+				tileSize
+			),
+			key: `${tileX}:${tileZ}:${context.resolution}`
+		};
+	}
 
+	private generateTile(region: Region, context: GenerationContext): GeographyTile {
 		const continentalParams = this.params.continental;
 		const oceanParams = this.params.oceanParams;
 		const coastParams = this.params.coastParams;
@@ -157,8 +178,10 @@ export class GeographyPass extends Pass {
 		const warpStrength = continentalParams.warpStrength.state;
 		const normalization = continentalParams.normalization;
 
-		const expansion = Math.ceil(Math.max(transitionWidth, shelfWidth) / context.resolution) * context.resolution + context.resolution;
+		const expansion = Math.ceil(Math.max(transitionWidth, shelfWidth * 1.5) / context.resolution) * context.resolution + context.resolution;
 		const workingRegion = region.expand(expansion);
+
+		const samples = context.getSampleRegionFor(region);
 		const workingSamples = context.getSampleRegionFor(workingRegion);
 
 		const width = workingSamples.width;
@@ -175,6 +198,8 @@ export class GeographyPass extends Pass {
 
 		const landThreshold = this.distribution.landThreshold;
 
+		const warp = new Vector2();
+
 		// Generate continental and ocean classification.
 		for (let z = 0; z < height; z++) {
 			for (let x = 0; x < width; x++) {
@@ -183,7 +208,7 @@ export class GeographyPass extends Pass {
 				const worldX = workingSamples.x + x * workingSamples.resolution;
 				const worldZ = workingSamples.z + z * workingSamples.resolution;
 
-				const warp = continentalParams.warp.get(worldX, worldZ);
+				continentalParams.warp.getInto(worldX, worldZ, warp);
 
 				const warpedX = worldX + warp.x * warpStrength;
 				const warpedZ = worldZ + warp.y * warpStrength;
@@ -297,23 +322,68 @@ export class GeographyPass extends Pass {
 			coastValues[i] = falloffLookup[lower]! * (1 - t) + falloffLookup[upper]! * t;
 		}
 
-		// Copy the requested region into the output maps.
-		for (let z = 0; z < outputSamples.height; z++) {
-			for (let x = 0; x < outputWidth; x++) {
-				const worldX = outputSamples.x + x * outputSamples.resolution;
-				const worldZ = outputSamples.z + z * outputSamples.resolution;
+		// Copy the tile interior from the expanded working region.
+		const tileWidth = samples.width;
+		const tileHeight = samples.height;
 
-				const workingX = Math.round((worldX - workingSamples.x) / workingSamples.resolution);
-				const workingZ = Math.round((worldZ - workingSamples.z) / workingSamples.resolution);
+		const tileContinental = new Float32Array(tileWidth * tileHeight);
+		const tileOcean = new Float32Array(tileWidth * tileHeight);
+		const tileCoast = new Float32Array(tileWidth * tileHeight);
 
-				const workingIndex = workingZ * width + workingX;
-				const outputIndex = z * outputWidth + x;
+		const offsetX = Math.round((samples.x - workingSamples.x) / workingSamples.resolution);
+		const offsetZ = Math.round((samples.z - workingSamples.z) / workingSamples.resolution);
 
-				continentalOutput[outputIndex] = continentalValues[workingIndex]!;
-				oceanOutput[outputIndex] = oceanValues[workingIndex]!;
-				coastOutput[outputIndex] = coastValues[workingIndex]!;
-			}
+		for (let z = 0; z < tileHeight; z++) {
+			const sourceOffset = (offsetZ + z) * width + offsetX;
+			const targetOffset = z * tileWidth;
+
+			tileContinental.set(continentalValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
+			tileOcean.set(oceanValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
+			tileCoast.set(coastValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
 		}
+
+		return {
+			samples,
+			continental: tileContinental,
+			ocean: tileOcean,
+			coast: tileCoast
+		};
 	}
 
+	private getTile(region: Region, context: GenerationContext): GeographyTile {
+		const { region: tileRegion, key } = this.getTileRegion(region, context);
+
+		let tile = this.tiles.get(key);
+
+		if (!tile) {
+			tile = this.generateTile(tileRegion, context);
+			this.tiles.set(key, tile);
+		}
+
+		return tile;
+	}
+
+	public override generate(region: Region, context: GenerationContext): void {
+		const tile = this.getTile(region, context);
+		const outputSamples = context.getSampleRegion();
+
+		const outputWidth = outputSamples.width;
+		const tileWidth = tile.samples.width;
+
+		const offsetX = Math.round((outputSamples.x - tile.samples.x) / outputSamples.resolution);
+		const offsetZ = Math.round((outputSamples.z - tile.samples.z) / outputSamples.resolution);
+
+		const continentalOutput = this.continental.data;
+		const oceanOutput = this.ocean.data;
+		const coastOutput = this.coast.data;
+
+		for (let z = 0; z < outputSamples.height; z++) {
+			const sourceOffset = (offsetZ + z) * tileWidth + offsetX;
+			const targetOffset = z * outputWidth;
+
+			continentalOutput.set(tile.continental.subarray(sourceOffset, sourceOffset + outputWidth), targetOffset);
+			oceanOutput.set(tile.ocean.subarray(sourceOffset, sourceOffset + outputWidth), targetOffset);
+			coastOutput.set(tile.coast.subarray(sourceOffset, sourceOffset + outputWidth), targetOffset);
+		}
+	}
 }
