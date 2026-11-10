@@ -18,6 +18,14 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 		return meta;
 	}
 
+	public static fromName(name: string) {
+		for(const [type, meta] of this.registry) {
+			if(type.name === name)
+				return type;
+		}
+		return null;
+	}
+	
 	public static readonly register = <T extends MapDataType<any, any>>(meta: MapDataMeta<T>) => (target: T) => {
 		this.registry.set(target, meta as any);
 	}

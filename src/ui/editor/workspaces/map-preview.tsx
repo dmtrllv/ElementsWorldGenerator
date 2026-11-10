@@ -94,12 +94,12 @@ export const MapPreview = ({ workspace, dropControls }: { workspace: MapPreviewW
 	);
 };
 
-const render = (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDataType<any, any>, _meta: MapDataMeta<any>, worldParams: WorldParamsSnapshot) => {
+const render = async (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDataType<any, any>, _meta: MapDataMeta<any>, worldParams: WorldParamsSnapshot) => {
 	const ctx = canvas.getContext("2d");
 	if (!ctx)
 		throw new Error(`Could not get canvas context!`);
 	
-	const map = generator.generateMap(mapType, GenerationScope.Global);
+	const map = await generator.generate(mapType, GenerationScope.Global);
 
 	canvas.width = generator.worldParams.size.x;
 	canvas.height = generator.worldParams.size.z;

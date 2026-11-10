@@ -13,22 +13,25 @@ export class World {
 	@observable
 	public chunkManager: ChunkManager;
 
+	private generation: number;
+
 	private readonly unsubscribeWorldParams: Unsubscriber;
 
 	public constructor(seed: number, worldParamProps: WorldParamProps) {
+		this.generation = 0;
 		this.worldParams = new WorldParams(seed, worldParamProps);
 
 		const world = createObservable(this);
 		const snapshot = this.worldParams.snapshot();
 
-		this.generator = createObservable(new Generator(snapshot));
+		this.generator = createObservable(new Generator(this.generation, snapshot));
 		this.chunkManager = new ChunkManager(this.generator);
 
 		this.unsubscribeWorldParams = subscribeDeep(this.worldParams, () => {
 			world.chunkManager.dispose();
 			world.generator.dispose();
 
-			world.generator = createObservable(new Generator(this.worldParams.snapshot()));
+			world.generator = createObservable(new Generator(this.generation++, this.worldParams.snapshot()));
 			world.chunkManager = new ChunkManager(world.generator);
 		});
 	}

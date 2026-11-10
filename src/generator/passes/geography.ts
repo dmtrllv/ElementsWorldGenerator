@@ -1,6 +1,6 @@
 import { benchmark, clamp } from "../../utils";
 import type { GenerationContext } from "../context";
-import { CoastMap, ContinentalMap, ContinentalThresholdMap, OceanMap } from "../maps";
+import { CoastMap, ContinentalMap, ContinentalThresholdMap, OceanMap, type SampleRegion } from "../maps";
 import { GeographyParams } from "../param-groups";
 import type { Region } from "../region";
 import { sampleContinentalDistribution } from "./continental-distribution";
@@ -133,7 +133,19 @@ export class GeographyPass extends Pass {
 
 		const workingRegion = region.expand(expansion);
 		const outputSamples = context.getSampleRegion();
-		const coarseSamples = context.getSampleRegionFor(workingRegion, coarseResolution);
+
+		const minX = Math.ceil(workingRegion.x / coarseResolution);
+		const minZ = Math.ceil(workingRegion.z / coarseResolution);
+		const maxX = Math.ceil(workingRegion.maxX / coarseResolution);
+		const maxZ = Math.ceil(workingRegion.maxZ / coarseResolution);
+
+		const coarseSamples: SampleRegion = {
+			x: minX * coarseResolution,
+			z: minZ * coarseResolution,
+			width: maxX - minX,
+			height: maxZ - minZ,
+			resolution: coarseResolution
+		};
 
 		const width = coarseSamples.width;
 		const height = coarseSamples.height;

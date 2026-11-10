@@ -59,7 +59,7 @@ export class ChunkManager {
 	}
 
 	public generateMap(type: any, chunk: Chunk, resolution: number = 1) {
-		return this.generator.generateMap(type, GenerationScope.Local, new Vector2(chunk.x, chunk.z), resolution);
+		return this.generator.generate(type, GenerationScope.Local, new Vector2(chunk.x, chunk.z), resolution);
 	}
 
 	public dispose() {

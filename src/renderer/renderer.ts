@@ -360,6 +360,7 @@ export class Renderer extends Module {
 		this.seaLevelMesh.scale.set(size, 1, size);
 	}
 
+	// todo add LRU eviction
 	private updateChunks() {
 		if (!this.world)
 			return;
@@ -370,8 +371,17 @@ export class Renderer extends Module {
 		const nextChunkIds = new Set(chunks.map(({ chunk }) => `${chunk.x}:${chunk.z}`));
 
 		for (const id of this.activeChunkIds) {
-			if (!nextChunkIds.has(id))
-				this.disposeChunk(id);
+			if (nextChunkIds.has(id))
+				continue;
+
+			const terrainMesh = this.terrainMeshes.get(id);
+			const edgeMesh = this.edgeMeshes.get(id);
+
+			if (terrainMesh)
+				this.scene.remove(terrainMesh);
+
+			if (edgeMesh)
+				this.scene.remove(edgeMesh);
 		}
 
 		for (const { chunk, offsetX, offsetZ } of chunks) {
@@ -380,14 +390,23 @@ export class Renderer extends Module {
 			if (!this.terrainMeshes.has(id))
 				this.renderChunk(this.world, chunk);
 
+			const terrainMesh = this.terrainMeshes.get(id);
+			const edgeMesh = this.edgeMeshes.get(id);
+
+			if (terrainMesh)
+				this.scene.add(terrainMesh);
+
+			if (edgeMesh && this.showEdges)
+				this.scene.add(edgeMesh);
+
 			this.positionChunk(id, offsetX, offsetZ);
 		}
 
 		this.activeChunkIds = nextChunkIds;
 	}
 
-	private renderChunk(world: World, chunk: Chunk) {
-		const map = world.chunkManager.generateMap(ElevationMap, chunk);
+	private async renderChunk(world: World, chunk: Chunk) {
+		const map = await world.chunkManager.generateMap(ElevationMap, chunk);
 
 		if (this.renderMode === "heightmap") {
 			this.renderHeightmapChunk(world, chunk, map);
@@ -439,7 +458,7 @@ export class Renderer extends Module {
 		this.createTerrainMesh(geometry, `${chunk.x}:${chunk.z}`);
 	}
 
-	private renderVoxelChunk(world: World, chunk: Chunk, map: ElevationMap) {
+	private async renderVoxelChunk(world: World, chunk: Chunk, map: ElevationMap) {
 		const worldParams = world.generator.worldParams;
 		const samples = map.samples;
 		const resolution = samples.resolution;
@@ -456,7 +475,7 @@ export class Renderer extends Module {
 		for (const neighbour of neighbourChunks) {
 			const neighbourMap = neighbour.x === chunk.x && neighbour.z === chunk.z
 				? map
-				: world.chunkManager.generateMap(ElevationMap, neighbour);
+				: await world.chunkManager.generateMap(ElevationMap, neighbour);
 
 			const neighbourSamples = neighbourMap.samples;
 
