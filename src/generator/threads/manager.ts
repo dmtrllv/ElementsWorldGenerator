@@ -33,6 +33,7 @@ export class ThreadManager {
 		while (event) {
 			await thread.emit(event.event, event.data);
 			event.resolver();
+			event = this.getEvent();
 		}
 		this.freeThreads.push(thread);
 	}
