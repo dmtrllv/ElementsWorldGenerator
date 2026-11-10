@@ -12,7 +12,7 @@ export class MountainParams extends ParamGroup<MountainParams> {
 		description: "Determines the spatial distribution and frequency of mountain regions. Scale is measured in metres.",
 		default: {
 			seedOffset: 0,
-			scale: 1500,
+			scale: 4000,
 			strength: 1,
 			persistence: 0.5,
 			lacunarity: 2,
@@ -26,7 +26,7 @@ export class MountainParams extends ParamGroup<MountainParams> {
 		name: "Shape",
 		description: "Controls the internal elevation variation of mountain regions. Scale is measured in metres.",
 		default: {
-			seedOffset: 200,
+			seedOffset: 300,
 			scale: 200,
 			strength: 1,
 			persistence: 0.5,

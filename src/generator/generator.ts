@@ -89,7 +89,6 @@ export class Generator {
 
 			const context = new GenerationContext(region, this.worldParams.region, scope, resolution);
 			const samples = context.getSampleRegion();
-			const bufferSize = samples.width * samples.height;
 
 			for (const k in passMeta.outputs) {
 				const OutputType = passMeta.outputs[k]!;
@@ -98,8 +97,10 @@ export class Generator {
 
 				if (!this.mapRegistry.has(outputId)) {
 					const meta = MapData.getMeta(OutputType);
+					const outputSamples = meta.sampleRegion ?? samples;
+					const bufferSize = outputSamples.width * outputSamples.height;
 					const data = new (meta.type || Float32Array)(bufferSize);
-					const map = new OutputType(data, samples);
+					const map = new OutputType(data, outputSamples);
 
 					this.mapRegistry.set(outputId, map);
 					Object.assign(pass, {

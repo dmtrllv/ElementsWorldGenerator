@@ -43,10 +43,12 @@ export type MapDataMeta<T extends MapDataType<any, any>> = T extends MapDataType
 	readonly type?: TypedArrayCtor<V>;
 	readonly name: string;
 	readonly description: string;
+	readonly sampleRegion?: SampleRegion;
 } : {
 	readonly type: TypedArrayCtor<V>;
 	readonly name: string;
 	readonly description: string;
+	readonly sampleRegion?: SampleRegion;
 }) : never;
 
 export type MapDataType<T extends MapData<Type>, Type extends TypedArray> = new (data: Type, samples: SampleRegion) => T;

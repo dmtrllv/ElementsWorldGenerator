@@ -1,17 +1,11 @@
+
 import { benchmark, clamp } from "../../utils";
 import type { GenerationContext } from "../context";
-import { CoastMap, ContinentalDistributionMap, ContinentalMap, OceanMap } from "../maps";
-import type { SampleRegion } from "../maps/map";
+import { CoastMap, ContinentalMap, ContinentalThresholdMap, OceanMap } from "../maps";
 import { GeographyParams } from "../param-groups";
-import { Region } from "../region";
+import type { Region } from "../region";
+import { sampleContinentalDistribution } from "./continental-distribution";
 import { dependency, GenerationScope, output, Pass } from "./pass";
-
-type GeographyTile = {
-	samples: SampleRegion;
-	continental: Float32Array;
-	ocean: Float32Array;
-	coast: Float32Array;
-};
 
 export class GeographyPass extends Pass {
 	@dependency(GeographyParams)
@@ -26,11 +20,8 @@ export class GeographyPass extends Pass {
 	@output(CoastMap)
 	public coast!: CoastMap;
 
-	@dependency(ContinentalDistributionMap, GenerationScope.Global, worldParams => worldParams.chunkSize / 2)
-	public distribution!: ContinentalDistributionMap;
-
-	private readonly tileChunks = 8;
-	private readonly tiles = new Map<string, GeographyTile>();
+	@dependency(ContinentalThresholdMap, GenerationScope.Global, worldParams => worldParams.chunkSize / 2)
+	public threshold!: ContinentalThresholdMap;
 
 
 	private chamferDistance(seeds: Uint8Array, width: number, height: number): Float32Array {
@@ -101,9 +92,8 @@ export class GeographyPass extends Pass {
 	};
 
 	private normalizeContinental(value: number, threshold: number): number {
-		if (value >= threshold) {
+		if (value >= threshold)
 			return 0.5 + 0.5 * this.normalize(value, threshold, 1);
-		}
 
 		return 0.5 * this.normalize(value, 0, threshold);
 	}
@@ -128,37 +118,22 @@ export class GeographyPass extends Pass {
 		return top * (1 - tz) + bottom * tz;
 	}
 
-	private getTileRegion(region: Region, context: GenerationContext): { region: Region; key: string } {
-		const tileSize = this.chunkSize * this.tileChunks;
-
-		const tileX = Math.floor((region.x - context.worldRegion.x) / tileSize);
-		const tileZ = Math.floor((region.z - context.worldRegion.z) / tileSize);
-
-		return {
-			region: new Region(
-				context.worldRegion.x + tileX * tileSize,
-				context.worldRegion.z + tileZ * tileSize,
-				tileSize,
-				tileSize
-			),
-			key: `${tileX}:${tileZ}:${context.resolution}`
-		};
-	}
-
 	@benchmark
-	private generateTile(region: Region, context: GenerationContext): GeographyTile {
+	private generateChunk(region: Region, context: GenerationContext): void {
 		const oceanParams = this.params.oceanParams;
 		const coastParams = this.params.coastParams;
 
 		const transitionWidth = Math.max(coastParams.transitionWidth.state, 0);
 		const shelfWidth = Math.max(oceanParams.shelfWidth.state, 1);
 
-		const coarseResolution = this.distribution.samples.resolution;
-		const expansion = Math.ceil(Math.max(transitionWidth, shelfWidth * 1.5) / coarseResolution) * coarseResolution + coarseResolution * 2;
+		const coarseResolution = this.chunkSize / 2;
+		const maxDistance = Math.max(transitionWidth, shelfWidth * 1.5);
+
+		// Include enough neighbouring samples for coastline and shelf distances.
+		const expansion = Math.ceil(maxDistance / coarseResolution) * coarseResolution + coarseResolution * 2;
 
 		const workingRegion = region.expand(expansion);
-
-		const samples = context.getSampleRegionFor(region);
+		const outputSamples = context.getSampleRegion();
 		const coarseSamples = context.getSampleRegionFor(workingRegion, coarseResolution);
 
 		const width = coarseSamples.width;
@@ -172,21 +147,19 @@ export class GeographyPass extends Pass {
 		const oceanMask = new Uint8Array(size);
 		const coastlineSeeds = new Uint8Array(size);
 
-		const distributionSamples = this.distribution.samples;
-		const distributionWidth = distributionSamples.width;
-		const distributionOffsetX = Math.round((coarseSamples.x - distributionSamples.x) / coarseResolution);
-		const distributionOffsetZ = Math.round((coarseSamples.z - distributionSamples.z) / coarseResolution);
+		const landThreshold = this.threshold.landThreshold;
+		const continentalParams = this.params.continental;
 
-		const landThreshold = this.distribution.landThreshold;
-
-		// Classify land and ocean using the cached low-resolution distribution map.
+		// Sample and classify the local coarse region.
 		for (let z = 0; z < height; z++) {
-			const sourceOffset = (distributionOffsetZ + z) * distributionWidth + distributionOffsetX;
-			const targetOffset = z * width;
+			const worldZ = coarseSamples.z + z * coarseResolution;
+			const rowOffset = z * width;
 
 			for (let x = 0; x < width; x++) {
-				const index = targetOffset + x;
-				const value = this.distribution.data[sourceOffset + x]!;
+				const worldX = coarseSamples.x + x * coarseResolution;
+				const index = rowOffset + x;
+
+				const value = sampleContinentalDistribution(continentalParams, worldX, worldZ);
 
 				continentalValues[index] = this.normalizeContinental(value, landThreshold);
 
@@ -224,16 +197,15 @@ export class GeographyPass extends Pass {
 					}
 				}
 
-				if (adjacentToOpposite) {
+				if (adjacentToOpposite)
 					coastlineSeeds[index] = 1;
-				}
 			}
 		}
 
 		// Calculate approximate coastline distances at coarse resolution.
 		const coastlineDistances = this.chamferDistance(coastlineSeeds, width, height);
 
-		// Generate ocean floor noise only at coarse resolution.
+		// Generate ocean floor noise only for local ocean samples.
 		for (let i = 0; i < size; i++) {
 			if (oceanMask[i] === 0)
 				continue;
@@ -287,72 +259,29 @@ export class GeographyPass extends Pass {
 			coastValues[i] = falloffLookup[lower]! * (1 - t) + falloffLookup[upper]! * t;
 		}
 
-		const tileWidth = samples.width;
-		const tileHeight = samples.height;
-
-		const tileContinental = new Float32Array(tileWidth * tileHeight);
-		const tileOcean = new Float32Array(tileWidth * tileHeight);
-		const tileCoast = new Float32Array(tileWidth * tileHeight);
-
-		// Interpolate the coarse maps into the full-resolution tile.
-		for (let z = 0; z < tileHeight; z++) {
-			const worldZ = samples.z + z * samples.resolution;
-			const coarseZ = (worldZ - coarseSamples.z) / coarseResolution;
-
-			for (let x = 0; x < tileWidth; x++) {
-				const worldX = samples.x + x * samples.resolution;
-				const coarseX = (worldX - coarseSamples.x) / coarseResolution;
-				const index = z * tileWidth + x;
-
-				tileContinental[index] = this.sampleBilinear(continentalValues, width, height, coarseX, coarseZ);
-				tileOcean[index] = this.sampleBilinear(oceanValues, width, height, coarseX, coarseZ);
-				tileCoast[index] = this.sampleBilinear(coastValues, width, height, coarseX, coarseZ);
-			}
-		}
-
-		return {
-			samples,
-			continental: tileContinental,
-			ocean: tileOcean,
-			coast: tileCoast
-		};
-	}
-
-	private getTile(region: Region, context: GenerationContext): GeographyTile {
-		const { region: tileRegion, key } = this.getTileRegion(region, context);
-
-		let tile = this.tiles.get(key);
-
-		if (!tile) {
-			tile = this.generateTile(tileRegion, context);
-			this.tiles.set(key, tile);
-		}
-
-		return tile;
-	}
-
-	@benchmark
-	public override generate(region: Region, context: GenerationContext): void {
-		const tile = this.getTile(region, context);
-		const outputSamples = context.getSampleRegion();
-
-		const outputWidth = outputSamples.width;
-		const tileWidth = tile.samples.width;
-
-		const offsetX = Math.round((outputSamples.x - tile.samples.x) / outputSamples.resolution);
-		const offsetZ = Math.round((outputSamples.z - tile.samples.z) / outputSamples.resolution);
-
+		// Interpolate directly into the requested chunk's output maps.
 		const continentalOutput = this.continental.data;
 		const oceanOutput = this.ocean.data;
 		const coastOutput = this.coast.data;
 
 		for (let z = 0; z < outputSamples.height; z++) {
-			const sourceOffset = (offsetZ + z) * tileWidth + offsetX;
-			const targetOffset = z * outputWidth;
+			const worldZ = outputSamples.z + z * outputSamples.resolution;
+			const coarseZ = (worldZ - coarseSamples.z) / coarseResolution;
 
-			continentalOutput.set(tile.continental.subarray(sourceOffset, sourceOffset + outputWidth), targetOffset);
-			oceanOutput.set(tile.ocean.subarray(sourceOffset, sourceOffset + outputWidth), targetOffset);
-			coastOutput.set(tile.coast.subarray(sourceOffset, sourceOffset + outputWidth), targetOffset);
+			for (let x = 0; x < outputSamples.width; x++) {
+				const worldX = outputSamples.x + x * outputSamples.resolution;
+				const coarseX = (worldX - coarseSamples.x) / coarseResolution;
+				const index = z * outputSamples.width + x;
+
+				continentalOutput[index] = this.sampleBilinear(continentalValues, width, height, coarseX, coarseZ);
+				oceanOutput[index] = this.sampleBilinear(oceanValues, width, height, coarseX, coarseZ);
+				coastOutput[index] = this.sampleBilinear(coastValues, width, height, coarseX, coarseZ);
+			}
 		}
+	}
+
+	@benchmark
+	public override generate(region: Region, context: GenerationContext): void {
+		this.generateChunk(region, context);
 	}
 }

@@ -16,14 +16,14 @@ export class ElevationParams extends ParamGroup<ElevationParams> {
 	@param(Float, {
 		name: "Ocean Depth",
 		description: "Maximum depth of ocean floors below sea level.",
-		default: 80
+		default: 400
 	})
 	public readonly oceanDepth!: Float;
 
 	@param(Float, {
 		name: "Mountain Height",
 		description: "Maximum additional elevation contributed by mountain regions.",
-		default: 120
+		default: 800
 	})
 	public readonly mountainHeight!: Float;
 

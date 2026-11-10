@@ -10,7 +10,7 @@ import { Region } from "./region";
 export class WorldParams {
 	public static get defaultProps(): WorldParamProps {
 		return {
-			size: new Vector3(512, 256, 512),
+			size: new Vector3(4096, 3000, 4096),
 			offset: new Vector2(0, 0),
 			chunkSize: 32,
 			geography: GeographyParams.getDefaultProps(),

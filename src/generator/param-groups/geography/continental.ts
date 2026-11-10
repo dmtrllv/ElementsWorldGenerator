@@ -40,7 +40,7 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 		name: "Warp",
 		description: "Defines spatial distortion applied to continental distribution. Scale is measured in metres.",
 		default: {
-			seedOffset: 100,
+			seedOffset: 200,
 			scale: 180,
 			strength: 1,
 			persistence: 0.5,
@@ -51,6 +51,7 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 	})
 	public readonly warp!: VectorField;
 
+	// todo is this not the same as the vectorfield strength?
 	@param(Float, {
 		name: "Warp Strength",
 		description: "Maximum coordinate displacement caused by the warp field, measured in metres.",
@@ -68,7 +69,7 @@ export class ContinentalParams extends ParamGroup<ContinentalParams> {
 	@param(Float, { 
 		name: "Land Coverage",
 		description: "Defines how much of the world will be covered by land",
-		default: 0.35,
+		default: 0.75,
 		options: {
 			step: 0.005,
 			min: 0.005,

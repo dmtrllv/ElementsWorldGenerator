@@ -67,7 +67,7 @@ export class ElevationPass extends Pass {
 				const oceanFactor = smoothstep(clamp((0.5 - continentalValue) * 2, 0, 1));
 
 				const coastInfluence = clamp(coast[coastIndex]!, 0, 1);
-				const coastalFactor = 1 - (coastInfluence * coastalElevation);
+				const coastalFactor = 1 - (coastInfluence * (1 - coastalElevation));
 
 				const oceanDepthFactor = clamp(ocean[oceanIndex]!, 0, 1);
 				const mountainInfluence = clamp(mountains[mountainIndex]!, 0, 1);
@@ -77,7 +77,7 @@ export class ElevationPass extends Pass {
 				elevation += landElevation * landFactor * coastalFactor;
 				elevation -= oceanDepth * oceanFactor * oceanDepthFactor;
 
-				elevation += mountainHeight * mountainInfluence;
+				elevation += mountainHeight * mountainInfluence * landFactor;
 
 				output[index] = elevation;
 			}
