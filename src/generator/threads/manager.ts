@@ -1,22 +1,53 @@
 import type { GenerationScope } from "../passes";
 import type { SampleRegion } from "../maps";
 import { Thread } from "./thread";
+import { SharedWorkQueue } from "./work-queue";
+import { SharedOutputs } from "./shared-outputs";
+import { TaskTypes } from "./task-types";
+import { TaskRegistry } from "./task-registry";
 
 export class ThreadManager {
+	private static readonly TASK_CAPACITY = 65536;
+	private static readonly CONTINUATION_CAPACITY = 262144;
+
+	public readonly registry: TaskRegistry;
+
+	public readonly outputs: SharedOutputs;
+	private readonly taskTypes: TaskTypes;
+
 	private readonly threads: ReadonlyArray<Thread> = [];
-
 	private readonly queue: QueuedEvent[] = [];
-
 	private readonly freeThreads: Thread[] = [];
+	private readonly workQueues: SharedWorkQueue[] = [];
 
-	public static async initialize() {
+	public static async initialize(arenaCapacity: number = 64 * 1024 * 1024) {
 		const manager = new ThreadManager();
-		await manager.broadcast("init", {});
+
+		const arenas: any = await Promise.all(manager.threads.map((thread, workerId) => thread.emit("init", {
+			workerId,
+			queues: manager.workQueues.map(queue => queue.buffer),
+			arenaCapacity
+		})));
+
+		await Promise.all(manager.threads.map(thread => thread.emit("configure", {
+			arenas,
+			registry: manager.registry.buffer,
+			outputs: manager.outputs.buffer,
+			taskCapacity: ThreadManager.TASK_CAPACITY,
+			continuationCapacity: ThreadManager.CONTINUATION_CAPACITY,
+			maxOutputs: manager.taskTypes.maxOutputs
+		})));
+
 		return manager;
 	}
 
 	private constructor() {
-		this.threads = new Array(Math.max(1, (navigator.hardwareConcurrency || 4) - 1)).fill(0).map(_ => new Thread());
+		const count = Math.max(1, (navigator.hardwareConcurrency || 4) - 1);
+		this.registry = TaskRegistry.create(ThreadManager.TASK_CAPACITY, ThreadManager.CONTINUATION_CAPACITY);
+		this.taskTypes = new TaskTypes();
+		this.outputs = SharedOutputs.create(ThreadManager.TASK_CAPACITY, this.taskTypes.maxOutputs);
+		this.workQueues = new Array(count).fill(0).map(() => SharedWorkQueue.create());
+		this.threads = new Array(count).fill(0).map(() => new Thread());
 		this.freeThreads = [...this.threads];
 	}
 
@@ -71,13 +102,30 @@ type QueuedEvent = {
 };
 
 export type MainEvents = {
-	readonly init: {};
+	readonly init: InitEvent;
+	readonly configure: ConfigureEvent;
 	readonly sync: SyncEvent;
 	readonly generate: GenerateEvent;
 };
 
+export type InitEvent = {
+	readonly workerId: number;
+	readonly queues: readonly SharedArrayBuffer[];
+	readonly arenaCapacity: number;
+};
+
+export type ConfigureEvent = {
+	readonly arenas: readonly SharedArrayBuffer[];
+	readonly registry: SharedArrayBuffer;
+	readonly outputs: SharedArrayBuffer;
+	readonly taskCapacity: number;
+	readonly continuationCapacity: number;
+	readonly maxOutputs: number;
+};
+
 export type MainEventResponses = {
 	readonly init: void;
+	readonly configure: void;
 	readonly sync: void;
 	readonly generate: GeneratedEvent;
 };

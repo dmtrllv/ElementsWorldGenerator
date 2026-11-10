@@ -1,17 +1,27 @@
-import { MapData, type MapDataType, type TypedArray } from "../maps";
+import { MapData, type MapDataType, type SampleRegion, type TypedArray } from "../maps";
 import { Pass, type PassType, isMapDependency } from "../passes";
 import { GenerationContext } from "../context";
 import { Region } from "../region";
 import { Vector2, Vector3 } from "three";
 import { WorldParams, type WorldParamProps } from "../world-params";
-import type { GenerateEvent, GeneratedEvent, MapBufferDescriptor, SyncEvent } from "./manager";
+import type { GenerateEvent, GeneratedEvent, MapBufferDescriptor, SyncEvent, InitEvent, ConfigureEvent } from "./manager";
 import { events } from "./worker/events";
+import { WorkScheduler } from "./work-scheduler";
+import { SharedArena } from "./shared-arena";
+import { SharedOutputs } from "./shared-outputs";
+import { TaskRegistry } from "./task-registry";
 
 export class GeneratorWorker {
 	public static readonly instance = new GeneratorWorker();
 
 	private generation: number = -1;
 	private worldParams: WorldParams | null = null;
+
+	private scheduler: WorkScheduler | null = null;
+	private arena: SharedArena | null = null;
+	private arenas: readonly SharedArrayBuffer[] = [];
+	private outputs: SharedOutputs | null = null;
+	private registry: TaskRegistry | null = null;
 
 	private readonly passRegistry = new Map<PassType<any>, Pass>();
 	private readonly passMapper = new Map<MapDataType<any, any>, Pass>();
@@ -39,9 +49,50 @@ export class GeneratorWorker {
 	}
 
 	private constructor() {
-		events.on("init", () => { });
+		events.on("init", this.init);
+		events.on("configure", this.configure);
 		events.on("sync", this.sync);
 		events.on("generate", this.generate);
+	}
+
+	private readonly init = ({ workerId, queues, arenaCapacity }: InitEvent): SharedArrayBuffer => {
+		if (this.scheduler || this.arena)
+			throw new Error("Worker is already initialized!");
+
+		this.scheduler = new WorkScheduler(workerId, [...queues]);
+		this.arena = SharedArena.create(arenaCapacity);
+
+		return this.arena.bufferRef;
+	};
+
+	private readonly configure = ({ arenas, registry, outputs, taskCapacity, continuationCapacity, maxOutputs }: ConfigureEvent) => {
+		if (!this.arena || !this.scheduler)
+			throw new Error("Worker is not initialized!");
+
+		if (arenas.length === 0)
+			throw new Error("No worker arenas received!");
+
+		this.arenas = arenas;
+		this.registry = new TaskRegistry(registry, taskCapacity, continuationCapacity);
+		this.outputs = new SharedOutputs(outputs, taskCapacity, maxOutputs);
+	};
+
+	private allocateOutput(type: MapDataType<any, any>, samples: SampleRegion) {
+		if (!this.arena)
+			throw new Error("Worker arena is not initialized!");
+
+		const meta = MapData.getMeta(type);
+		const ArrayType = meta.type ?? Float32Array;
+		const count = samples.width * samples.height;
+		const byteLength = count * ArrayType.BYTES_PER_ELEMENT;
+		const offset = this.arena.allocate(byteLength, ArrayType.BYTES_PER_ELEMENT);
+		const data = new ArrayType(this.arena.bufferRef as any, offset, count);
+
+		return {
+			map: new type(data, samples),
+			offset,
+			byteLength
+		};
 	}
 
 	private readonly sync = ({ generation, seed, worldParamsJson }: SyncEvent) => {
@@ -116,10 +167,7 @@ export class GeneratorWorker {
 		for (const [key, OutputType] of Object.entries(passMeta.outputs)) {
 			const meta = MapData.getMeta(OutputType);
 			const samples = meta.sampleRegion ?? context.getSampleRegion();
-			const ArrayType = meta.type ?? Float32Array;
-			const buffer = new SharedArrayBuffer(samples.width * samples.height * ArrayType.BYTES_PER_ELEMENT);
-			const data = new ArrayType(buffer as any);
-			const map = new OutputType(data, samples);
+			const { map, offset, byteLength } = this.allocateOutput(OutputType, samples);
 
 			Object.assign(pass, {
 				[key]: map
@@ -127,7 +175,7 @@ export class GeneratorWorker {
 
 			outputs.push({
 				type: OutputType.name,
-				buffer,
+				buffer: this.arena!.bufferRef,
 				samples
 			});
 		}
