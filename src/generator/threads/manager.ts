@@ -1,4 +1,5 @@
 import type { GenerationScope } from "../passes";
+import type { SampleRegion } from "../maps";
 import { Thread } from "./thread";
 
 export class ThreadManager {
@@ -15,7 +16,7 @@ export class ThreadManager {
 	}
 
 	private constructor() {
-		this.threads = new Array((navigator.hardwareConcurrency || 4) - 1).fill(0).map(_ => new Thread());
+		this.threads = new Array(Math.max(1, (navigator.hardwareConcurrency || 4) - 1)).fill(0).map(_ => new Thread());
 		this.freeThreads = [...this.threads];
 	}
 
@@ -30,26 +31,34 @@ export class ThreadManager {
 
 	private async flushQueue(thread: Thread) {
 		let event = this.getEvent();
+
 		while (event) {
-			await thread.emit(event.event, event.data);
-			event.resolver();
+			try {
+				const result = await thread.emit(event.event as any, event.data as any);
+				event.resolver(result);
+			} catch (error) {
+				event.rejecter(error);
+			}
+
 			event = this.getEvent();
 		}
+
 		this.freeThreads.push(thread);
 	}
 
-	public async emit<K extends keyof MainEvents>(event: K, data: MainEvents[K]): Promise<void> {
-		return new Promise((resolver) => {
+	public async emit<K extends keyof MainEvents>(event: K, data: MainEvents[K]): Promise<MainEventResponses[K]> {
+		return new Promise((resolver, rejecter) => {
 			this.queue.push({
 				event,
 				data,
-				resolver
+				resolver,
+				rejecter
 			});
 
 			const thread = this.freeThreads.pop();
-			if (thread) {
+
+			if (thread)
 				this.flushQueue(thread);
-			}
 		});
 	}
 }
@@ -57,7 +66,8 @@ export class ThreadManager {
 type QueuedEvent = {
 	readonly event: keyof MainEvents;
 	readonly data: MainEvents[keyof MainEvents];
-	readonly resolver: () => void;
+	readonly resolver: (result: any) => void;
+	readonly rejecter: (error: unknown) => void;
 };
 
 export type MainEvents = {
@@ -66,24 +76,40 @@ export type MainEvents = {
 	readonly generate: GenerateEvent;
 };
 
+export type MainEventResponses = {
+	readonly init: void;
+	readonly sync: void;
+	readonly generate: GeneratedEvent;
+};
+
 export type SyncEvent = {
 	readonly worldParamsJson: string;
 	readonly seed: number;
 	readonly generation: number;
 };
 
+export type MapBufferDescriptor = {
+	readonly type: string;
+	readonly buffer: SharedArrayBuffer;
+	readonly samples: SampleRegion;
+};
+
 export type GenerateEvent = {
-	readonly mapId: string;
+	readonly generation: number;
 	readonly type: string;
 	readonly scope: GenerationScope;
-	readonly chunk?: readonly [number, number] | undefined;
 	readonly resolution: number;
+	readonly region: {
+		readonly x: number;
+		readonly z: number;
+		readonly width: number;
+		readonly height: number;
+	};
+	readonly inputs: Readonly<Record<string, MapBufferDescriptor>>;
 };
 
-export type ThreadEvents = {
-	readonly generated: GeneratedEvent;
-};
+export type GeneratedMap = MapBufferDescriptor;
 
 export type GeneratedEvent = {
-	readonly mapId: string;
-}
+	readonly outputs: readonly GeneratedMap[];
+};

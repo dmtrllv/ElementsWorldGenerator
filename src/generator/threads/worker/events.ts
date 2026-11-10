@@ -1,46 +1,48 @@
-import type { MainEvents, ThreadEvents } from "../manager";
+
+import type { MainEvents } from "../manager";
 
 class WorkerEventManager {
-	private eventId: number = 0;
-
-	public readonly eventResponseListeners = new Map<number, () => void>();
-	public readonly handlers = new Map<string, ((data: any) => void)[]>();
+	public readonly handlers = new Map<string, ((data: any) => any | Promise<any>)[]>();
 
 	public constructor() {
 		self.onmessage = this.handleMessage;
 	}
 
-	public async emit<K extends keyof ThreadEvents>(key: K, data: ThreadEvents[K]): Promise<void> {
-		const id = this.eventId++;
-		const promise = new Promise<void>((res) => this.eventResponseListeners.set(id, res));
-		self.postMessage([id, key, data]);
-		return promise;
-	}
-
-	private handleMessage = (e: MessageEvent) => {
+	private handleMessage = async (e: MessageEvent) => {
 		if (!Array.isArray(e.data))
 			return;
-		const [id, event, data = {}] = e.data;
-		if (event === "__event-response__") {
-			const handler = this.eventResponseListeners.get(id);
-			if (!handler)
-				return;
-			this.eventResponseListeners.delete(id);
-			handler();
-		} else {
-			const handlers = this.handlers.get(event);
-			if (handlers)
-				Promise.all(handlers.map(handler => handler(data))).then(() => self.postMessage([id, "__event-response__"]));
-		}
-	}
 
-	public on<K extends keyof MainEvents>(event: K, handler: (data: MainEvents[K]) => void) {
+		const [id, event, data = {}] = e.data;
+
+		if (event === "__event-response__")
+			return;
+
+		try {
+			const handlers = this.handlers.get(event);
+
+			if (!handlers)
+				throw new Error(`No handler registered for event "${event}".`);
+
+			const results = await Promise.all(handlers.map(handler => handler(data)));
+			const result = results.length === 1 ? results[0] : results;
+
+			self.postMessage([id, "__event-response__", result]);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			self.postMessage([id, "__event-error__", message]);
+		}
+	};
+
+	public on<K extends keyof MainEvents>(event: K, handler: (data: MainEvents[K]) => any | Promise<any>) {
 		if (!this.handlers.has(event))
 			this.handlers.set(event, []);
+
 		const handlers = this.handlers.get(event)!;
 		handlers.push(handler);
+
 		return () => {
 			const i = handlers.indexOf(handler);
+
 			if (i > -1)
 				handlers.splice(i, 1);
 		};
