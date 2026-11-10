@@ -83,7 +83,7 @@ const CanvasRenderer = ({ renderer }: { renderer: Renderer }) => {
 			<button onClick={toggleController} className="generate-btn">
 				{renderer.controller?.cameraMode === "first-person" ? "Oribal" : "First Person"}
 			</button>
-			<input type="range" min={50} max={500} value={renderer.renderDistance} onChange={e => renderer.renderDistance = Number.parseInt(e.target.value)} />
+			<NumberInput name="render distance" min={50} value={renderer.renderDistance} onChange={e => renderer.renderDistance = e} />
 			<NumberInput name="speed" min={5} max={100} value={renderer.controller?.movementSpeed || 0} onChange={v => { if(renderer.controller) renderer.controller.movementSpeed = v }} />
 			<button onClick={() => renderer.toggleEdges()} className="generate-btn">
 				{renderer.showEdges ? "Hide" : "Show"} edges

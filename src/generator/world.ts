@@ -31,7 +31,7 @@ export class World {
 			world.chunkManager.dispose();
 			world.generator.dispose();
 
-			world.generator = createObservable(new Generator(this.generation++, this.worldParams.snapshot()));
+			world.generator = createObservable(new Generator(++this.generation, this.worldParams.snapshot()));
 			world.chunkManager = new ChunkManager(world.generator);
 		});
 	}
