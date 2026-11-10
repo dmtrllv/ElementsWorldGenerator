@@ -188,6 +188,7 @@ export class Renderer extends Module {
 		this.chunkGeneration++;
 		this.chunkQueue.length = 0;
 		this.pendingChunkIds.clear();
+		this.activeChunkBuilds = 0;
 
 		for (const mesh of this.terrainMeshes.values())
 			this.disposeMesh(mesh);
@@ -380,7 +381,10 @@ export class Renderer extends Module {
 				console.error(`Failed to render chunk ${build.id}:`, error);
 			}).finally(() => {
 				this.pendingChunkIds.delete(pendingId);
-				this.activeChunkBuilds--;
+
+				if (build.generation === this.chunkGeneration)
+					this.activeChunkBuilds--;
+
 				this.pumpChunkQueue();
 			});
 		}
@@ -395,7 +399,7 @@ export class Renderer extends Module {
 		if (build.mode === "heightmap")
 			this.renderHeightmapChunk(build.world, build.chunk, map);
 		else
-			await this.renderVoxelChunk(build.world, build.chunk, map);
+			await this.renderVoxelChunk(build.world, build.chunk, map, build.generation);
 	}
 
 	private updateChunks() {
@@ -519,7 +523,7 @@ export class Renderer extends Module {
 		this.createTerrainMesh(geometry, `${chunk.x}:${chunk.z}`);
 	}
 
-	private async renderVoxelChunk(world: World, chunk: Chunk, map: ElevationMap) {
+	private async renderVoxelChunk(world: World, chunk: Chunk, map: ElevationMap, generation: number) {
 		const worldParams = world.generator.worldParams;
 		const samples = map.samples;
 		const resolution = samples.resolution;
@@ -533,9 +537,10 @@ export class Renderer extends Module {
 		const heights = new Map<string, number>();
 
 		for (const neighbour of neighbourChunks) {
-			const neighbourMap = neighbour.x === chunk.x && neighbour.z === chunk.z
-				? map
-				: await world.chunkManager.generateMap(ElevationMap, neighbour);
+			const neighbourMap = neighbour.x === chunk.x && neighbour.z === chunk.z ? map : await world.chunkManager.generateMap(ElevationMap, neighbour);
+
+			if (generation !== this.chunkGeneration || world !== this.world || this.renderMode !== "voxel")
+				return;
 
 			const neighbourSamples = neighbourMap.samples;
 
@@ -599,6 +604,9 @@ export class Renderer extends Module {
 					addFace(x0, southHeight, z1, x1, southHeight, z1, x1, height, z1, x0, height, z1, 0, 0, 1);
 			}
 		}
+
+		if (generation !== this.chunkGeneration || world !== this.world || this.renderMode !== "voxel")
+			return;
 
 		const geometry = new Three.BufferGeometry();
 		geometry.setAttribute("position", new Three.Float32BufferAttribute(positions, 3));
