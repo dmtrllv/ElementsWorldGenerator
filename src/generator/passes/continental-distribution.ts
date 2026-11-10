@@ -1,4 +1,4 @@
-
+import { Vector2 } from "three";
 import { benchmark, clamp } from "../../utils";
 import type { GenerationContext } from "../context";
 import { ContinentalThresholdMap } from "../maps";
@@ -6,14 +6,17 @@ import { GeographyParams } from "../param-groups";
 import type { Region } from "../region";
 import { dependency, output, Pass } from "./pass";
 
-export const sampleContinentalDistribution = (params: GeographyParams["continental"], worldX: number, worldZ: number): number => {
+const HISTOGRAM_BIN_COUNT = 65536;
+const HISTOGRAM_BIN_SCALE = HISTOGRAM_BIN_COUNT;
+
+export const sampleContinentalDistribution = (params: GeographyParams["continental"], worldX: number, worldZ: number, warpTarget = new Vector2()): number => {
 	const warpStrength = params.warpStrength.state;
 	const normalization = params.normalization;
 
-	const warp = params.warp.get(worldX, worldZ);
+	params.warp.getInto(worldX, worldZ, warpTarget);
 
-	const warpedX = worldX + warp.x * warpStrength;
-	const warpedZ = worldZ + warp.y * warpStrength;
+	const warpedX = worldX + warpTarget.x * warpStrength;
+	const warpedZ = worldZ + warpTarget.y * warpStrength;
 
 	const value = params.distribution.get(warpedX, warpedZ);
 
@@ -47,57 +50,41 @@ export class ContinentalDistributionPass extends Pass {
 		if (sampleCount === 0)
 			throw new Error("Cannot calculate land threshold from an empty distribution.");
 
-		const binCount = 4096;
-		const histogram = new Uint32Array(binCount);
+		const histogram = new Uint32Array(HISTOGRAM_BIN_COUNT);
+		const warpTarget = new Vector2();
 
-		// Build a histogram without retaining the global distribution.
-		for (let z = 0; z < height; z++) {
-			for (let x = 0; x < width; x++) {
-				const worldX = samples.x + x * samples.resolution;
-				const worldZ = samples.z + z * samples.resolution;
+		const startX = samples.x;
+		const startZ = samples.z;
+		const resolution = samples.resolution;
 
-				const value = sampleContinentalDistribution(params, worldX, worldZ);
-				const bin = Math.min(binCount - 1, Math.floor(value * binCount));
+		let worldZ = startZ;
 
-				histogram[bin] = histogram[bin]! + 1;
+		for (let z = 0; z < height; z++, worldZ += resolution) {
+			let worldX = startX;
+
+			for (let x = 0; x < width; x++, worldX += resolution) {
+				const value = sampleContinentalDistribution(params, worldX, worldZ, warpTarget);
+				const bin = Math.min(HISTOGRAM_BIN_COUNT - 1, (value * HISTOGRAM_BIN_SCALE) | 0);
+
+				histogram[bin]!++;
 			}
 		}
 
 		const rank = Math.floor((1 - landCoverage) * (sampleCount - 1));
 
 		let cumulative = 0;
-		let thresholdBin = 0;
 
-		for (let i = 0; i < binCount; i++) {
-			const next = cumulative + histogram[i]!;
+		for (let i = 0; i < HISTOGRAM_BIN_COUNT; i++) {
+			const count = histogram[i]!;
 
-			if (rank < next) {
-				thresholdBin = i;
-				break;
+			if (rank < cumulative + count) {
+				this.threshold.data[0] = (i + 0.5) / HISTOGRAM_BIN_SCALE;
+				return;
 			}
 
-			cumulative = next;
+			cumulative += count;
 		}
 
-		const bucket = new Float32Array(histogram[thresholdBin]!);
-		let bucketIndex = 0;
-
-		// Re-sample only values belonging to the selected histogram bin.
-		for (let z = 0; z < height; z++) {
-			for (let x = 0; x < width; x++) {
-				const worldX = samples.x + x * samples.resolution;
-				const worldZ = samples.z + z * samples.resolution;
-
-				const value = sampleContinentalDistribution(params, worldX, worldZ);
-				const bin = Math.min(binCount - 1, Math.floor(value * binCount));
-
-				if (bin === thresholdBin)
-					bucket[bucketIndex++] = value;
-			}
-		}
-
-		bucket.sort();
-
-		this.threshold.data[0] = bucket[rank - cumulative]!;
+		this.threshold.data[0] = 1;
 	}
 }
