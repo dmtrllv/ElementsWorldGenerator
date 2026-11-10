@@ -1,5 +1,5 @@
 import { Vector2 } from "three";
-import { clamp } from "../../utils";
+import { benchmark, benchmarkBlock, clamp } from "../../utils";
 import type { GenerationContext } from "../context";
 import { CoastMap, ContinentalDistributionMap, ContinentalMap, OceanMap } from "../maps";
 import type { SampleRegion } from "../maps/map";
@@ -30,7 +30,7 @@ export class GeographyPass extends Pass {
 	@dependency(ContinentalDistributionMap, GenerationScope.Global, worldParams => worldParams.chunkSize / 2)
 	public distribution!: ContinentalDistributionMap;
 
-	private readonly tileChunks = 64;
+	private readonly tileChunks = 8;
 	private readonly tiles = new Map<string, GeographyTile>();
 
 	private distanceTransform1D(input: Float64Array, output: Float64Array, length: number, v: Int32Array, z: Float64Array): void {
@@ -168,6 +168,7 @@ export class GeographyPass extends Pass {
 		};
 	}
 
+	@benchmark
 	private generateTile(region: Region, context: GenerationContext): GeographyTile {
 		const continentalParams = this.params.continental;
 		const oceanParams = this.params.oceanParams;
@@ -201,128 +202,138 @@ export class GeographyPass extends Pass {
 		const warp = new Vector2();
 
 		// Generate continental and ocean classification.
-		for (let z = 0; z < height; z++) {
-			for (let x = 0; x < width; x++) {
-				const index = z * width + x;
+		benchmarkBlock("Generate continental and ocean classification", () => {
+			for (let z = 0; z < height; z++) {
+				for (let x = 0; x < width; x++) {
+					const index = z * width + x;
 
-				const worldX = workingSamples.x + x * workingSamples.resolution;
-				const worldZ = workingSamples.z + z * workingSamples.resolution;
+					const worldX = workingSamples.x + x * workingSamples.resolution;
+					const worldZ = workingSamples.z + z * workingSamples.resolution;
 
-				continentalParams.warp.getInto(worldX, worldZ, warp);
+					continentalParams.warp.getInto(worldX, worldZ, warp);
 
-				const warpedX = worldX + warp.x * warpStrength;
-				const warpedZ = worldZ + warp.y * warpStrength;
+					const warpedX = worldX + warp.x * warpStrength;
+					const warpedZ = worldZ + warp.y * warpStrength;
 
-				const continentalValue = continentalParams.distribution.get(warpedX, warpedZ);
-				const normalizedContinental = this.normalize(continentalValue, normalization.min, normalization.max);
+					const continentalValue = continentalParams.distribution.get(warpedX, warpedZ);
+					const normalizedContinental = this.normalize(continentalValue, normalization.min, normalization.max);
 
-				const landValue = clamp(continentalParams.shape.evaluate(normalizedContinental), 0, 1);
-				const normalizedLandValue = this.normalizeContinental(landValue, landThreshold);
+					const landValue = clamp(continentalParams.shape.evaluate(normalizedContinental), 0, 1);
+					const normalizedLandValue = this.normalizeContinental(landValue, landThreshold);
 
-				continentalValues[index] = normalizedLandValue;
+					continentalValues[index] = normalizedLandValue;
 
-				if (landValue < landThreshold)
-					oceanMask[index] = 1;
+					if (landValue < landThreshold)
+						oceanMask[index] = 1;
+				}
 			}
-		}
+		});
 
-		// Find land and ocean cells adjacent to the coastline.
-		for (let z = 0; z < height; z++) {
-			for (let x = 0; x < width; x++) {
-				const index = z * width + x;
-				const isOcean = oceanMask[index] === 1;
+		benchmarkBlock("Find land and ocean cells adjacent to the coastline.", () => {
+			// Find land and ocean cells adjacent to the coastline.
+			for (let z = 0; z < height; z++) {
+				for (let x = 0; x < width; x++) {
+					const index = z * width + x;
+					const isOcean = oceanMask[index] === 1;
 
-				let adjacentToOpposite = false;
+					let adjacentToOpposite = false;
 
-				for (let dz = -1; dz <= 1 && !adjacentToOpposite; dz++) {
-					for (let dx = -1; dx <= 1; dx++) {
-						if (dx === 0 && dz === 0)
-							continue;
+					for (let dz = -1; dz <= 1 && !adjacentToOpposite; dz++) {
+						for (let dx = -1; dx <= 1; dx++) {
+							if (dx === 0 && dz === 0)
+								continue;
 
-						const nx = x + dx;
-						const nz = z + dz;
+							const nx = x + dx;
+							const nz = z + dz;
 
-						if (nx < 0 || nx >= width || nz < 0 || nz >= height)
-							continue;
+							if (nx < 0 || nx >= width || nz < 0 || nz >= height)
+								continue;
 
-						const neighborIndex = nz * width + nx;
-						const neighborIsOcean = oceanMask[neighborIndex] === 1;
+							const neighborIndex = nz * width + nx;
+							const neighborIsOcean = oceanMask[neighborIndex] === 1;
 
-						if (isOcean !== neighborIsOcean) {
-							adjacentToOpposite = true;
-							break;
+							if (isOcean !== neighborIsOcean) {
+								adjacentToOpposite = true;
+								break;
+							}
 						}
 					}
-				}
 
-				if (adjacentToOpposite) {
-					if (isOcean)
-						oceanCoastSeeds[index] = 1;
-					else
-						coastSeeds[index] = 1;
+					if (adjacentToOpposite) {
+						if (isOcean)
+							oceanCoastSeeds[index] = 1;
+						else
+							coastSeeds[index] = 1;
+					}
 				}
 			}
-		}
+		});
 
 		// Calculate distance to the nearest coastline on both sides.
 		const distances = this.distanceTransform(coastSeeds, width, height);
 		const oceanDistances = this.distanceTransform(oceanCoastSeeds, width, height);
 
 		// Generate ocean floor depth.
-		for (let i = 0; i < size; i++) {
-			if (oceanMask[i] === 0)
-				continue;
+		benchmarkBlock("ocean floor", () => {
+			for (let i = 0; i < size; i++) {
+				if (oceanMask[i] === 0)
+					continue;
 
-			const x = i % width;
-			const z = Math.floor(i / width);
+				const x = i % width;
+				const z = Math.floor(i / width);
 
-			const worldX = workingSamples.x + x * workingSamples.resolution;
-			const worldZ = workingSamples.z + z * workingSamples.resolution;
+				const worldX = workingSamples.x + x * workingSamples.resolution;
+				const worldZ = workingSamples.z + z * workingSamples.resolution;
 
-			const oceanValue = oceanParams.distribution.get(worldX, worldZ);
-			const shelfValue = oceanParams.shelf.get(worldX, worldZ);
+				const oceanValue = oceanParams.distribution.get(worldX, worldZ);
+				const shelfValue = oceanParams.shelf.get(worldX, worldZ);
 
-			const normalizedOcean = this.normalize(oceanValue, -1, 1);
-			const normalizedShelf = this.normalize(shelfValue, -1, 1);
+				const normalizedOcean = this.normalize(oceanValue, -1, 1);
+				const normalizedShelf = this.normalize(shelfValue, -1, 1);
 
-			const effectiveShelfWidth = Math.max(shelfWidth * (0.5 + normalizedShelf), 1);
-			const oceanDistance = oceanDistances[i]! * workingSamples.resolution;
-			const shelfProgress = clamp(oceanDistance / effectiveShelfWidth, 0, 1);
-			const shelfFactor = shelfProgress * shelfProgress * (3 - 2 * shelfProgress);
+				const effectiveShelfWidth = Math.max(shelfWidth * (0.5 + normalizedShelf), 1);
+				const oceanDistance = oceanDistances[i]! * workingSamples.resolution;
+				const shelfProgress = clamp(oceanDistance / effectiveShelfWidth, 0, 1);
+				const shelfFactor = shelfProgress * shelfProgress * (3 - 2 * shelfProgress);
 
-			const basinDepth = 0.5 + normalizedOcean * 0.5;
+				const basinDepth = 0.5 + normalizedOcean * 0.5;
 
-			oceanValues[i] = clamp(shelfFactor * basinDepth, 0, 1);
-		}
+				oceanValues[i] = clamp(shelfFactor * basinDepth, 0, 1);
+			}
+		});
+
 
 		// Precompute the falloff curve.
 		const lookupSize = 1024;
 		const falloffLookup = new Float32Array(lookupSize);
-
-		for (let i = 0; i < lookupSize; i++)
-			falloffLookup[i] = clamp(coastParams.falloff.evaluate(i / (lookupSize - 1)), 0, 1);
+		benchmarkBlock("falloffLookup", () => {
+			for (let i = 0; i < lookupSize; i++)
+				falloffLookup[i] = clamp(coastParams.falloff.evaluate(i / (lookupSize - 1)), 0, 1);
+		});
 
 		// Generate coast map.
-		for (let i = 0; i < size; i++) {
-			if (oceanMask[i] === 1 || transitionWidth <= 0)
-				continue;
+		benchmarkBlock("Generate coast", () => {
+			for (let i = 0; i < size; i++) {
+				if (oceanMask[i] === 1 || transitionWidth <= 0)
+					continue;
 
-			const distance = distances[i]! * workingSamples.resolution;
+				const distance = distances[i]! * workingSamples.resolution;
 
-			if (distance >= transitionWidth)
-				continue;
+				if (distance >= transitionWidth)
+					continue;
 
-			const normalizedDistance = distance / transitionWidth;
-			const lookupIndex = normalizedDistance * (lookupSize - 1);
+				const normalizedDistance = distance / transitionWidth;
+				const lookupIndex = normalizedDistance * (lookupSize - 1);
 
-			const lower = Math.floor(lookupIndex);
-			const upper = Math.min(lower + 1, lookupSize - 1);
-			const t = lookupIndex - lower;
+				const lower = Math.floor(lookupIndex);
+				const upper = Math.min(lower + 1, lookupSize - 1);
+				const t = lookupIndex - lower;
 
-			coastValues[i] = falloffLookup[lower]! * (1 - t) + falloffLookup[upper]! * t;
-		}
+				coastValues[i] = falloffLookup[lower]! * (1 - t) + falloffLookup[upper]! * t;
+			}
+		});
 
-		// Copy the tile interior from the expanded working region.
+
 		const tileWidth = samples.width;
 		const tileHeight = samples.height;
 
@@ -330,17 +341,20 @@ export class GeographyPass extends Pass {
 		const tileOcean = new Float32Array(tileWidth * tileHeight);
 		const tileCoast = new Float32Array(tileWidth * tileHeight);
 
-		const offsetX = Math.round((samples.x - workingSamples.x) / workingSamples.resolution);
-		const offsetZ = Math.round((samples.z - workingSamples.z) / workingSamples.resolution);
+		// Copy the tile interior from the expanded working region.
+		benchmarkBlock("copy tile interior", () => {
+			const offsetX = Math.round((samples.x - workingSamples.x) / workingSamples.resolution);
+			const offsetZ = Math.round((samples.z - workingSamples.z) / workingSamples.resolution);
 
-		for (let z = 0; z < tileHeight; z++) {
-			const sourceOffset = (offsetZ + z) * width + offsetX;
-			const targetOffset = z * tileWidth;
+			for (let z = 0; z < tileHeight; z++) {
+				const sourceOffset = (offsetZ + z) * width + offsetX;
+				const targetOffset = z * tileWidth;
 
-			tileContinental.set(continentalValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
-			tileOcean.set(oceanValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
-			tileCoast.set(coastValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
-		}
+				tileContinental.set(continentalValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
+				tileOcean.set(oceanValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
+				tileCoast.set(coastValues.subarray(sourceOffset, sourceOffset + tileWidth), targetOffset);
+			}
+		})
 
 		return {
 			samples,
@@ -363,6 +377,7 @@ export class GeographyPass extends Pass {
 		return tile;
 	}
 
+	@benchmark
 	public override generate(region: Region, context: GenerationContext): void {
 		const tile = this.getTile(region, context);
 		const outputSamples = context.getSampleRegion();

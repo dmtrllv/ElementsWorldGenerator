@@ -31,3 +31,36 @@ export type Immutable<T> =
 	T extends Array<infer U> ? ReadonlyArray<Immutable<U>> :
 	T extends object ? T & { readonly [K in keyof T]: Immutable<T[K]> } :
 	Readonly<T>;
+
+const BENCHMARK = false;
+
+export const benchmark = (target: any, key: any, description: PropertyDescriptor) => {
+	if(!BENCHMARK)
+		return;
+	
+	const original = description.value;
+
+	if (typeof original !== "function") {
+		return;
+	}
+
+	description.value = function (...args: any[]) {
+		const label = `${target.constructor.name}.${String(key)}`;
+
+		console.time(label);
+
+		try {
+			return original.apply(this, args);
+		}
+		finally {
+			console.timeEnd(label);
+		}
+	};
+};
+
+export const benchmarkBlock = <T>(name: string, fn: () => T): T => {
+	console.time(name);
+	const result = fn();
+	console.timeEnd(name);
+	return result;
+}

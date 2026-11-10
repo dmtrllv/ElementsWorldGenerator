@@ -5,6 +5,7 @@ import type { Region } from "../region";
 import { dependency, output, Pass } from "./pass";
 import { MountainMap } from "../maps/terrain";
 import type { GenerationContext } from "../context";
+import { benchmark } from "../../utils";
 
 export class MountainPass extends Pass {
 	@dependency(ContinentalMap)
@@ -19,6 +20,7 @@ export class MountainPass extends Pass {
 	@output(MountainMap)
 	public readonly mountainMap!: MountainMap;
 
+	@benchmark
 	public override generate(_region: Region, context: GenerationContext): void {
 		const continental = this.continental.data;
 		const coast = this.coast.data;

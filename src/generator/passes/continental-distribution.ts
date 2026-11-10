@@ -1,4 +1,4 @@
-import { clamp } from "../../utils";
+import { benchmark, clamp } from "../../utils";
 import type { GenerationContext } from "../context";
 import { ContinentalDistributionMap } from "../maps";
 import { GeographyParams } from "../param-groups";
@@ -12,6 +12,7 @@ export class ContinentalDistributionPass extends Pass {
 	@output(ContinentalDistributionMap)
 	public distribution!: ContinentalDistributionMap;
 
+	@benchmark
 	public override generate(_region: Region, context: GenerationContext): void {
 		const params = this.params.continental;
 		const samples = context.getSampleRegion();

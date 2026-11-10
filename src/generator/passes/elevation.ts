@@ -6,6 +6,7 @@ import { SeaLevelParams } from "../param-groups/terrain/sea";
 import { ElevationParams } from "../param-groups/terrain/elevation";
 import { CoastMap, ContinentalMap, OceanMap } from "../maps";
 import type { GenerationContext } from "../context";
+import { benchmark } from "../../utils";
 
 export class ElevationPass extends Pass {
 	@dependency(SeaLevelParams)
@@ -29,6 +30,7 @@ export class ElevationPass extends Pass {
 	@output(ElevationMap)
 	public readonly elevationMap!: ElevationMap;
 
+	@benchmark
 	public override generate(_region: Region, context: GenerationContext): void {
 		const continental = this.continentalMap.data;
 		const ocean = this.oceanMap.data;
