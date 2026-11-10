@@ -1,8 +1,6 @@
 import { Vector2, Vector3 } from "three";
 import { createObservable, observable } from "../reactive";
-import { GeographyParams } from "./param-groups/geography/geography";
-import { ParamGroup, type ParamGroupProps, type ParamGroupType } from "./param-groups/param-group";
-import { TerrainParams } from "./param-groups/terrain/terrain";
+import { GeographyParams, TerrainParams, ParamGroup, type ParamGroupProps, type ParamGroupType } from "./param-groups";
 import type { Immutable } from "../utils";
 import { Region } from "./region";
 

@@ -2,6 +2,7 @@ import { group, ParamGroup, subGroup } from "../param-group";
 import { ElevationParams } from "./elevation";
 import { HillParams } from "./hills";
 import { MountainParams } from "./mountains";
+import { PlainParams } from "./plains";
 import { PlateauParams } from "./plateaus";
 import { SeaLevelParams } from "./sea";
 import { ValleyParams } from "./valleys";
@@ -11,6 +12,9 @@ import { ValleyParams } from "./valleys";
 	description: ""
 })
 export class TerrainParams extends ParamGroup<TerrainParams> {
+	@subGroup(PlainParams)
+	public readonly plains!: PlainParams;
+
 	@subGroup(MountainParams)
 	public readonly mountains!: MountainParams;
 
