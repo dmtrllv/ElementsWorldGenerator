@@ -5,6 +5,7 @@ import { useObservable } from "../../../reactive";
 import { GenerationScope, Generator, type MapDataMeta, type MapDataType, type WorldParamsSnapshot } from "../../../generator";
 import { NumberInput } from "../../components";
 import { useEvent } from "../../hooks/event";
+import { clamp } from "../../../utils";
 
 import "./styles/map-preview.scss";
 
@@ -52,7 +53,7 @@ export const MapPreview = ({ workspace, dropControls }: { workspace: MapPreviewW
 		position: "absolute",
 		left: `calc(50% + ${offset[0]}px)`,
 		top: `calc(50% + ${offset[1]}px)`,
-		transform: `translate(-50%, -50%)`,
+		transform: `translate(-50%, -50%) scale(${workspace.scale * 100}%)`,
 		border: `1px solid var(--border-1)`
 	};
 
@@ -79,14 +80,19 @@ export const MapPreview = ({ workspace, dropControls }: { workspace: MapPreviewW
 			downOffset[0] + deltaX,
 			downOffset[1] + deltaY,
 		];
-	})
+	});
+
+	const onWheel = (e: React.WheelEvent) => {
+		workspace.scale = clamp(workspace.scale + (e.deltaY / -10000), 0.05, 5);
+		
+	};
 
 	return (
 		<div className="map-preview">
 			<div className="toolbar">
 				<NumberInput name="radius" min={1} value={renderState.chunkRadius} onChange={r => update({ chunkRadius: r })} />
 			</div>
-			<div className="workspace" onMouseDown={onMouseDown}>
+			<div className="workspace" onMouseDown={onMouseDown} onWheel={onWheel}>
 				<canvas ref={canvas} style={canvasStyle} />
 				{dropControls}
 			</div>
