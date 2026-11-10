@@ -203,7 +203,13 @@ export class Renderer extends Module {
 		if (this.seaLevelMesh) {
 			this.scene.remove(this.seaLevelMesh);
 			this.seaLevelMesh.geometry.dispose();
-			(this.seaLevelMesh.material as any).dispose();
+
+			if (Array.isArray(this.seaLevelMesh.material)) {
+				this.seaLevelMesh.material.forEach(material => material.dispose());
+			} else {
+				this.seaLevelMesh.material.dispose();
+			}
+
 			this.seaLevelMesh = null;
 		}
 
