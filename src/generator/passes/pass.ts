@@ -74,7 +74,7 @@ export type PassDependency = {
 	readonly type: ParamGroupType<any>;
 } | MapDependency;
 
-type MapDependency = {
+export type MapDependency = {
 	readonly type: MapDataType<any, any>;
 	readonly scope?: GenerationScope;
 	readonly resolution?: number | ((params: WorldParamsSnapshot) => number);

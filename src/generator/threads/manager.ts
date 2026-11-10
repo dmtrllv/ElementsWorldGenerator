@@ -153,11 +153,19 @@ export type GenerateEvent = {
 		readonly width: number;
 		readonly height: number;
 	};
-	readonly inputs: Readonly<Record<string, MapBufferDescriptor>>;
+	readonly inputs: Readonly<Record<string, MapOutputDescriptor>>;
 };
 
 export type GeneratedMap = MapBufferDescriptor;
 
 export type GeneratedEvent = {
-	readonly outputs: readonly GeneratedMap[];
+	readonly outputs: MapOutputDescriptor[];
+};
+
+export type MapOutputDescriptor = {
+	readonly type: string;
+	readonly workerId: number;
+	readonly offset: number;
+	readonly byteLength: number;
+	readonly samples: SampleRegion;
 };
