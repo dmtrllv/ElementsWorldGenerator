@@ -3,7 +3,7 @@ import { randomSeed } from "../utils";
 import type { Editor } from "./editor";
 import { Project, ProjectInfo } from "./project";
 import { SettingsManager } from "./settings";
-import { Module } from "./store";
+import { Module } from "./module";
 
 @observable
 export class ProjectManager extends Module {

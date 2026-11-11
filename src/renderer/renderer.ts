@@ -2,7 +2,7 @@ import * as Three from "three";
 import { Scene } from "./scene";
 import { Controller } from "./controller";
 import { computed, observable } from "../reactive";
-import { Module } from "../editor/store";
+import { Module } from "../editor/module";
 import type { Editor } from "../editor";
 import { Chunk, Region, type World } from "../generator";
 import { ElevationMap } from "../generator/maps/terrain";

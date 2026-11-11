@@ -2,7 +2,7 @@ import { observable } from "../reactive";
 import { SaveModal } from "../ui/modals/saves";
 import { ModalManager } from "./modals";
 import { ProjectManager } from "./project-manager";
-import { Module } from "./store";
+import { Module } from "./module";
 
 @observable
 export class Menu extends Module {

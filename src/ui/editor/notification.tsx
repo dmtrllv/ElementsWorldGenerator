@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { Editor, NotificationManager, type Notification } from "../../editor";
+import { NotificationManager, type Notification } from "../../editor";
 
 import "./styles/notifications.scss";
 
 export const Notifications = () => {
-	const { notifications } = Editor.useModule(NotificationManager);
+	const { notifications } = NotificationManager.use()
 	return (
 		<div id="notifications">
 			{notifications.map(notification => (
@@ -15,7 +15,7 @@ export const Notifications = () => {
 };
 
 const NotificationView = ({ message, title, type, id }: NotificationProps) => {
-	const { close } = Editor.useModule(NotificationManager);
+	const { close } = NotificationManager.use();
 
 	useEffect(() => {
 		const timeout = setTimeout(() => {

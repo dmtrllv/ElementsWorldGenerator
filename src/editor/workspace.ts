@@ -1,6 +1,6 @@
 import { observable } from "../reactive";
 import type { Editor } from "./editor";
-import { Module } from "./store";
+import { Module } from "./module";
 
 @observable
 export class WorkspaceManager extends Module {

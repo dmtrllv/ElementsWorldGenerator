@@ -1,4 +1,3 @@
-import { Editor } from "../../editor";
 import { ConfirmModal, Modal, ModalManager } from "../../editor/modals";
 import { useObservable } from "../../reactive";
 import { last } from "../../utils";
@@ -7,7 +6,7 @@ import { useEvent } from "../hooks/event";
 import "./styles/modal.scss";
 
 export const Modals = () => {
-	const manager = Editor.useModule(ModalManager);
+	const manager = ModalManager.use();
 
 	const closeLast = () => {
 		const modal = last(manager.modals);

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import type { MapPreviewWorkspace } from "../../../editor/workspaces/map-preview";
-import { Editor, ProjectManager } from "../../../editor";
+import { ProjectManager } from "../../../editor";
 import { useObservable } from "../../../reactive";
 import { GenerationScope, Generator, type MapDataMeta, type MapDataType, type WorldParamsSnapshot } from "../../../generator";
 import { NumberInput } from "../../components";
@@ -10,7 +10,7 @@ import { clamp } from "../../../utils";
 import "./styles/map-preview.scss";
 
 export const MapPreview = ({ workspace, dropControls }: { workspace: MapPreviewWorkspace, dropControls: JSX.Element }) => {
-	const { activeProject } = Editor.useModule(ProjectManager);
+	const { activeProject } = ProjectManager.use();
 
 	const offset = useObservable(workspace.offset);
 

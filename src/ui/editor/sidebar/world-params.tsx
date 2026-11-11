@@ -1,4 +1,4 @@
-import { Editor, ProjectManager } from "../../../editor";
+import { ProjectManager } from "../../../editor";
 import { useObservable } from "../../../reactive";
 import { GroupInput } from "../../components/params/group-input";
 import { DropdownPanel, NumberInput, Vector2Input, Vector3Input } from "../../components";
@@ -6,7 +6,7 @@ import { DropdownPanel, NumberInput, Vector2Input, Vector3Input } from "../../co
 import "./styles/sidebar.scss";
 
 export const WorldParams = () => {
-	const manager = Editor.useModule(ProjectManager);
+	const manager = ProjectManager.use();
 	const project = useObservable(manager.activeProject);
 	const params = useObservable(project.world.worldParams);
 

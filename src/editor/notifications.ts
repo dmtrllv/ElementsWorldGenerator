@@ -1,5 +1,5 @@
 import { observable } from "../reactive";
-import { Module } from "./store";
+import { Module } from "./module";
 
 @observable
 export class NotificationManager extends Module {

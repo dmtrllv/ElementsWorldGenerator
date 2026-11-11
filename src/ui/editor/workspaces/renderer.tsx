@@ -41,7 +41,7 @@ export const RendererViewWorkspace = ({ dropControls }: { dropControls: JSX.Elem
 const Toolbar = ({ renderer }: { renderer: Renderer }) => {
 	useObservable(renderer);
 	useObservable(renderer.controller!);
-	const activeProject = Editor.useModule(ProjectManager).activeProject;
+	const activeProject = useObservable(ProjectManager.use().activeProject);
 	const world = useObservable(activeProject.world);
 
 	const toggleRender = () => {

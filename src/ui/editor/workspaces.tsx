@@ -1,5 +1,3 @@
-
-import { Editor } from "../../editor";
 import { Workspace, WorkspaceLayout, WorkspaceManager, type SplitEdge, type WorkspaceType } from "../../editor/workspace";
 import { RendererWorkspace } from "../../editor/workspaces/renderer";
 import { RendererViewWorkspace } from "./workspaces/renderer";
@@ -20,7 +18,7 @@ interface SlidingState {
 }
 
 export const Workspaces = () => {
-	const workspace = Editor.useModule(WorkspaceManager);
+	const workspace = WorkspaceManager.use();
 
 	useEvent("mouseup", () => {
 		if (workspace.movingWorkspace)
@@ -35,7 +33,7 @@ export const Workspaces = () => {
 };
 
 const WorkspaceLayoutPanel = ({ layout: initialLayout, isFirst }: { layout: WorkspaceLayout, isFirst: boolean; }) => {
-	const workspaces = Editor.useModule(WorkspaceManager);
+	const workspaces = WorkspaceManager.use();
 	const layout = useObservable(initialLayout);
 
 	const [slidingState, setSlidingState] = useState<SlidingState>({

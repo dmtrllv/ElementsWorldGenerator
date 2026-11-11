@@ -1,6 +1,6 @@
 import type React from "react";
 import { observable } from "../reactive";
-import { Module } from "./store";
+import { Module } from "./module";
 
 @observable
 export class ModalManager extends Module {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createModal } from "../../editor/modals";
 import { TextInput } from "../components";
-import { Editor, ProjectManager } from "../../editor";
+import { ProjectManager } from "../../editor";
 
 export const SaveModal = createModal({
 	title: "Save As",
@@ -10,7 +10,7 @@ export const SaveModal = createModal({
 	Component: ({ modal }) => {
 		const [saveName, setValue] = useState("");
 
-		const manager = Editor.useModule(ProjectManager);
+		const manager = ProjectManager.use();
 
 		return (
 			<div>

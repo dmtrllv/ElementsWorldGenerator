@@ -1,10 +1,10 @@
-import { Editor, Menu, MenuSep, type MenuChild, type MenuItem } from "../../editor";
+import { Menu, MenuSep, type MenuChild, type MenuItem } from "../../editor";
 import { useObservable } from "../../reactive";
 
 import "./styles/menubar.scss";
 
 export const Menubar = () => {
-	const menubar = Editor.useModule(Menu);
+	const menubar = Menu.use();
 
 	return (
 		<div id="menubar">

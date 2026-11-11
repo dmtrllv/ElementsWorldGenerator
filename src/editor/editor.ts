@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useRef, type PropsWithChildren } from "react";
 import { computed, observable, useObservable } from "../reactive";
-import type { Module, ModuleType } from "./store";
+import type { Module, ModuleType } from "./module";
 import { ThreadManager } from "../generator/threads";
 
 @observable
