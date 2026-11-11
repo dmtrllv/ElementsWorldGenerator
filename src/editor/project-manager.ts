@@ -4,12 +4,42 @@ import type { Editor } from "./editor";
 import { Project, ProjectInfo } from "./project";
 import { SettingsManager } from "./settings";
 import { Module } from "./module";
+import { ModalManager } from "./modals";
+import { SaveModal } from "../ui/modals/saves";
+import { NotificationManager } from "./notifications";
+import { WorldParams, type WorldParamProps } from "../generator";
+import { Menu, MenuItem } from "./menu";
 
 @observable
 export class ProjectManager extends Module {
 	private static readonly loadProjects = (): ProjectInfo[] => {
 		const projects = JSON.parse(localStorage.getItem("editor.saves") || "[]");
 		return projects.map((p: any) => new ProjectInfo(p.name));
+	}
+
+	private static readonly updateProjects = (info: ProjectInfo[]) => {
+		localStorage.setItem("editor.saves", JSON.stringify(info));
+	}
+
+	private static saveProject(name: string, worldParams: WorldParams) {
+		localStorage.setItem("editor.saves." + name, JSON.stringify({
+			name,
+			seed: worldParams.seed,
+			params: worldParams.toProps(),
+		}));
+	}
+
+	private static getSavedProject(name: string): SavedProject | null {
+		const item = localStorage.getItem(`editor.saves.${name}`);
+		if (!item) {
+			return null;
+		}
+		const json = JSON.parse(item);
+		return {
+			name: json.name,
+			seed: json.seed,
+			params: WorldParams.parseJsonProps(json.params)
+		};
 	}
 
 	@observable
@@ -28,15 +58,77 @@ export class ProjectManager extends Module {
 		super(editor);
 		const settings = editor.get(SettingsManager);
 		this._activeProject = new Project(editor.threadManager, { name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams });
+
+		document.title = `Unsaved - World Editor`;
+
+		window.onbeforeunload = e => {
+			console.log(this._activeProject.savedGenerationId !== this._activeProject.world.generator.generation)
+			if (this._activeProject.savedGenerationId !== this._activeProject.world.generator.generation) {
+				e.preventDefault();
+			}
+		};
 	}
 
-	public async saveAs(_name: string, _force: boolean = false) {
-		return false;
+	public async saveAs(name: string, force: boolean = false) {
+		const notifiactions = this.editor.get(NotificationManager);
+		if (name.length === 0) {
+			notifiactions.error("Project name cannot be empty!");
+			return false;
+		}
+
+		if (!force && this._projects.find(p => p.name === name)) {
+			notifiactions.error(`Project ${name} already exists!`);
+			return false;
+		}
+
+		this._projects.splice(0, 0, { name });
+
+		ProjectManager.saveProject(name, this._activeProject.world.worldParams);
+		ProjectManager.updateProjects(this._projects);
+
+		const item = this.editor.get(Menu).getItemByText("Open Recent");
+
+		if (item) {
+			item.children.splice(0, 0, new MenuItem(name, undefined, () => this.open(name)));
+		}
+
+		return true;
 	}
 
-	public save() {
+	public async save() {
+		if (!this._activeProject.fromSave) {
+			this.editor.get(ModalManager).open(SaveModal);
+		} else {
+			this.saveAs(this._activeProject.info.name, true);
+			this._activeProject.savedGenerationId = this._activeProject.world.generator.generation;
+		}
 	}
 
-	public open(_name: string) {
+	public open(name: string) {
+		const notifiactions = this.editor.get(NotificationManager);
+		if (this._activeProject.info.name === name) {
+			notifiactions.notify({
+				type: "Info",
+				message: `Project ${name} is already open!`,
+				title: `Note`
+			});
+			return;
+		}
+
+		const project = ProjectManager.getSavedProject(name);
+		if (!project) {
+			notifiactions.error(`Could not find project ${name}!`);
+			return;
+		}
+
+		document.title = `${name} - World Editor`;
+
+		this._activeProject = new Project(this.editor.threadManager, { name }, project.seed, project.params);
 	}
 }
+
+export type SavedProject = {
+	name: string;
+	seed: number;
+	params: WorldParamProps;
+};

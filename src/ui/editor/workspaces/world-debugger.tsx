@@ -3,15 +3,13 @@ import { useCanvasControls } from "../../components/canvas-renderer";
 import { ProjectManager, WorldDebugWorkspace } from "../../../editor";
 import { useObservable } from "../../../reactive";
 import type { Project } from "../../../editor/project";
-
+import { nameToLabel } from "../../components";
 import {
 	CoastMap, ContinentalMap, ElevationMap, GenerationScope, HillMap,
 	MountainMap, OceanMap, PlainsMap, PlateauMap, ValleyMap, type DebugRenderType, type Generator, type MapDataType, type World
 } from "../../../generator";
 
 import "./styles/world-debugger.scss";
-import { nameToLabel } from "../../components";
-import { white } from "../../../utils";
 
 const MAP_TYPES = {
 	ElevationMap,

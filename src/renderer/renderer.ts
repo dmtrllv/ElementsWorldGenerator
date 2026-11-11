@@ -4,7 +4,7 @@ import { Controller } from "./controller";
 import { computed, observable } from "../reactive";
 import { Module } from "../editor/module";
 import type { Editor } from "../editor";
-import { Chunk, Region, type World } from "../generator";
+import { Chunk, Generator, Region, type World } from "../generator";
 import { ElevationMap } from "../generator/maps/terrain";
 
 type RenderMode = "heightmap" | "voxel";
@@ -54,6 +54,7 @@ export class Renderer extends Module {
 	private seaLevelMesh: Three.Mesh | null = null;
 
 	private world: World | null = null;
+	private generator: Generator | null = null;
 	private renderMode: RenderMode = "heightmap";
 	private activeChunkIds = new Set<string>();
 
@@ -425,6 +426,13 @@ export class Renderer extends Module {
 			return;
 
 		const world = this.world;
+
+		if (this.generator !== world.generator) {
+			this.disposeTerrainMeshes();
+			this.generator = world.generator;
+			this.createSeaLevelMesh(world);
+		}
+
 		const worldParams = world.generator.worldParams;
 		const center = this.getRenderCenter(world);
 
@@ -636,18 +644,9 @@ export class Renderer extends Module {
 	}
 
 	public renderVoxelWorld(world: World) {
-		if(world === this.world) {
-			this._isRendering = true;
-			this.updateChunks();
-			return;
-		}
-
 		this.world = world;
 		this.renderMode = "voxel";
-
 		this._isRendering = true;
-		this.disposeTerrainMeshes();
-		this.createSeaLevelMesh(world);
 		this.updateChunks();
 	}
 

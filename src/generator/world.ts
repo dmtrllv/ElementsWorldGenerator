@@ -34,7 +34,7 @@ export class World {
 
 			world.generator = createObservable(new Generator(threadManager, ++this.generation, this.worldParams.snapshot()));
 			world.chunkManager = new ChunkManager(world.generator);
-		});
+		});	
 	}
 
 	public dispose() {

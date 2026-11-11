@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type JSX } from "react";
 import type { MapPreviewWorkspace } from "../../../editor/workspaces/map-preview";
 import { ProjectManager } from "../../../editor";
 import { useObservable } from "../../../reactive";
-import { GenerationScope, Generator, type MapDataMeta, type MapDataType, type WorldParamsSnapshot } from "../../../generator";
+import { Generator, type MapDataMeta, type MapDataType, type WorldParamsSnapshot } from "../../../generator";
 import { NumberInput } from "../../components";
 import { useEvent } from "../../hooks/event";
 import { clamp } from "../../../utils";
@@ -100,19 +100,19 @@ export const MapPreview = ({ workspace, dropControls }: { workspace: MapPreviewW
 	);
 };
 
-const render = async (canvas: HTMLCanvasElement, generator: Generator, mapType: MapDataType<any, any>, _meta: MapDataMeta<any>, worldParams: WorldParamsSnapshot) => {
+const render = async (canvas: HTMLCanvasElement, generator: Generator, _mapType: MapDataType<any, any>, _meta: MapDataMeta<any>, _worldParams: WorldParamsSnapshot) => {
 	const ctx = canvas.getContext("2d");
 	if (!ctx)
 		throw new Error(`Could not get canvas context!`);
 	
-	const map = await generator.generate(mapType, GenerationScope.Global);
+	//const map = await generator.generate(mapType, GenerationScope.Global);
 
 	canvas.width = generator.worldParams.size.x;
 	canvas.height = generator.worldParams.size.z;
 
 	const imageData = ctx.createImageData(canvas.width, canvas.height);
 
-	map.debug(imageData, worldParams);
+	//map.debug(imageData, worldParams);
 
 	ctx.putImageData(imageData, 0, 0);
 };

@@ -7,6 +7,7 @@ import "./styles/modal.scss";
 
 export const Modals = () => {
 	const manager = ModalManager.use();
+	const modals = useObservable(manager.modals);
 
 	const closeLast = () => {
 		const modal = last(manager.modals);
@@ -23,8 +24,8 @@ export const Modals = () => {
 
 	return (
 		<>
-			<div className={"modal-bg " + (manager.modals.length > 0 ? "show" : "")} onMouseDown={closeLast}>
-				{manager.modals.map(modal => <ModalWindow key={modal.id} modal={modal} />)}
+			<div className={"modal-bg " + (modals.length > 0 ? "show" : "")} onMouseDown={closeLast}>
+				{modals.map(modal => <ModalWindow key={modal.id} modal={modal} />)}
 			</div>
 			<div className={"modal-bg " + (manager.confirmModal ? "show" : "")}>
 				{manager.confirmModal && <ConfirmWindow modal={manager.confirmModal} />}

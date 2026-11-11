@@ -16,6 +16,14 @@ export class WorldParams {
 		}
 	}
 
+	public static parseJsonProps({ size, offset, ...rest }: WorldParamProps) {
+		return {
+			size: new Vector3(size.x, size.y, size.z),
+			offset: new Vector2(offset.x, offset.y),
+			...rest
+		}
+	}
+
 	@observable
 	public seed: number;
 
@@ -59,6 +67,16 @@ export class WorldParams {
 			geography: this.geography.toProps(),
 			terrain: this.terrain.toProps()
 		});
+	}
+
+	public toProps(): WorldParamProps {
+		return {
+			size: this.size.clone(),
+			offset: this.offset.clone(),
+			chunkSize: this.chunkSize,
+			geography: this.geography.toProps(),
+			terrain: this.terrain.toProps()
+		}
 	}
 
 	public get<T extends ParamGroupType<Type>, Type extends ParamGroup<any>>(type: T): Type {

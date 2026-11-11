@@ -14,7 +14,6 @@ import "./styles/app.scss";
 export const App = () => {
 	const editor = useObservable(Editor.useContext());
 	const renderer = Renderer.use();
-	console.log(renderer.isInitialized);
 
 	useEffect(() => {
 		editor.initialize();

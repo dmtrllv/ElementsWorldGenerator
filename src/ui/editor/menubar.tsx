@@ -5,26 +5,22 @@ import "./styles/menubar.scss";
 
 export const Menubar = () => {
 	const menubar = Menu.use();
-
+	const items = useObservable(menubar.items);
 	return (
 		<div id="menubar">
-			{menubar.items.map((child) => <MenuItemView key={child.id} item={child} />)}
+			{items.map((child) => <MenuItemView key={child.id} item={child} />)}
 		</div>
 	);
 }
 
-const getChildren = (item: MenuItem): MenuChild[] => {
-	return typeof item.children === "function" ? item.children() : item.children;
-}
-
 const MenuItemView = ({ item }: { item: MenuItem }) => {
 	item = useObservable(item);
-
-	const children = getChildren(item);
+	const action = useObservable(item.action);
+	const children = useObservable(item.children);
 
 	return (
 		<div className="menu-item">
-			<div className="item" onClick={() => { item.action && item.action(); }}>
+			<div className="item" onClick={() => action()}>
 				{item.text}
 			</div>
 			{children.length > 0 && (

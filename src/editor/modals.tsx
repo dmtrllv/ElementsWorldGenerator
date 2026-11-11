@@ -24,6 +24,7 @@ export class ModalManager extends Module {
 	};
 
 	public open(modal: ModalProps) {
+		console.log("open", modal)
 		const found = this.modals.find(m => m.title === modal.title);
 		if (found) {
 			this.focus(found.id);

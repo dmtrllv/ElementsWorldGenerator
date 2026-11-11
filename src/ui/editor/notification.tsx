@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { NotificationManager, type Notification } from "../../editor";
+import { useObservable } from "../../reactive";
 
 import "./styles/notifications.scss";
 
 export const Notifications = () => {
-	const { notifications } = NotificationManager.use()
+	const { notifications } = NotificationManager.use();
+	useObservable(notifications);
 	return (
 		<div id="notifications">
 			{notifications.map(notification => (
