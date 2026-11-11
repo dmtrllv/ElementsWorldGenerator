@@ -19,7 +19,7 @@ export class World {
 	private readonly unsubscribeWorldParams: Unsubscriber;
 
 	public constructor(threadManager: ThreadManager, seed: number, worldParamProps: WorldParamProps) {
-		this.generation = 0;
+		this.generation = threadManager.createGeneration();
 		this.worldParams = new WorldParams(seed, worldParamProps);
 
 		const world = createObservable(this);
@@ -29,12 +29,14 @@ export class World {
 		this.chunkManager = new ChunkManager(this.generator);
 
 		this.unsubscribeWorldParams = subscribeDeep(this.worldParams, () => {
+			this.generation = threadManager.createGeneration();
+
 			world.chunkManager.dispose();
 			world.generator.dispose();
 
-			world.generator = createObservable(new Generator(threadManager, ++this.generation, this.worldParams.snapshot()));
+			world.generator = createObservable(new Generator(threadManager, this.generation, this.worldParams.snapshot()));
 			world.chunkManager = new ChunkManager(world.generator);
-		});	
+		});
 	}
 
 	public dispose() {

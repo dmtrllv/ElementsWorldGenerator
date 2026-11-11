@@ -76,6 +76,7 @@ export class ProjectManager extends Module {
 		}
 		const settings = this.editor.get(SettingsManager);
 		document.title = `Unsaved - World Editor`;
+		this._activeProject.world.dispose();
 		this._activeProject = new Project(this.editor.threadManager, { name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams }, false);
 	}
 
@@ -144,7 +145,7 @@ export class ProjectManager extends Module {
 		}
 
 		document.title = `${name} - World Editor`;
-
+		this._activeProject.world.dispose();
 		this._activeProject = new Project(this.editor.threadManager, { name }, project.seed, project.params, true);
 	}
 }

@@ -35,6 +35,12 @@ export class ThreadManager {
 	private isInitialized = false;
 	private initializePromise: Promise<void> | null = null
 
+	private nextGenerationId = 0;
+
+	public createGeneration(): number {
+		return this.nextGenerationId++;
+	}
+
 	public async initialize(arenaCapacity: number = 64 * 1024 * 1024, arenaMaxCapacity: number = 1024 * 1024 * 1024): Promise<void> {
 		if (this.initializePromise)
 			return this.initializePromise;
