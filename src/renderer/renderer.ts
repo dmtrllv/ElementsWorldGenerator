@@ -21,12 +21,22 @@ const MAX_CONCURRENT_CHUNK_BUILDS = 4;
 
 @observable
 export class Renderer extends Module {
-	@observable
 	private element: HTMLDivElement | null = null;
+
+	@observable
+	private _isInitialized = false;
+
+	@observable
+	private _isRendering: boolean = false;
+
+	@computed
+	public get isRendering() {
+		return this._isRendering;
+	}
 
 	@computed
 	public get isInitialized() {
-		return this.element !== null;
+		return this._isInitialized;
 	}
 
 	public readonly scene: Scene = new Scene();
@@ -106,8 +116,7 @@ export class Renderer extends Module {
 		}
 	}
 
-	public readonly initialize = (element: HTMLDivElement) => {
-		console.log("init");
+	public initialize(element: HTMLDivElement) {
 		if (this.element)
 			throw new Error("Renderer is already initialized!");
 
@@ -127,6 +136,8 @@ export class Renderer extends Module {
 			this.previousFrameTime = time;
 			this.renderInternal(delta);
 		});
+
+		this._isInitialized = true;
 	}
 
 	private renderInternal(delta: number) {
@@ -410,7 +421,7 @@ export class Renderer extends Module {
 	}
 
 	private updateChunks() {
-		if (!this.world)
+		if (!this.world || !this.isRendering)
 			return;
 
 		const world = this.world;
@@ -624,21 +635,23 @@ export class Renderer extends Module {
 		this.createTerrainMesh(geometry, `${chunk.x}:${chunk.z}`);
 	}
 
-	public renderWorldHeightmap(world: World) {
-		this.world = world;
-		this.renderMode = "heightmap";
+	public renderVoxelWorld(world: World) {
+		if(world === this.world) {
+			this._isRendering = true;
+			this.updateChunks();
+			return;
+		}
 
+		this.world = world;
+		this.renderMode = "voxel";
+
+		this._isRendering = true;
 		this.disposeTerrainMeshes();
 		this.createSeaLevelMesh(world);
 		this.updateChunks();
 	}
 
-	public renderVoxelWorld(world: World) {
-		this.world = world;
-		this.renderMode = "voxel";
-
-		this.disposeTerrainMeshes();
-		this.createSeaLevelMesh(world);
-		this.updateChunks();
+	public pauseRendering() {
+		this._isRendering = false;
 	}
 }

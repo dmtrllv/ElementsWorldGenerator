@@ -13,7 +13,7 @@ const tabs = {
 };
 
 export const Sidebar = () => {
-	const { size: width, onMouseDown } = useSlider(420, 320, 860, "x");
+	const { size: width, onMouseDown } = useSlider(600, 320, 960, "x");
 
 	const [activeTab, setActiveTab] = useState("World");
 

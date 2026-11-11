@@ -5,6 +5,8 @@ import { useObservable } from "../../../reactive";
 import type { Renderer } from "../../../renderer";
 import { NumberInput } from "../../components";
 
+import "./styles/renderer.scss";
+
 export const RendererViewWorkspace = ({ dropControls }: { dropControls: JSX.Element, workspace: RendererWorkspace }) => {
 	const editor = Editor.useContext();
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -28,22 +30,25 @@ export const RendererViewWorkspace = ({ dropControls }: { dropControls: JSX.Elem
 	}, []);
 
 	return (
-		<>
-			<div className="renderer" ref={containerRef} />
-			{renderer && <CanvasRenderer renderer={renderer} />}
+		<div className="renderer">
+			{renderer && <Toolbar renderer={renderer} />}
+			<div className="viewport" ref={containerRef} />
 			{dropControls}
-		</>
+		</div>
 	);
 };
 
-const CanvasRenderer = ({ renderer }: { renderer: Renderer }) => {
+const Toolbar = ({ renderer }: { renderer: Renderer }) => {
 	useObservable(renderer);
 	useObservable(renderer.controller!);
 	const activeProject = Editor.useModule(ProjectManager).activeProject;
 	const world = useObservable(activeProject.world);
 
-	const generateVoxels = () => {
-		renderer.renderVoxelWorld(world);
+	const toggleRender = () => {
+		if (renderer.isRendering)
+			renderer.pauseRendering();
+		else
+			renderer.renderVoxelWorld(world);
 	};
 
 	const toggleController = () => {
@@ -59,15 +64,20 @@ const CanvasRenderer = ({ renderer }: { renderer: Renderer }) => {
 	};
 
 	return (
-		<div className="buttons" style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)" }} >
-			<button onClick={generateVoxels} className="generate-btn">
-				Generate
+		<div className="toolbar">
+			<button onClick={toggleRender} className={`play-btn ${renderer.isRendering ? "play" : ""}`}>
+				<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+					<path className="play-icon" d="M17 10.5 L36 21.5 Q39 24 36 26.5 L17 37.5 Q13 39.5 13 35 V13 Q13 8.5 17 10.5Z" />
+					<g className="stop-icon">
+						<rect x="12" y="12" width="24" height="24" rx="3" />
+					</g>
+				</svg>
 			</button>
 			<button onClick={toggleController} className="generate-btn">
 				{renderer.controller?.cameraMode === "first-person" ? "Oribal" : "First Person"}
 			</button>
 			<NumberInput name="render distance" min={50} value={renderer.renderDistance} onChange={e => renderer.renderDistance = e} />
-			<NumberInput name="speed" min={5} max={100} value={renderer.controller?.movementSpeed || 0} onChange={v => { if(renderer.controller) renderer.controller.movementSpeed = v }} />
+			<NumberInput name="speed" min={5} max={100} value={renderer.controller?.movementSpeed || 0} onChange={v => { if (renderer.controller) renderer.controller.movementSpeed = v }} />
 			<button onClick={() => renderer.toggleEdges()} className="generate-btn">
 				{renderer.showEdges ? "Hide" : "Show"} edges
 			</button>
