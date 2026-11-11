@@ -29,4 +29,8 @@ export class CoastMap extends MapData { }
 		resolution: 1
 	}
 })
-export class ContinentalThresholdMap extends MapData { }
+export class ContinentalThresholdMap extends MapData {
+	public get landThreshold(): number {
+		return this.data[0]!;
+	}
+}
