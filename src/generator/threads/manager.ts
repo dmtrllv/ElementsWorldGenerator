@@ -90,12 +90,24 @@ export class ThreadManager {
 	public beginGeneration(event: SyncEvent): Promise<void> {
 		this.currentGeneration = event.generation;
 
+		// Pause workers immediately, instead of waiting for active requests.
+		const pausePromise = this.broadcast("pause", undefined);
+
 		const operation = this.generationQueue.then(async () => {
-			await this.waitForIdle();
-			await this.broadcast("pause", undefined);
+			await pausePromise;
 
 			for (const queue of this.workQueues)
 				queue.clear();
+
+			// Fail every queued, waiting, or running task and wake its waiters.
+			this.registry.cancel();
+
+			// Only wait for the request handlers to unwind, not for the old work queue.
+			await this.waitForIdle();
+
+			// A newer generation may have superseded this one while we were waiting.
+			if (event.generation !== this.currentGeneration)
+				return;
 
 			this.registry.reset();
 			this.outputs.reset();

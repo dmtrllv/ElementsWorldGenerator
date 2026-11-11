@@ -70,6 +70,28 @@ export class TaskRegistry {
 		return this.control.buffer as SharedArrayBuffer;
 	}
 
+	public cancel(): void {
+		this.lock();
+
+		try {
+			const count = Atomics.load(this.control, 1);
+
+			for (let i = 0; i < count; i++) {
+				const offset = i * TASK_SIZE;
+				const state = Atomics.load(this.tasks, offset);
+
+				if (state === TaskState.Empty || state === TaskState.Complete || state === TaskState.Failed)
+					continue;
+
+				Atomics.store(this.tasks, offset, TaskState.Failed);
+				Atomics.notify(this.tasks, offset);
+			}
+		}
+		finally {
+			this.unlock();
+		}
+	}
+
 	public register(key: TaskKey, workerId: number): TaskRegistration {
 		this.validateKey(key);
 

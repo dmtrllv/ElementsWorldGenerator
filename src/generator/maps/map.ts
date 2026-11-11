@@ -43,7 +43,14 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 		this.samples = samples;
 	}
 
-	public debug(_imageData: ImageData, _worldParams: WorldParamsSnapshot, _renderType: DebugRenderType) { }
+	public debug(imageData: ImageData, _worldParams: WorldParamsSnapshot, renderType: DebugRenderType, color: Color) {
+		console.log("render", renderType)
+		return renderFloat32(this.data as any, imageData, val => {
+			if (renderType === "factor")
+				return val;
+			return renderThresholdBorder(val);
+		}, color);
+	}
 }
 
 export type DebugRenderType = "border" | "factor";
@@ -91,9 +98,9 @@ export const renderFloat32 = (data: Float32Array, imageData: ImageData, normaliz
 
 	for (let i = 0; i < data.length; i++) {
 		const value = normalizer(data[i]!);
-		if(value === undefined)
+		if (value === undefined)
 			continue;
-		
+
 		const index = i * 4;
 
 		pixels[index + 0] = Math.round(value * color[0]);
@@ -101,4 +108,14 @@ export const renderFloat32 = (data: Float32Array, imageData: ImageData, normaliz
 		pixels[index + 2] = Math.round(value * color[2]);
 		pixels[index + 3] = 255;
 	}
-}
+};
+
+const THRESHOLD = 0.5;
+const THRESHOLD_DELTA = 0.001;
+
+export const renderThresholdBorder = (val: number) => {
+	if (val < THRESHOLD + THRESHOLD_DELTA && val > THRESHOLD - THRESHOLD_DELTA) {
+		return 1;
+	}
+	return undefined;
+};

@@ -19,28 +19,41 @@ export const useCanvasControls = (handlers: CanvasEventChangeHandlers, rerenderD
 	const timeout = useRef<number | null>(null);
 
 	useEffect(() => {
-		if (canvas.current) {
-			const c = canvas.current;
-			if (!didRender.current) {
-				didRender.current = true;
-				handlers.render(c);
-			}
+		if (!canvas.current)
+			return;
 
+		const c = canvas.current;
+
+		if (!didRender.current) {
+			didRender.current = true;
+			handlers.render(c);
+		}
+
+		if (timeout.current !== null)
+			clearTimeout(timeout.current);
+
+		timeout.current = window.setTimeout(() => {
+			handlers.render(c);
+		}, 500);
+
+		return () => {
 			if (timeout.current !== null)
 				clearTimeout(timeout.current);
-
-			timeout.current = setTimeout(() => {
-				handlers.render(c);
-			}, 500);
-		}
+		};
 	}, rerenderDependencies);
+
+	useEffect(() => {
+		if (canvas.current)
+			handlers.viewport?.(canvas.current, offset, scale);
+	}, [offset, scale]);
 
 	const style: React.CSSProperties = {
 		position: "absolute",
 		left: `calc(50% + ${offset[0]}px)`,
 		top: `calc(50% + ${offset[1]}px)`,
 		transform: `translate(-50%, -50%) scale(${scale * 100}%)`,
-		border: `1px solid var(--border-1)`
+		transformOrigin: "center",
+		border: "1px solid var(--border-1)"
 	};
 
 	const onMouseDown = (e: React.MouseEvent) => {
@@ -49,22 +62,23 @@ export const useCanvasControls = (handlers: CanvasEventChangeHandlers, rerenderD
 			downPos: [e.clientX, e.clientY],
 			isDown: true,
 		});
-	}
+	};
 
 	useEvent("mouseup", () => update({ isDown: false }));
 
-	useEvent("mousemove", (e) => {
+	useEvent("mousemove", e => {
 		if (!isDown)
 			return;
 
 		const deltaX = e.clientX - downPos[0];
 		const deltaY = e.clientY - downPos[1];
+
 		update({
 			offset: [
 				downOffset[0] + deltaX,
 				downOffset[1] + deltaY,
 			]
-		})
+		});
 	});
 
 	const onWheel = (e: React.WheelEvent) => {
@@ -76,13 +90,12 @@ export const useCanvasControls = (handlers: CanvasEventChangeHandlers, rerenderD
 		onMouseDown,
 		style,
 		ref: canvas
-	}
+	};
 };
 
 type CanvasEventChangeHandlers = {
 	render: (canvas: HTMLCanvasElement) => void;
-	scale?: (scale: number) => void;
-	move?: (offset: [number, number]) => void;
+	viewport?: (canvas: HTMLCanvasElement, offset: [number, number], scale: number) => void;
 };
 
 type RenderState = {
