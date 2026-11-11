@@ -5,7 +5,7 @@ import { GenerationScope, Pass, type PassType } from "./passes";
 import type { WorldParamsSnapshot } from "./world-params";
 import { ThreadManager, type RootTask, type SharedOutput } from "./threads";
 
-const threadManager = await ThreadManager.initialize();
+//const threadManager = await ThreadManager.initialize();
 
 export class Generator {
 	public readonly worldParams: WorldParamsSnapshot;
@@ -14,8 +14,10 @@ export class Generator {
 	private readonly mapRegistry = new Map<string, MapData>();
 	private readonly pendingMaps = new Map<string, Promise<MapData>>();
 	private readonly syncPromise: Promise<void>;
+	private readonly threadManager: ThreadManager;
 
-	public constructor(generation: number, worldParams: WorldParamsSnapshot) {
+	public constructor(threadManager: ThreadManager, generation: number, worldParams: WorldParamsSnapshot) {
+		this.threadManager = threadManager;
 		this.generation = generation;
 		this.worldParams = worldParams;
 
@@ -44,12 +46,12 @@ export class Generator {
 	private getMapFromDescriptor(type: MapDataType<any, any>, descriptor: SharedOutput): MapData {
 		const meta = MapData.getMeta(type);
 		const ArrayType = meta.type ?? Float32Array;
-		const arena = threadManager.arenas[descriptor.workerId] as any;
+		const arena = this.threadManager.arenas[descriptor.workerId] as any;
 
 		if (!arena)
 			throw new Error(`Arena for worker ${descriptor.workerId} is unavailable!`);
 
-		if (descriptor.mapId !== threadManager.taskTypes.getMapId(type))
+		if (descriptor.mapId !== this.threadManager.taskTypes.getMapId(type))
 			throw new Error(`Unexpected map ID for ${type.name}.`);
 
 		const count = descriptor.samples.width * descriptor.samples.height;
@@ -64,11 +66,11 @@ export class Generator {
 	}
 
 	private cacheTaskOutputs(taskId: number, PassType: PassType<any>, scope: GenerationScope, resolution: number, chunk?: Vector2Type): void {
-		const outputTypes = threadManager.taskTypes.getOutputs(PassType);
+		const outputTypes = this.threadManager.taskTypes.getOutputs(PassType);
 
 		for (let i = 0; i < outputTypes.length; i++) {
 			const OutputType = outputTypes[i]!;
-			const descriptor = threadManager.getOutput(taskId, i);
+			const descriptor = this.threadManager.getOutput(taskId, i);
 
 			if (!descriptor)
 				throw new Error(`Pass ${PassType.name} did not publish output ${OutputType.name}.`);
@@ -123,7 +125,7 @@ export class Generator {
 		if (!PassType)
 			throw new Error(`Could not find pass with output map ${type.name}.`);
 
-		const passId = threadManager.taskTypes.getPassId(PassType);
+		const passId = this.threadManager.taskTypes.getPassId(PassType);
 		const requestedChunks = scope === GenerationScope.Local ? chunks : [undefined];
 		const roots: RootTask[] = [];
 		const rootChunks: (Vector2Type | undefined)[] = [];
@@ -161,7 +163,7 @@ export class Generator {
 		}
 
 		if (roots.length > 0) {
-			const taskIds = await threadManager.generateMany(this.generation, roots);
+			const taskIds = await this.threadManager.generateMany(this.generation, roots);
 
 			for (let i = 0; i < taskIds.length; i++)
 				this.cacheTaskOutputs(taskIds[i]!, PassType, scope, resolution, rootChunks[i]);

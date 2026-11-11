@@ -32,31 +32,45 @@ export class ThreadManager {
 	private readonly idleWaiters: (() => void)[] = [];
 	private generationQueue: Promise<void> = Promise.resolve();
 
-	public static async initialize(arenaCapacity: number = 64 * 1024 * 1024, arenaMaxCapacity: number = 1024 * 1024 * 1024): Promise<ThreadManager> {
-		const manager = new ThreadManager();
-		const arenas = await Promise.all(manager.threads.map((thread, workerId) => thread.emit("init", {
-			workerId,
-			queues: manager.workQueues.map(queue => queue.buffer),
-			wakeup: manager.wakeup,
-			arenaCapacity,
-			arenaMaxCapacity
-		})));
+	private isInitialized = false;
+	private initializePromise: Promise<void> | null = null
 
-		manager.arenas = arenas;
+	public async initialize(arenaCapacity: number = 64 * 1024 * 1024, arenaMaxCapacity: number = 1024 * 1024 * 1024): Promise<void> {
+		if (this.initializePromise)
+			return this.initializePromise;
 
-		await Promise.all(manager.threads.map(thread => thread.emit("configure", {
-			arenas,
-			registry: manager.registry.buffer,
-			outputs: manager.outputs.buffer,
-			taskCapacity: ThreadManager.TASK_CAPACITY,
-			continuationCapacity: ThreadManager.CONTINUATION_CAPACITY,
-			maxOutputs: manager.taskTypes.maxOutputs
-		})));
+		if (this.isInitialized)
+			return;
 
-		return manager;
+		this.isInitialized = true;
+
+		this.initializePromise = new Promise(async res => {
+			const arenas = await Promise.all(this.threads.map((thread, workerId) => thread.emit("init", {
+				workerId,
+				queues: this.workQueues.map(queue => queue.buffer),
+				wakeup: this.wakeup,
+				arenaCapacity,
+				arenaMaxCapacity
+			})));
+
+			this.arenas = arenas;
+
+			await Promise.all(this.threads.map(thread => thread.emit("configure", {
+				arenas,
+				registry: this.registry.buffer,
+				outputs: this.outputs.buffer,
+				taskCapacity: ThreadManager.TASK_CAPACITY,
+				continuationCapacity: ThreadManager.CONTINUATION_CAPACITY,
+				maxOutputs: this.taskTypes.maxOutputs
+			})));
+
+			res();
+		});
+
+		return this.initializePromise;
 	}
 
-	private constructor() {
+	public constructor() {
 		const count = Math.max(1, (navigator.hardwareConcurrency || 4) - 1);
 
 		this.registry = TaskRegistry.create(ThreadManager.TASK_CAPACITY, ThreadManager.CONTINUATION_CAPACITY);
@@ -89,7 +103,7 @@ export class ThreadManager {
 			await this.broadcast("sync", event);
 		});
 
-		this.generationQueue = operation.catch(() => {});
+		this.generationQueue = operation.catch(() => { });
 
 		return operation;
 	}

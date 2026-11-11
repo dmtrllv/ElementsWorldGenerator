@@ -27,7 +27,7 @@ export class ProjectManager extends Module {
 	public constructor(editor: Editor) {
 		super(editor);
 		const settings = editor.get(SettingsManager);
-		this._activeProject = new Project({ name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams });
+		this._activeProject = new Project(editor.threadManager, { name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams });
 	}
 
 	public async saveAs(_name: string, _force: boolean = false) {

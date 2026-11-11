@@ -1,7 +1,7 @@
 import * as Three from "three";
 import { Scene } from "./scene";
 import { Controller } from "./controller";
-import { observable } from "../reactive";
+import { computed, observable } from "../reactive";
 import { Module } from "../editor/store";
 import type { Editor } from "../editor";
 import { Chunk, Region, type World } from "../generator";
@@ -21,7 +21,13 @@ const MAX_CONCURRENT_CHUNK_BUILDS = 4;
 
 @observable
 export class Renderer extends Module {
+	@observable
 	private element: HTMLDivElement | null = null;
+
+	@computed
+	public get isInitialized() {
+		return this.element !== null;
+	}
 
 	public readonly scene: Scene = new Scene();
 	public readonly camera = new Three.PerspectiveCamera();
@@ -101,6 +107,7 @@ export class Renderer extends Module {
 	}
 
 	public readonly initialize = (element: HTMLDivElement) => {
+		console.log("init");
 		if (this.element)
 			throw new Error("Renderer is already initialized!");
 

@@ -1,3 +1,4 @@
+import type { ThreadManager } from "../generator/threads";
 import { World } from "../generator/world";
 import type { WorldParamProps } from "../generator/world-params";
 import { observable } from "../reactive";
@@ -15,9 +16,9 @@ export class ProjectInfo {
 export class Project {
 	public readonly info: ProjectInfo;
 	public readonly world: World;
-	
-	public constructor(info: ProjectInfo, seed: number, worldParams: WorldParamProps) {
+
+	public constructor(ThreadManager: ThreadManager, info: ProjectInfo, seed: number, worldParams: WorldParamProps) {
 		this.info = info;
-		this.world = new World(seed, worldParams);
+		this.world = new World(ThreadManager, seed, worldParams);
 	}
 }

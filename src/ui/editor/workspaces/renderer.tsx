@@ -4,9 +4,6 @@ import { Editor, ProjectManager } from "../../../editor";
 import { useObservable } from "../../../reactive";
 import type { Renderer } from "../../../renderer";
 import { NumberInput } from "../../components";
-import { ElevationMap } from "../../../generator/maps/terrain";
-import { GenerationScope } from "../../../generator";
-import { Vector2 } from "three";
 
 export const RendererViewWorkspace = ({ dropControls }: { dropControls: JSX.Element, workspace: RendererWorkspace }) => {
 	const editor = Editor.useContext();
@@ -45,10 +42,6 @@ const CanvasRenderer = ({ renderer }: { renderer: Renderer }) => {
 	const activeProject = Editor.useModule(ProjectManager).activeProject;
 	const world = useObservable(activeProject.world);
 
-	const generate = () => {
-		renderer.renderWorldHeightmap(world);
-	};
-
 	const generateVoxels = () => {
 		renderer.renderVoxelWorld(world);
 	};
@@ -65,20 +58,10 @@ const CanvasRenderer = ({ renderer }: { renderer: Renderer }) => {
 			controller.setCameraMode("orbital");
 	};
 
-	const threadTest = () => {
-		activeProject.world.generator.generate(ElevationMap, GenerationScope.Local, new Vector2(0, 0), 1);
-	}
-
 	return (
 		<div className="buttons" style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)" }} >
-			<button onClick={generate} className="generate-btn">
-				Heightmap
-			</button>
 			<button onClick={generateVoxels} className="generate-btn">
-				Voxels
-			</button>
-			<button onClick={threadTest} className="generate-btn">
-				Test Threaded
+				Generate
 			</button>
 			<button onClick={toggleController} className="generate-btn">
 				{renderer.controller?.cameraMode === "first-person" ? "Oribal" : "First Person"}
