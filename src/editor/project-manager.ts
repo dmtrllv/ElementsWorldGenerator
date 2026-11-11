@@ -57,25 +57,26 @@ export class ProjectManager extends Module {
 	public constructor(editor: Editor) {
 		super(editor);
 		const settings = editor.get(SettingsManager);
-		this._activeProject = new Project(editor.threadManager, { name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams });
-		
+		this._activeProject = new Project(editor.threadManager, { name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams }, false);
+
 		document.title = `Unsaved - World Editor`;
-		
+
 		window.onbeforeunload = e => {
 			if (this._activeProject.savedGenerationId !== this._activeProject.world.generator.generation) {
 				e.preventDefault();
 			}
 		};
 	}
-	
+
 	public async new() {
-		if(this._activeProject.savedGenerationId !== this._activeProject.world.generator.generation) {
-			if(!await this.editor.get(ModalManager).confirm("Project has unsaved changes, do you want to continue?")){
+		if (this._activeProject.savedGenerationId !== this._activeProject.world.generator.generation) {
+			if (!await this.editor.get(ModalManager).confirm("Project has unsaved changes, do you want to continue?")) {
 				return;
 			}
 		}
 		const settings = this.editor.get(SettingsManager);
-		this._activeProject = new Project(this.editor.threadManager, { name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams });
+		document.title = `Unsaved - World Editor`;
+		this._activeProject = new Project(this.editor.threadManager, { name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams }, false);
 	}
 
 	public async saveAs(name: string, force: boolean = false) {
@@ -84,22 +85,35 @@ export class ProjectManager extends Module {
 			notifiactions.error("Project name cannot be empty!");
 			return false;
 		}
+		const index = this._projects.findIndex(p => p.name === name);
 
-		if (!force && this._projects.find(p => p.name === name)) {
+		if (!force && (index > -1)) {
 			notifiactions.error(`Project ${name} already exists!`);
 			return false;
 		}
 
-		this._projects.splice(0, 0, { name });
+		if (index > -1) {
+			this._projects.splice(index, 1);
+		}
 
+		this._projects.splice(0, 0, { name });
+		
 		ProjectManager.saveProject(name, this._activeProject.world.worldParams);
 		ProjectManager.updateProjects(this._projects);
+
+		this._activeProject.savedGenerationId = this._activeProject.world.generator.generation;
 
 		const item = this.editor.get(Menu).getItemByText("Open Recent");
 
 		if (item) {
 			item.children.splice(0, 0, new MenuItem(name, undefined, () => this.open(name)));
 		}
+
+		this.editor.get(NotificationManager).notify({
+			type: "Info",
+			message: `Saved project ${name}!`,
+			title: "Saved"
+		})
 
 		return true;
 	}
@@ -109,7 +123,6 @@ export class ProjectManager extends Module {
 			this.editor.get(ModalManager).open(SaveModal);
 		} else {
 			this.saveAs(this._activeProject.info.name, true);
-			this._activeProject.savedGenerationId = this._activeProject.world.generator.generation;
 		}
 	}
 
@@ -132,7 +145,7 @@ export class ProjectManager extends Module {
 
 		document.title = `${name} - World Editor`;
 
-		this._activeProject = new Project(this.editor.threadManager, { name }, project.seed, project.params);
+		this._activeProject = new Project(this.editor.threadManager, { name }, project.seed, project.params, true);
 	}
 }
 

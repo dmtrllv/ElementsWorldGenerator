@@ -27,7 +27,7 @@ export class Project {
 	@observable
 	public savedGenerationId: number = 0;
 
-	public constructor(ThreadManager: ThreadManager, info: ProjectInfo, seed: number, worldParams: WorldParamProps, fromSave: boolean = false) {
+	public constructor(ThreadManager: ThreadManager, info: ProjectInfo, seed: number, worldParams: WorldParamProps, fromSave: boolean) {
 		this._saved = fromSave;
 		this.info = info;
 		this.world = new World(ThreadManager, seed, worldParams);

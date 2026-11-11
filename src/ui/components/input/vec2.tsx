@@ -1,7 +1,7 @@
 import type { Vector2 } from "three";
 import { nameToLabel, type InputComponent } from "./input";
 import { useSlider } from "../../hooks/slider";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 import "./styles/input.scss";
 
@@ -11,88 +11,45 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name })
 
 	const [x, setX] = useState(value.x.toString());
 	const [y, setY] = useState(value.y.toString());
-	const prevX = useRef(x);
-	const prevY = useRef(y);
-
-
-	const updateX = (v: string) => {
-		setX(v);
-		const val = parseFloat(v);
-		if (Number.isFinite(val) && !Number.isNaN(val)) {
-			sx.set(val);
-			value.x = val;
-			onChange?.(value);
-		}
-	};
-
-	const updateY = (v: string) => {
-		setY(v);
-		const val = parseFloat(v);
-		if (Number.isFinite(val) && !Number.isNaN(val)) {
-			sy.set(val);
-			value.y = val;
-			onChange?.(value);
-		}
-	};
-
-	useEffect(() => {
-		const vx = x.toString();
-		if (prevX.current !== vx) {
-			prevX.current = vx;
-			updateX(vx);
-			onChange?.(value);
-		}
-
-		const vy = y.toString();
-		if (prevY.current !== vy) {
-			prevY.current = vy;
-			updateY(vy);
-			onChange?.(value);
-		}
-	}, [value.x, value.y]);
-
-	useEffect(() => {
-		const vx = sx.size.toString();
-		if (prevX.current !== vx) {
-			prevX.current = vx;
-			updateX(vx);
-		}
-
-		const vy = sy.size.toString();
-		if (prevY.current !== vy) {
-			prevY.current = vy;
-			updateY(vy);
-		}
-	}, [sx.size, sy.size])
 
 	const fixInput = () => {
 		const inputX = parseFloat(x);
 		const inputY = parseFloat(y);
 
-		let updated = false;
+		const nextX = Number.isFinite(inputX) ? inputX : 0;
+		const nextY = Number.isFinite(inputY) ? inputY : 0;
 
-		if (x.length === 0 || Number.isNaN(inputX) || !Number.isFinite(inputX)) {
-			setX("0");
-			updated = true;
-		} else if (inputX.toString() !== x) {
-			setX(inputX.toString());
-			value.x = inputX;
-			updated = true;
-		}
+		setX(nextX.toString());
+		setY(nextY.toString());
 
-		if (y.length === 0 || Number.isNaN(inputY) || !Number.isFinite(inputY)) {
-			setY("0");
-			updated = true;
-		} else if (inputY.toString() !== y) {
-			setY(inputY.toString());
-			value.y = inputY;
-			updated = true;
-		}
+		sx.set(nextX);
+		sy.set(nextY);
 
-		if (updated) {
-			onChange?.(value);
-		}
+		value.set(nextX, nextY);
+		onChange?.(value);
 	};
+
+	const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Enter")
+			e.currentTarget.blur();
+	};
+
+	useEffect(() => {
+		setX(value.x.toString());
+		setY(value.y.toString());
+	}, [value.x, value.y]);
+
+	useEffect(() => {
+		setX(sx.size.toString());
+		value.x = sx.size;
+		onChange?.(value);
+	}, [sx.size]);
+
+	useEffect(() => {
+		setY(sy.size.toString());
+		value.y = sy.size;
+		onChange?.(value);
+	}, [sy.size]);
 
 	return (
 		<div className="input-field vec2">
@@ -100,11 +57,11 @@ export const Vector2Input: InputComponent<Vector2> = ({ onChange, value, name })
 			<div className="inputs">
 				<div className="input">
 					<div className="label x" onMouseDown={sx.onMouseDown}>x</div>
-					<input value={x} id={name + ".x"} name={name + ".x"} placeholder={name + ".x"} type="text" onChange={e => updateX(e.target.value)} onBlur={fixInput} />
+					<input value={x} id={name + ".x"} name={name + ".x"} placeholder={name + ".x"} type="text" onChange={e => setX(e.target.value)} onBlur={fixInput} onKeyDown={onKeyDown} />
 				</div>
-				<div className="input" >
+				<div className="input">
 					<div className="label y" onMouseDown={sy.onMouseDown}>y</div>
-					<input value={y} id={name + ".y"} name={name + ".y"} placeholder={name + ".y"} type="text" onChange={e => updateY(e.target.value)} onBlur={fixInput} />
+					<input value={y} id={name + ".y"} name={name + ".y"} placeholder={name + ".y"} type="text" onChange={e => setY(e.target.value)} onBlur={fixInput} onKeyDown={onKeyDown} />
 				</div>
 			</div>
 		</div>
