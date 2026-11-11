@@ -107,6 +107,9 @@ export class GeneratorWorker {
 		const ready: number[] = [];
 
 		for (let i = 0; i < roots.length; i++) {
+			if (generation !== this.generation || this.paused)
+				break;
+
 			const root = roots[i]!;
 
 			try {
@@ -131,9 +134,15 @@ export class GeneratorWorker {
 			if ((i & 127) === 127) {
 				this.scheduler.enqueueMany(ready);
 				ready.length = 0;
+
 				await new Promise<void>(resolve => setTimeout(resolve, 0));
 			}
 		}
+
+		if (generation === this.generation && !this.paused)
+			this.scheduler.enqueueMany(ready);
+		else
+			ready.length = 0;
 
 		this.scheduler.enqueueMany(ready);
 
