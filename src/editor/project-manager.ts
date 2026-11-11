@@ -58,15 +58,24 @@ export class ProjectManager extends Module {
 		super(editor);
 		const settings = editor.get(SettingsManager);
 		this._activeProject = new Project(editor.threadManager, { name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams });
-
+		
 		document.title = `Unsaved - World Editor`;
-
+		
 		window.onbeforeunload = e => {
-			console.log(this._activeProject.savedGenerationId !== this._activeProject.world.generator.generation)
 			if (this._activeProject.savedGenerationId !== this._activeProject.world.generator.generation) {
 				e.preventDefault();
 			}
 		};
+	}
+	
+	public async new() {
+		if(this._activeProject.savedGenerationId !== this._activeProject.world.generator.generation) {
+			if(!await this.editor.get(ModalManager).confirm("Project has unsaved changes, do you want to continue?")){
+				return;
+			}
+		}
+		const settings = this.editor.get(SettingsManager);
+		this._activeProject = new Project(this.editor.threadManager, { name: "Unsaved" }, randomSeed(), { ...settings.defaultWorldParams });
 	}
 
 	public async saveAs(name: string, force: boolean = false) {

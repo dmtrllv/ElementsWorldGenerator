@@ -12,7 +12,7 @@ export class Menu extends Module {
 	@observable
 	public readonly items: MenuItem[] = [
 		new MenuItem("File", [
-			new MenuItem("New"),
+			new MenuItem("New", [], () => this.projectManager.new()),
 			new MenuItem("Open"),
 			new MenuItem("Open Recent", this.recentProjects),
 			new MenuItem("Save", [], () => this.projectManager.save()),
