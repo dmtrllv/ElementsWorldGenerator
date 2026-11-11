@@ -35,9 +35,9 @@ export type Immutable<T> =
 const BENCHMARK = false;
 
 export const benchmark = (target: any, key: any, description: PropertyDescriptor) => {
-	if(!BENCHMARK)
+	if (!BENCHMARK)
 		return;
-	
+
 	const original = description.value;
 
 	if (typeof original !== "function") {
@@ -57,3 +57,13 @@ export const benchmark = (target: any, key: any, description: PropertyDescriptor
 		}
 	};
 };
+
+export type Color = [number, number, number];
+
+export const color = (r: number, g: number, b: number): Color => [r, g, b];
+
+export const white = color(255, 255, 255);
+export const red = color(255, 0, 0);
+export const green = color(0, 255, 0);
+export const blue = color(0, 0, 255);
+export const black = color(0, 0, 0);

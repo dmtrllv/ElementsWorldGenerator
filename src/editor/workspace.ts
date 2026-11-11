@@ -52,8 +52,7 @@ export class WorkspaceManager extends Module {
 
 type WorkspaceArgs<T extends typeof Workspace> = ConstructorParameters<T> extends [manager: WorkspaceManager, layout: WorkspaceLayout | null, id: number, string, ...infer Args] ? Args : never;
 
-export type WorkspaceType<T extends Workspace> =
-	new (manager: WorkspaceManager, layout: WorkspaceLayout | null, id: number, ...args: any[]) => T;
+export type WorkspaceType<T extends Workspace> = new (manager: WorkspaceManager, layout: WorkspaceLayout | null, id: number, name: string, ...args: any[]) => T;
 
 @observable()
 export abstract class Workspace {

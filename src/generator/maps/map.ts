@@ -1,3 +1,4 @@
+import { white, type Color } from "../../utils";
 import type { WorldParamsSnapshot } from "../world-params";
 
 export type SampleRegion = {
@@ -19,13 +20,13 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 	}
 
 	public static fromName(name: string) {
-		for(const [type] of this.registry) {
-			if(type.name === name)
+		for (const [type] of this.registry) {
+			if (type.name === name)
 				return type;
 		}
 		return null;
 	}
-	
+
 	public static readonly register = <T extends MapDataType<any, any>>(meta: MapDataMeta<T>) => (target: T) => {
 		this.registry.set(target, meta as any);
 	}
@@ -42,8 +43,10 @@ export abstract class MapData<T extends TypedArray = Float32Array> {
 		this.samples = samples;
 	}
 
-	public debug(_imageData: ImageData, _worldParams: WorldParamsSnapshot) { }
+	public debug(_imageData: ImageData, _worldParams: WorldParamsSnapshot, _renderType: DebugRenderType) { }
 }
+
+export type DebugRenderType = "border" | "factor";
 
 
 export type MapDataMeta<T extends MapDataType<any, any>> = T extends MapDataType<any, infer V> ? (V extends Float32Array ? {
@@ -83,17 +86,19 @@ export type TypedArrayCtor<T extends TypedArray> =
 	T extends Float64Array ? Float64ArrayConstructor :
 	never;
 
-export const renderFloat32 = (data: Float32Array, imageData: ImageData, normalizer: (val: number) => number = n => Math.max(0, Math.min(1, n!))) => {
+export const renderFloat32 = (data: Float32Array, imageData: ImageData, normalizer: (val: number) => (number | undefined) = n => Math.max(0, Math.min(1, n!)), color: Color = white) => {
 	const pixels = imageData.data;
 
 	for (let i = 0; i < data.length; i++) {
 		const value = normalizer(data[i]!);
-		const color = Math.round(value * 255);
+		if(value === undefined)
+			continue;
+		
 		const index = i * 4;
 
-		pixels[index] = color;
-		pixels[index + 1] = color;
-		pixels[index + 2] = color;
+		pixels[index + 0] = Math.round(value * color[0]);
+		pixels[index + 1] = Math.round(value * color[1]);
+		pixels[index + 2] = Math.round(value * color[2]);
 		pixels[index + 3] = 255;
 	}
 }

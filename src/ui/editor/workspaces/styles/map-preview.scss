@@ -43,4 +43,14 @@
 			z-index: 1;
 		}
 	}
+
+	.debug-sidebar {
+		position: absolute;
+		right: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 300px;
+		border: 1px solid var(--border-1);
+		background-color: var(--bg-1);
+	}
 }

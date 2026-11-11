@@ -6,6 +6,8 @@ import { useObservable } from "../../reactive";
 import { useEvent } from "../hooks/event";
 import { MapPreview } from "./workspaces/map-preview";
 import { MapPreviewWorkspace } from "../../editor/workspaces/map-preview";
+import { WorldDebugWorkspace } from "../../editor/workspaces/world-debugger";
+import { WorldDebugger } from "./workspaces/world-debugger";
 
 import "./styles/workspace.scss";
 
@@ -250,3 +252,4 @@ export const register = <T extends Workspace>(type: WorkspaceType<T>, component:
 
 register(RendererWorkspace, RendererViewWorkspace);
 register(MapPreviewWorkspace, MapPreview);
+register(WorldDebugWorkspace, WorldDebugger);
